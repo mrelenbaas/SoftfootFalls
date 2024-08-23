@@ -17,7 +17,7 @@ CAPTION = 'SoftfootFalls'
 
 
 ROAD_FILENAME = 'Road.png'
-ROAD_SIZE = 41
+ROAD_SIZE = 30
 class Road:
     def __init__(self, i, j, color, houses, dens):
         self.__i = int(i)
@@ -25,17 +25,17 @@ class Road:
         self.__color = color
         self.__houses = houses
         self.__dens = dens
-        self.__randStart1 = 9
-        self.__randEnd1 = 10
-        self.__randStart2 = 13
-        self.__randEnd2 = 14
+        self.__randStart1 = 4
+        self.__randEnd1 = 5
+        self.__randStart2 = 7
+        self.__randEnd2 = 9
         x = rectXs[self.__i] + random.randint(self.__randStart1,
                                               self.__randEnd1)
         y = rectYs[self.__j] + random.randint(self.__randStart1,
                                               self.__randEnd1)
-        self.__width = ROAD_SIZE - random.randint(self.__randStart2,
+        self.__width = ROAD_SIZE + random.randint(self.__randStart2,
                                                   self.__randEnd2)
-        self.__height = ROAD_SIZE - random.randint(self.__randStart2,
+        self.__height = ROAD_SIZE + random.randint(self.__randStart2,
                                                    self.__randEnd2)
         self.__rect = pygame.Rect(x, y, self.__width, self.__height)
         self.__image = pygame.image.load(ROAD_FILENAME)
@@ -44,6 +44,12 @@ class Road:
                                                self.__height))
         self.__images = []
         self.__roads = []
+
+    def remove(self, i, j):
+        for road in self.__roads:
+            if i == road[1] and j == road[2]:
+                return True
+        return False
 
     def draw(self, screen):
         '''
@@ -71,10 +77,14 @@ class Road:
                     is_full = True
                     temp_i = i - 1
                     if temp_i >= 0 \
-                       and i - 2 >= 0 \
-                       and i - 3 >= 0 \
-                       and not tiles[temp_i - 1][j].has_road() \
-                       and not tiles[temp_i - 2][j].has_road() \
+                       and not tiles[temp_i - 1][j].has_road():
+                        temp_tiles.append(tiles[temp_i][j])
+                        is_full = False
+                    elif temp_i - 2 >= 0 \
+                       and not tiles[temp_i - 2][j].has_road():
+                        temp_tiles.append(tiles[temp_i][j])
+                        is_full = False
+                    elif i - 3 >= 0 \
                        and not tiles[temp_i - 3][j].has_road():
                         temp_tiles.append(tiles[temp_i][j])
                         is_full = False
@@ -82,10 +92,14 @@ class Road:
                         tiles[temp_i][j].mark_as_full()
                     temp_i = i + 1
                     if temp_i <= 19 \
-                       and i + 2 <= 19 \
-                       and i + 3 <= 19 \
-                       and not tiles[temp_i + 1][j].has_road() \
-                       and not tiles[temp_i + 2][j].has_road() \
+                       and not tiles[temp_i + 1][j].has_road():
+                        temp_tiles.append(tiles[temp_i][j])
+                        is_full = False
+                    elif i + 2 <= 19 \
+                       and not tiles[temp_i + 2][j].has_road():
+                        temp_tiles.append(tiles[temp_i][j])
+                        is_full = False
+                    elif i + 3 <= 19 \
                        and not tiles[temp_i + 3][j].has_road():
                         temp_tiles.append(tiles[temp_i][j])
                         is_full = False
@@ -93,10 +107,14 @@ class Road:
                         tiles[temp_i][j].mark_as_full()
                     temp_j = j - 1
                     if temp_j >= 0 \
-                       and j - 2 >= 0 \
-                       and j - 3 >= 0 \
-                       and not tiles[i][temp_j - 1].has_road() \
-                       and not tiles[i][temp_j - 2].has_road() \
+                       and not tiles[i][temp_j - 1].has_road():
+                        temp_tiles.append(tiles[i][temp_j])
+                        is_full = False
+                    elif j - 2 >= 0 \
+                       and not tiles[i][temp_j - 2].has_road():
+                        temp_tiles.append(tiles[i][temp_j])
+                        is_full = False
+                    elif j - 3 >= 0 \
                        and not tiles[i][temp_j - 3].has_road():
                         temp_tiles.append(tiles[i][temp_j])
                         is_full = False
@@ -104,10 +122,14 @@ class Road:
                         tiles[i][temp_j].mark_as_full()
                     temp_j = j + 1
                     if temp_j <= 19 \
-                       and j + 2 <= 19 \
-                       and j + 3 <= 19 \
-                       and not tiles[i][temp_j + 1].has_road() \
-                       and not tiles[i][temp_j + 2].has_road() \
+                       and not tiles[i][temp_j + 1].has_road():
+                        temp_tiles.append(tiles[i][temp_j])
+                        is_full = False
+                    elif j + 2 <= 19 \
+                       and not tiles[i][temp_j + 2].has_road():
+                        temp_tiles.append(tiles[i][temp_j])
+                        is_full = False
+                    elif j + 3 <= 19 \
                        and not tiles[i][temp_j + 3].has_road():
                         temp_tiles.append(tiles[i][temp_j])
                         is_full = False
@@ -145,10 +167,8 @@ class Road:
                                                          self.__randEnd1),
                                       y + random.randint(self.__randStart1,
                                                          self.__randEnd1),
-                                      ROAD_SIZE - random.randint(self.__randStart2,
-                                                                 self.__randEnd2),
-                                      ROAD_SIZE - random.randint(self.__randStart2,
-                                                                 self.__randEnd2))
+                                      self.__width,
+                                      self.__height)
         else:
             self.__houses.append(House(tile.i(), tile.j(), (62, 35, 14)))
             tiles[tile.i()][tile.j()].add_house()
@@ -186,10 +206,12 @@ class Terrain:
 
 
 HOUSE_FILENAME = 'HouseHaunt.png'
+DEN_FILENAME = 'HouseDenPillar003.png'
+TEMPLE_FILENAME = 'HouseRanch.png'
 TEMPLE_SPEED = 0.1
 HOUSE_SIZE = 30
 class House:
-    def __init__(self, i, j, color, houses=None, dens=None, is_den=False):
+    def __init__(self, i, j, color, houses=None, dens=None, is_temple=False, is_den=False):
         self.__i = int(i)
         self.__j = int(j)
         self.__color = color
@@ -197,11 +219,36 @@ class House:
         self.__dens = dens
         x = rectXs[self.__i] + 8
         y = rectYs[self.__j] + 8
-        self.__rect = pygame.Rect(x, y, HOUSE_SIZE, HOUSE_SIZE)
-        self.__image = pygame.image.load(HOUSE_FILENAME)
-        self.__image = pygame.transform.scale(self.__image,
-                                              (HOUSE_SIZE,
-                                               HOUSE_SIZE))
+        self.__image = None
+        if is_den:
+            self.__rect = pygame.Rect(x - (HOUSE_SIZE * 2) - (HOUSE_SIZE / 2),
+                                      y - (HOUSE_SIZE * 7) + (HOUSE_SIZE / 32),
+                                      HOUSE_SIZE * 8,
+                                      HOUSE_SIZE * 8)
+            self.__image = pygame.image.load(DEN_FILENAME)
+            self.__image = pygame.transform.scale(self.__image,
+                                                  (HOUSE_SIZE * 8,
+                                                   HOUSE_SIZE * 8))
+        elif is_temple:
+            self.__rect = pygame.Rect(x - (HOUSE_SIZE / 2),
+                                      y - HOUSE_SIZE,
+                                      HOUSE_SIZE * 2,
+                                      HOUSE_SIZE * 2)
+            self.__image = pygame.image.load(TEMPLE_FILENAME)
+            self.__image = pygame.transform.scale(self.__image,
+                                                  (HOUSE_SIZE * 2,
+                                                   HOUSE_SIZE * 2))
+        else:
+            x = rectXs[self.__i] - (HOUSE_SIZE / 32)
+            y = rectYs[self.__j] - (HOUSE_SIZE / 8)
+            self.__rect = pygame.Rect(x,
+                                      y,
+                                      HOUSE_SIZE * 1.5,
+                                      HOUSE_SIZE * 1.5)
+            self.__image = pygame.image.load(HOUSE_FILENAME)
+            self.__image = pygame.transform.scale(self.__image,
+                                                  (HOUSE_SIZE * 1.5,
+                                                   HOUSE_SIZE * 1.5))
 
     def draw(self, screen):
         '''
@@ -228,7 +275,9 @@ class House:
 class Main:
     def __init__(self):
         pygame.init();
-        self.__screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        self.__screen = pygame.display.set_mode((WIDTH, HEIGHT),
+                                                pygame.DOUBLEBUF,
+                                                32)
         title = generate_word('SOFTFOOTFALLS')
         title_x = (WIDTH / 2)
         title_x -= (len(title) * LETTER_SIZE / 2)
@@ -286,16 +335,22 @@ class Main:
         # self.__road = Road((len(rectXs) / 2) - 1,
         #                    len(rectYs) / 2,
         #                    (208, 237, 242))
-        self.__i = 19
-        self.__j = 19
+        self.__i = 1
+        self.__j = 1
         self.__blob = Blob(self.__i,
                            self.__j,
-                           (25, 80, 62),
+                           (124, 82, 130),
                            rectXs,
                            rectYs,
                            GRID_SIZE)
-        self.__blob_timer = Timer(BLOB_SPEED, self.start_blob_round)
         tiles[self.__i][self.__j].add_blob()
+        self.__i = 18
+        self.__j = 18
+        tiles[self.__i][self.__j].add_blob()
+        self.__i = 0
+        self.__j = 19
+        tiles[self.__i][self.__j].add_blob()
+        self.__blob_timer = Timer(BLOB_SPEED, self.start_blob_round)
         self.__houses = []
         '''
         self.__i = int(len(rectXs) / 2)
@@ -320,21 +375,25 @@ class Main:
                                  (len(rectYs) / 2) - 9,
                                  (162, 35, 214),
                                  is_den=True))
+        tiles[1][1].add_house()
         self.__dens.append(House((len(rectXs) / 2) + 8,
                                  (len(rectYs) / 2) + 8,
                                  (162, 35, 214),
                                  is_den=True))
+        tiles[18][18].add_house()
         self.__dens.append(House((len(rectXs) / 2) - 10,
                                  (len(rectYs) / 2) + 9,
-                                 (162, 35, 214),
+                                 (255, 50, 50),
                                  is_den=True))
+        tiles[0][19].add_house()
         self.__i = int(len(rectXs) / 2)
         self.__j = int(len(rectYs) / 2)
         self.__temple = House(self.__i,
                               self.__j,
                               (212, 185, 164),
                               self.__houses,
-                              self.__dens)
+                              self.__dens,
+                              is_temple=True)
         self.__temple_timer = Timer(TEMPLE_SPEED, self.start_round)
         tiles[self.__i][self.__j - 210].add_house()
         self.__i = int(len(rectXs) / 2)
@@ -365,6 +424,7 @@ class Main:
                                len(rectXs) / 2,
                                len(rectYs) / 2,
                                (0, 255, 0),
+                               extra_art_filename='CharacterSteedNut.png',
                                is_enemy=False)
         self.__player_timer = Timer(PLAYER_SPEED, self.move_player)
         # self.__player_timer = Timer(PLAYER_SPEED, self.move_enemy)
@@ -416,6 +476,8 @@ class Main:
                         tiles[self.__player.i()][self.__player.j()-210].mark_as_not_full_blob()
                         self.__blob.remove(self.__player.i(),
                                            self.__player.j()-210)
+                        # self.__blob2.remove(self.__player.i(),
+                        #                     self.__player.j()-210)
                     if key == 'd':
                         self.__player.move_right()
                         self.__player_timer.reset(reset_percent=True)
@@ -423,6 +485,8 @@ class Main:
                         tiles[self.__player.i()][self.__player.j()-210].mark_as_not_full_blob()
                         self.__blob.remove(self.__player.i(),
                                            self.__player.j()-210)
+                        # self.__blob2.remove(self.__player.i(),
+                        #                     self.__player.j()-210)
                     if key == 'w':
                         self.__player.move_up()
                         self.__player_timer.reset(reset_percent=True)
@@ -430,6 +494,8 @@ class Main:
                         tiles[self.__player.i()][self.__player.j()-210].mark_as_not_full_blob()
                         self.__blob.remove(self.__player.i(),
                                            self.__player.j()-210)
+                        # self.__blob2.remove(self.__player.i(),
+                        #                     self.__player.j()-210)
                     if key == 's':
                         self.__player.move_down()
                         self.__player_timer.reset(reset_percent=True)
@@ -437,6 +503,8 @@ class Main:
                         tiles[self.__player.i()][self.__player.j()-210].mark_as_not_full_blob()
                         self.__blob.remove(self.__player.i(),
                                            self.__player.j()-210)
+                        # self.__blob2.remove(self.__player.i(),
+                        #                     self.__player.j()-210)
                     # print(key, 'Key is pressed')
                 if event.type == pygame.KEYUP:
                     key=pygame.key.name(event.key)
@@ -456,9 +524,10 @@ class Main:
             self.__temple.draw(self.__screen)
             for house in self.__houses:
                 house.draw(self.__screen)
+            self.__blob.draw(self.__screen)
+            # self.__blob2.draw(self.__screen)
             for den in self.__dens:
                 den.draw(self.__screen)
-            self.__blob.draw(self.__screen)
             for i in range(len(self.__enemies)):
                 if self.__enemy_timers[i].percent() <= 0.0:
                     self.__enemy_timers[i].reset(reset_percent=True)
@@ -483,6 +552,7 @@ class Main:
             draw_title(self.__screen, gui_x, gui_y, self.__gui)
             self.__temple_timer.update()
             self.__blob_timer.update()
+            # self.__blob_timer2.update()
             self.__enemy_timers[0].update()
             self.__enemy_timers[1].update()
             self.__enemy_timers[2].update()
@@ -504,28 +574,48 @@ class Main:
         elif result[1] == 2:
             self.__gui = generate_word('LOSE')
 
+    def start_blob_round2(self):
+        self.__blob2.move_head()
+        '''
+        result = self.__gui = self.__blob2.move_head()
+        if result == None:
+            self.__gui = generate_word('WIN')
+        elif result[1] == 0:
+            self.__gui = result[0]
+        elif result[1] == 2:
+            self.__gui = generate_word('LOSE')
+        '''
+
     def move_player(self):
         pass
 
+    def destroy_blob(self, i):
+        tiles[self.__enemies[i].i()][self.__enemies[i].j()-210].remove_blob()
+        tiles[self.__enemies[i].i()][self.__enemies[i].j()-210].mark_as_not_full_blob()
+        self.__blob.remove(self.__enemies[i].i(),
+                           self.__enemies[i].j()-210)
+
     def move_enemy_0(self):
-        tiles[self.__enemies[0].i()][self.__enemies[0].j()-210].remove_blob()
-        tiles[self.__enemies[0].i()][self.__enemies[0].j()-210].mark_as_not_full_blob()
-        self.__blob.remove(self.__enemies[0].i(),
-                           self.__enemies[0].j()-210)
+        self.destroy_blob(0)
         self.__enemies[0].move_enemy()
 
     def move_enemy_1(self):
-        tiles[self.__enemies[1].i()][self.__enemies[1].j()-210].remove_blob()
-        tiles[self.__enemies[1].i()][self.__enemies[1].j()-210].mark_as_not_full_blob()
-        self.__blob.remove(self.__enemies[1].i(),
+        self.destroy_blob(1)
+        tiles[self.__enemies[1].i()][self.__enemies[1].j()-210].remove_road()
+        tiles[self.__enemies[1].i()][self.__enemies[1].j()-210].mark_as_not_full()
+        self.__road.remove(self.__enemies[1].i(),
                            self.__enemies[1].j()-210)
         self.__enemies[1].move_enemy()
 
     def move_enemy_2(self):
-        tiles[self.__enemies[2].i()][self.__enemies[1].j()-210].remove_blob()
-        tiles[self.__enemies[2].i()][self.__enemies[1].j()-210].mark_as_not_full_blob()
-        self.__blob.remove(self.__enemies[2].i(),
-                           self.__enemies[2].j()-210)
+        self.destroy_blob(2)
+        tiles[self.__enemies[2].i()][self.__enemies[2].j()-210].remove_house()
+        tiles[self.__enemies[2].i()][self.__enemies[2].j()-210].mark_as_not_full()
+        for house in self.__houses:
+            if self.__enemies[2].i() == house.i() and self.__enemies[2].j()-210 == house.j():
+                self.__houses.remove(house)
+        # self.__houses.remove(self.__enemies[2].i(),
+        #                      self.__enemies[2].j()-210)
         self.__enemies[2].move_enemy()
 
     def teardown_title(self):

@@ -38,7 +38,6 @@ class Letter:
 
 def load_alphabet(filenames):
     alphabet = []
-    images = []
     for file in filenames:
         if 'AlphabetUppercase' in file:
             # file = file.split('AlphabetUppercase')[1]

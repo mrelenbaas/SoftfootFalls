@@ -13,7 +13,13 @@ ENEMY_SPEED_0 = 1.1
 ENEMY_SPEED_1 = 1.5
 ENEMY_SPEED_2 = 1.0
 class Player:
-    def __init__(self, filename, i, j, color, is_enemy=True):
+    def __init__(self,
+                 filename,
+                 i,
+                 j,
+                 color,
+                 is_enemy=True,
+                 extra_art_filename=None):
         self.__filename = filename
         self.__i = int(i)
         self.__j = int(j)
@@ -27,6 +33,12 @@ class Player:
         self.__image = pygame.transform.scale(self.__image,
                                               (PLAYER_SIZE * 4.0,
                                                PLAYER_SIZE * 4.0))
+        self.__extra_art_image = None
+        if extra_art_filename != None:
+            self.__extra_art_image = pygame.image.load(extra_art_filename)
+            self.__extra_art_image = pygame.transform.scale(self.__extra_art_image,
+                                                            (PLAYER_SIZE * 2.0,
+                                                             PLAYER_SIZE * 2.0))
 
     def i(self):
         return self.__i
@@ -79,7 +91,7 @@ class Player:
                                PLAYER_SIZE / 2)
             '''
             screen.blit(self.__image, pygame.Rect(x - (PLAYER_SIZE * 2),
-                                                  y - (PLAYER_SIZE * 2),
+                                                  y - (PLAYER_SIZE * 4),
                                                   PLAYER_SIZE,
                                                   PLAYER_SIZE))
         else:
@@ -90,16 +102,24 @@ class Player:
                                 circle_y + animation_y),
                                PLAYER_SIZE,
                                2)
+            '''
+            '''
             pygame.draw.circle(screen,
                                self.__color,
                                (rectXs[self.__i] + PLAYER_SIZE + 1 + self.__modifier_x,
                                 rectYs[self.__j] + PLAYER_SIZE + 1 + self.__modifier_y),
                                PLAYER_SIZE / 2)
             '''
-            screen.blit(self.__image, pygame.Rect(circle_x + animation_x - (PLAYER_SIZE * 2),
-                                                  circle_y + animation_y - (PLAYER_SIZE * 2),
-                                                  PLAYER_SIZE,
-                                                  PLAYER_SIZE))
+            screen.blit(self.__extra_art_image,
+                        pygame.Rect(rectXs[self.__i] + 1 + self.__modifier_x,
+                                    rectYs[self.__j] + 1 + self.__modifier_y,
+                                    PLAYER_SIZE,
+                                    PLAYER_SIZE))
+            screen.blit(self.__image,
+                        pygame.Rect(circle_x + animation_x - (PLAYER_SIZE * 2),
+                                    circle_y + animation_y - (PLAYER_SIZE * 2),
+                                    PLAYER_SIZE,
+                                    PLAYER_SIZE))
 
     def move_left(self):
         self.__modifier_x = WEST
