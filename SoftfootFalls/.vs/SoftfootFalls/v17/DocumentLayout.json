@@ -1,0 +1,41 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\belenbaa\\Desktop\\SoftfootFalls\\SoftfootFalls\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{8980CD97-E265-4403-BB43-C9541F7C256A}|SoftfootFalls\\SoftfootFalls.vcxproj|C:\\Users\\belenbaa\\Desktop\\SoftfootFalls\\SoftfootFalls\\SoftfootFalls\\SoftfootFalls.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{8980CD97-E265-4403-BB43-C9541F7C256A}|SoftfootFalls\\SoftfootFalls.vcxproj|solutionrelative:SoftfootFalls\\SoftfootFalls.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SoftfootFalls.cpp",
+              "DocumentMoniker": "C:\\Users\\belenbaa\\Desktop\\SoftfootFalls\\SoftfootFalls\\SoftfootFalls\\SoftfootFalls.cpp",
+              "RelativeDocumentMoniker": "SoftfootFalls\\SoftfootFalls.cpp",
+              "ToolTip": "C:\\Users\\belenbaa\\Desktop\\SoftfootFalls\\SoftfootFalls\\SoftfootFalls\\SoftfootFalls.cpp",
+              "RelativeToolTip": "SoftfootFalls\\SoftfootFalls.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-09-16T18:44:13.327Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
