@@ -1,10 +1,3 @@
-#include <stdio.h>
-#include <chrono>
-#include <typeinfo>
-#include <cctype>
-#include <cstring>
-
-
 /**
  * @brief A clock that meaures duration in nanoseconds.
  * 

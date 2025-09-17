@@ -124,10 +124,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Clock.cpp" />
+    <ClCompile Include="Print.cpp" />
     <ClCompile Include="SoftfootFalls.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Clock.h" />
+    <ClInclude Include="Print.h" />
     <ClInclude Include="SoftfootFalls.h" />
   </ItemGroup>
   <ItemGroup>

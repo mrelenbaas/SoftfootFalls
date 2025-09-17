@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <iostream>
 
+#include "Print.h"
+#include "Clock.h"
+
 #include "SoftfootFalls.h"
 
 

@@ -24,6 +24,9 @@
     <ClCompile Include="Clock.cpp">
       <Filter>Source Files\System Calls</Filter>
     </ClCompile>
+    <ClCompile Include="Print.cpp">
+      <Filter>Source Files\System Calls</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Clock.h">
@@ -31,6 +34,9 @@
     </ClInclude>
     <ClInclude Include="SoftfootFalls.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Print.h">
+      <Filter>Source Files\System Calls</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
