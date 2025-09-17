@@ -5,6 +5,9 @@
 #include "Print.h"
 
 
+/**
+ * @brief Print the class name followed by a number.
+ */
 void Print::WithClassName(const char* text, long long number)
 {
 	auto Print = [text, number](int size, int offset)

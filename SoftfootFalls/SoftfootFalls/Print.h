@@ -1,3 +1,6 @@
+/**
+ * @brief Reused printing patterns.
+ */
 class Print
 {
 public:
