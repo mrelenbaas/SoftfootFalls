@@ -1,5 +1,8 @@
+#include <stdio.h>
 #include <chrono>
 #include <typeinfo>
+#include <cctype>
+#include <cstring>
 
 
 /**

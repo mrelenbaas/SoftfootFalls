@@ -2,7 +2,7 @@
 CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++17 -g
 LDFLAGS = 
-TARGET = myprogram
+TARGET = softfoot-falls
 SOURCES = ./SoftfootFalls/SoftfootFalls/SoftfootFalls.cpp ./SoftfootFalls/SoftfootFalls/Clock.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
