@@ -7,16 +7,12 @@
 
 void Print::WithClassName(const char* text, long long number)
 {
-	auto _Print = [](int size, int offset, const char* text, long long number)
+	auto Print = [text, number](int size, int offset)
 	{
-		auto PrintStringAndInt = [](const char* text, long long number)
-		{
-			printf("%s: %lld\n", text, number);
-		};
 		char* name = new char[size];
 		memset(name, 0, size);
 		for (int i = 0, j = offset; i < size; ++i, ++j) name[i] = text[j];
-		PrintStringAndInt(name, number);
+		printf("%s: %lld\n", name, number);
 		delete[] name;
 	};
 	int offset = 0;
@@ -37,5 +33,5 @@ void Print::WithClassName(const char* text, long long number)
 		}
 		size = total - offset + 1;
 	}
-	_Print(size, offset, text, number);
+	Print(size, offset);
 }
