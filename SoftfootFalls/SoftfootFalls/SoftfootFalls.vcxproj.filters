@@ -39,7 +39,4 @@
       <Filter>Source Files\System Calls</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
 </Project>
