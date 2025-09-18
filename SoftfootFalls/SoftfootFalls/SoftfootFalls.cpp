@@ -1,15 +1,19 @@
 #include <stdio.h>
 #include <iostream>
+#include <stdio.h>
 
 
 #include "Print.h"
 #include "Clock.h"
 #include "SoftfootFalls.h"
 
+#ifdef _WIN32
 #include <SDL3/SDL.h>
-//#include <SDL3/SDL_main.h>
+#elif __linux__
+#include <SDL2/SDL.h>
+#endif
 
-#if _WIN32
+#ifdef _WIN32
 #elif __linux__
 #endif
 
@@ -23,13 +27,21 @@ int main()
 
     SDL_Window* window = NULL;
     SDL_Surface* screenSurface = NULL;
+#ifdef _WIN32
     if (!SDL_Init(SDL_INIT_VIDEO))
+#elif __linux__
+	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+#endif
     {
         SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
     }
     else
     {
+#ifdef _WIN32
 		window = SDL_CreateWindow("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+#elif __linux__
+		window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,  SDL_WINDOW_SHOWN);
+#endif
 		if (window == NULL)
 		{
 			SDL_Log(
@@ -39,9 +51,14 @@ int main()
 		else
 		{
 			screenSurface = SDL_GetWindowSurface(window);
+#ifdef _WIN32
 			SDL_FillSurfaceRect(screenSurface, NULL, SDL_MapSurfaceRGB(screenSurface, 0xFF, 0xFF, 0xFF));
+#elif __linux__
+			SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
+#endif
 			SDL_UpdateWindowSurface(window);
 
+#ifdef _WIN32
 			SDL_Event e;
 			bool quit = false;
 			while (quit == false)
@@ -51,8 +68,13 @@ int main()
 					if (e.type == SDL_EVENT_QUIT) quit = true;
 				}
 			}
+#elif __linux__
+			SDL_Event e; bool quit = false; while (quit == false) {while(SDL_PollEvent(&e)) {if(e.type == SDL_QUIT) quit = true;}}
+#endif
 		}
     }
+    SDL_FreeSurface(screenSurface);
+    screenSurface = NULL;
     SDL_DestroyWindow(window);
     SDL_Quit();
     delete clock;

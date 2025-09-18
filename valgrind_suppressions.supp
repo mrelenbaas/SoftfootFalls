@@ -1,0 +1,51 @@
+{
+   <SDL_GetWindowSurface 000>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+}
+{
+   <SDL_GetWindowSurface 001>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+}
+{
+   <SDL_GetWindowSurface 002>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libGLX_mesa.so.0.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+}

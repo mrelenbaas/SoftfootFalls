@@ -11,7 +11,7 @@ all: $(TARGET)
 
 # Rule to build the executable
 $(TARGET): $(OBJECTS)
-	$(CXX) $(LDFLAGS) $(OBJECTS) -o $(TARGET)
+	$(CXX) $(LDFLAGS) $(OBJECTS) -o $(TARGET) -L/usr/lib -lSDL2
 
 # Pattern rule for compiling C++ source files into object files
 %.o: %.cpp

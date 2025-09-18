@@ -6,13 +6,9 @@ A town builder game.
 
 #### Check for memory leaks
 
-valgrind --leak-check=full --show-leak-kinds=definite,indirect,possible --track-origins=yes ./softfoot-falls
+valgrind --leak-check=full --track-origins=yes --suppressions=valgrind_suppressions.supp ./softfoot-falls
 
 ## Git
-
-#### Check for untracked files
-
-git ls-files --others --exclude-standard
 
 #### Track a file type with Git Large File System (LFS)
 
