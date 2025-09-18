@@ -73,7 +73,6 @@ int main()
 #endif
 		}
     }
-    SDL_FreeSurface(screenSurface);
     screenSurface = NULL;
     SDL_DestroyWindow(window);
     SDL_Quit();
