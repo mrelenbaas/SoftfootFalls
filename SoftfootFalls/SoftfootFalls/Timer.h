@@ -1,3 +1,6 @@
+#include <atomic>
+
+
 class Timer
 {
 public:

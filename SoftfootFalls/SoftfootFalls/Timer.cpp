@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <thread>
 #include <functional>
-#include <atomic>
 
 #include "Timer.h"
 #include "Print.h"
@@ -17,14 +16,6 @@ void Timer::Print()
 {
 	Timer::framesPerSeconds[Timer::index] = Timer::framesPerSecond.load();
 	Timer::framesPerSecond.store(0);
-	//if (Timer::index.load() < Timer::size && !Timer::isReady.load())
-	//{
-	//	return;
-	//}
-	//else if (!Timer::isReady.load())
-	//{
-	//	Timer::isReady.store(true);
-	//}
 	int average = 0;
 	for (int i = 0; i < Timer::size; ++i)
 	{

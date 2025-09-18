@@ -64,7 +64,6 @@ int main(int argc, char* argv[])
 #endif
 			SDL_UpdateWindowSurface(window);
 
-#ifdef _WIN32
 			SDL_Event e;
 			bool quit = false;
 			while (quit == false)
@@ -72,12 +71,14 @@ int main(int argc, char* argv[])
 				timer->Update();
 				while (SDL_PollEvent(&e))
 				{
-					if (e.type == SDL_EVENT_QUIT) quit = true;
+#ifdef _WIN32
+					if (e.type == SDL_EVENT_QUIT)
+#elif __linux__
+					if (e.type == SDL_QUIT)
+#endif
+						quit = true;
 				}
 			}
-#elif __linux__
-			SDL_Event e; bool quit = false; while (quit == false) {while(SDL_PollEvent(&e)) {if(e.type == SDL_QUIT) quit = true;}}
-#endif
 		}
     }
     screenSurface = NULL;

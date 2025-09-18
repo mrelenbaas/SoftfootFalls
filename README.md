@@ -6,7 +6,7 @@ A town builder game.
 
 #### Check for memory leaks
 
-valgrind --leak-check=full --track-origins=yes --suppressions=valgrind_suppressions.supp ./softfoot-falls
+valgrind --leak-check=full --track-origins=yes --suppressions=valgrind_suppressions.supp --gen-suppressions=all ./softfoot-falls
 
 ## Git
 
