@@ -3,7 +3,12 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++17 -g
 LDFLAGS = 
 TARGET = softfoot-falls
-SOURCES = ./SoftfootFalls/SoftfootFalls/SoftfootFalls.cpp ./SoftfootFalls/SoftfootFalls/Print.cpp ./SoftfootFalls/SoftfootFalls/Clock.cpp
+SOURCES = \
+    ./SoftfootFalls/SoftfootFalls/SoftfootFalls.cpp \
+	./SoftfootFalls/SoftfootFalls/Print.cpp \
+	./SoftfootFalls/SoftfootFalls/Time.cpp \
+	./SoftfootFalls/SoftfootFalls/Clock.cpp \
+	./SoftfootFalls/SoftfootFalls/Timer.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 # Default target

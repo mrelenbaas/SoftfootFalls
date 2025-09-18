@@ -27,6 +27,12 @@
     <ClCompile Include="Print.cpp">
       <Filter>Source Files\System Calls</Filter>
     </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>Source Files\System Calls</Filter>
+    </ClCompile>
+    <ClCompile Include="Time.cpp">
+      <Filter>Source Files\System Calls</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Clock.h">
@@ -36,6 +42,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Print.h">
+      <Filter>Source Files\System Calls</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Source Files\System Calls</Filter>
+    </ClInclude>
+    <ClInclude Include="Time.h">
       <Filter>Source Files\System Calls</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,10 +1,15 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdio.h>
+#include <thread>
+#include <chrono>
+#include <functional>
 
 
 #include "Print.h"
+#include "Time.h"
 #include "Clock.h"
+#include "Timer.h"
 #include "SoftfootFalls.h"
 
 #ifdef _WIN32
@@ -21,9 +26,10 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-int main()
+int main(int argc, char* argv[])
 {
     Clock* clock = new Clock();
+	Timer* timer = new Timer(Timer::Print, 1);
 
     SDL_Window* window = NULL;
     SDL_Surface* screenSurface = NULL;
@@ -63,6 +69,7 @@ int main()
 			bool quit = false;
 			while (quit == false)
 			{
+				timer->Update();
 				while (SDL_PollEvent(&e))
 				{
 					if (e.type == SDL_EVENT_QUIT) quit = true;
@@ -76,6 +83,7 @@ int main()
     screenSurface = NULL;
     SDL_DestroyWindow(window);
     SDL_Quit();
+	delete timer;
     delete clock;
     return 0;
 }

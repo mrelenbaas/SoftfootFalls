@@ -11,7 +11,6 @@ public:
 	Clock();
 	~Clock();
 private:
-	void Print();
-	long long Now();
+	void Print() const;
 	long long start = 0L;
 };

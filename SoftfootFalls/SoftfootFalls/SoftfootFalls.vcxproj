@@ -131,11 +131,15 @@
     <ClCompile Include="Clock.cpp" />
     <ClCompile Include="Print.cpp" />
     <ClCompile Include="SoftfootFalls.cpp" />
+    <ClCompile Include="Time.cpp" />
+    <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Clock.h" />
     <ClInclude Include="Print.h" />
     <ClInclude Include="SoftfootFalls.h" />
+    <ClInclude Include="Time.h" />
+    <ClInclude Include="Timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

@@ -3,6 +3,7 @@
 #include <typeinfo>
 
 #include "Clock.h"
+#include "Time.h"
 #include "Print.h"
 
 
@@ -11,7 +12,7 @@
  */
 Clock::Clock()
 {
-	start = Now();
+	start = Time::Now();
 }
 
 /**
@@ -22,12 +23,7 @@ Clock::~Clock()
 	Print();
 }
 
-void Clock::Print()
+void Clock::Print() const
 {
-	Print::WithClassName(typeid(*this).name(), Now() - start);
-}
-
-long long Clock::Now()
-{
-	return std::chrono::system_clock::now().time_since_epoch().count();
+	Print::WithClassName(typeid(*this).name(), Time::Now() - start);
 }
