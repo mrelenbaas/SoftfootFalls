@@ -1,6 +1,9 @@
 #include <atomic>
 
 
+/**
+ * @brief A timer for callbacks.
+ */
 class Timer
 {
 public:
