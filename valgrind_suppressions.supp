@@ -65,7 +65,7 @@
    fun:main
 }
 {
-   <Image loading>
+   <Image loading (Linux, Ubuntu)>
    Memcheck:Leak
    match-leak-kinds: definite
    fun:realloc
@@ -74,4 +74,15 @@
    fun:_Z9loadMediav
    fun:main
 }
+{
+   <Image loading (Linux, Pi)>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   obj:/usr/lib/aarch64-linux-gnu/libSDL2-2.0.so.0.2600.5
+   obj:/usr/lib/aarch64-linux-gnu/libSDL2-2.0.so.0.2600.5
+   fun:_Z9loadMediav
+   fun:main
+}
+
 
