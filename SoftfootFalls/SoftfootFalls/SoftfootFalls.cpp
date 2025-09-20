@@ -44,6 +44,7 @@ bool init()
 #endif
 	{
 		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+		success = false;
 	}
 	else
 	{
@@ -57,6 +58,7 @@ bool init()
 			SDL_Log(
 				"Window could not be created! SDL_Error: %s\n",
 				SDL_GetError());
+			success = false;
 		}
 		else
 		{
@@ -74,13 +76,20 @@ bool loadMedia()
 	bool success = true;
 
 	const char* basePath = SDL_GetBasePath();
+#ifdef _WIN32
 	const char* relativePath = "\\art\\hello_world.bmp";
+#elif __linux__
+	const char* relativePath = "SoftfootFalls/x64/debug/art/hello_world.bmp";
+#endif
 	int pathSize = strlen(basePath) + strlen(relativePath) + 1;
 	char* path = new char[pathSize];
+	printf("%s\n", basePath);
+	printf("%s\n", relativePath);
 	for(int i = 0; i < pathSize; ++i)
 	{
-		path[i] = (i < strlen(basePath)) ? basePath[i] : relativePath[i - strlen(basePath)];
+		path[i] = (i < (int)strlen(basePath)) ? basePath[i] : relativePath[i - strlen(basePath)];
 	}
+	printf("%s\n", path);
 	gHelloWorld = SDL_LoadBMP(path);
 	if (gHelloWorld == NULL)
 	{
@@ -94,7 +103,11 @@ bool loadMedia()
 
 void close()
 {
+#ifdef _WIN32
 	SDL_DestroySurface(gHelloWorld);
+#elif __linux__
+	SDL_FreeSurface(gHelloWorld);
+#endif
 	gHelloWorld = NULL;
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
