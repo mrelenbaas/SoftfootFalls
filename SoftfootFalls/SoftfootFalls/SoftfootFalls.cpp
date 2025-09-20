@@ -5,7 +5,6 @@
 #include <chrono>
 #include <functional>
 
-
 #include "Print.h"
 #include "Time.h"
 #include "Clock.h"
@@ -26,29 +25,34 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-int main(int argc, char* argv[])
-{
-    Clock* clock = new Clock();
-	Timer* timer = new Timer(Timer::Print, 1);
+bool init();
+bool loadMedia();
+void close();
 
-    SDL_Window* window = NULL;
-    SDL_Surface* screenSurface = NULL;
+SDL_Window* gWindow = NULL;
+SDL_Surface* gScreenSurface = NULL;
+SDL_Surface* gHelloWorld = NULL;
+
+bool init()
+{
+	bool success = true;
+
 #ifdef _WIN32
-    if (!SDL_Init(SDL_INIT_VIDEO))
+	if (!SDL_Init(SDL_INIT_VIDEO))
 #elif __linux__
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 #endif
-    {
-        SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-    }
-    else
-    {
+	{
+		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+	}
+	else
+	{
 #ifdef _WIN32
-		window = SDL_CreateWindow("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+		gWindow = SDL_CreateWindow("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 #elif __linux__
-		window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,  SDL_WINDOW_SHOWN);
+		gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 #endif
-		if (window == NULL)
+		if (gWindow == NULL)
 		{
 			SDL_Log(
 				"Window could not be created! SDL_Error: %s\n",
@@ -56,34 +60,87 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			screenSurface = SDL_GetWindowSurface(window);
-#ifdef _WIN32
-			SDL_FillSurfaceRect(screenSurface, NULL, SDL_MapSurfaceRGB(screenSurface, 0xFF, 0xFF, 0xFF));
-#elif __linux__
-			SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
-#endif
-			SDL_UpdateWindowSurface(window);
-
-			SDL_Event e;
-			bool quit = false;
-			while (quit == false)
-			{
-				timer->Update();
-				while (SDL_PollEvent(&e))
-				{
-#ifdef _WIN32
-					if (e.type == SDL_EVENT_QUIT)
-#elif __linux__
-					if (e.type == SDL_QUIT)
-#endif
-						quit = true;
-				}
-			}
+			gScreenSurface = SDL_GetWindowSurface(gWindow);
 		}
-    }
-    screenSurface = NULL;
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+	}
+
+	return success;
+}
+
+bool loadMedia()
+{
+	using namespace std;
+
+	bool success = true;
+
+	const char* basePath = SDL_GetBasePath();
+	const char* relativePath = "\\art\\hello_world.bmp";
+	int pathSize = strlen(basePath) + strlen(relativePath) + 1;
+	char* path = new char[pathSize];
+	for(int i = 0; i < pathSize; ++i)
+	{
+		path[i] = (i < strlen(basePath)) ? basePath[i] : relativePath[i - strlen(basePath)];
+	}
+	gHelloWorld = SDL_LoadBMP(path);
+	if (gHelloWorld == NULL)
+	{
+		SDL_Log("Unable to load image %s! SDL Error: %s\n", "hello_world.bmp", SDL_GetError());
+		success = false;
+	}
+	delete[] path;
+
+	return success;
+}
+
+void close()
+{
+	SDL_DestroySurface(gHelloWorld);
+	gHelloWorld = NULL;
+	SDL_DestroyWindow(gWindow);
+	gWindow = NULL;
+	SDL_Quit();
+}
+
+int main(int argc, char* argv[])
+{
+    Clock* clock = new Clock();
+	Timer* timer = new Timer(Timer::Print, 1);
+
+	if (!init())
+	{
+		SDL_Log("Failed to initialize!\n");
+	}
+	else
+	{
+		if (!loadMedia())
+		{
+			SDL_Log("Failed to load media!\n");
+		}
+		else
+		{
+			SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+			SDL_UpdateWindowSurface(gWindow);
+		}
+	}
+	SDL_UpdateWindowSurface(gWindow);
+	SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+
+	SDL_Event e;
+	bool quit = false;
+	while (quit == false)
+	{
+		timer->Update();
+		while (SDL_PollEvent(&e))
+		{
+#ifdef _WIN32
+			if (e.type == SDL_EVENT_QUIT)
+#elif __linux__
+			if (e.type == SDL_QUIT)
+#endif
+				quit = true;
+		}
+	}
+	close();
 	delete timer;
     delete clock;
     return 0;

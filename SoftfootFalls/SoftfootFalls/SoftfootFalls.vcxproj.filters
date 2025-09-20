@@ -9,12 +9,11 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Source Files\System Calls">
       <UniqueIdentifier>{f0a4cf49-9e05-4351-8a58-44c2db652301}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\System Calls">
+      <UniqueIdentifier>{7080a32c-1809-4337-a449-b8f9d3172c0e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,19 +35,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Clock.h">
-      <Filter>Source Files\System Calls</Filter>
-    </ClInclude>
-    <ClInclude Include="SoftfootFalls.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files\System Calls</Filter>
     </ClInclude>
     <ClInclude Include="Print.h">
-      <Filter>Source Files\System Calls</Filter>
-    </ClInclude>
-    <ClInclude Include="Timer.h">
-      <Filter>Source Files\System Calls</Filter>
+      <Filter>Header Files\System Calls</Filter>
     </ClInclude>
     <ClInclude Include="Time.h">
-      <Filter>Source Files\System Calls</Filter>
+      <Filter>Header Files\System Calls</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Header Files\System Calls</Filter>
+    </ClInclude>
+    <ClInclude Include="SoftfootFalls.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
