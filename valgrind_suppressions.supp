@@ -64,3 +64,14 @@
    fun:_ZN5TimerC1ESt8functionIFvvEEi
    fun:main
 }
+{
+   <Image loading>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   fun:_Z9loadMediav
+   fun:main
+}
+
