@@ -8,7 +8,8 @@ SOURCES = \
 	./SoftfootFalls/SoftfootFalls/Print.cpp \
 	./SoftfootFalls/SoftfootFalls/Time.cpp \
 	./SoftfootFalls/SoftfootFalls/Clock.cpp \
-	./SoftfootFalls/SoftfootFalls/Timer.cpp
+	./SoftfootFalls/SoftfootFalls/Timer.cpp \
+	./SoftfootFalls/SoftfootFalls/Load.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 # Default target

@@ -20,7 +20,7 @@ private:
 #ifdef _WIN32
 	const char* relativePath = "art\\";
 #elif __linux__
-	const char* relativePath = "/art/";
+	const char* relativePath = "SoftfootFalls/x64/debug/art/";
 #endif
 	Node* paths;
 };

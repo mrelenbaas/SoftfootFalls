@@ -20,41 +20,50 @@ Load::Load(const char* basePath)
 Load::~Load()
 {
 	delete[] basePath;
+	Node* temp;
 	do
 	{
 		delete[] ((PathNode*)(paths->data))->path;
-		delete paths->data;
+		((PathNode*)(paths->data))->path = NULL;
+		delete ((PathNode*)(paths->data));
+		paths->data = NULL;
+		temp = paths;
 		paths = paths->next;
+		delete temp;
+		temp = NULL;
 	} while (paths != NULL);
+	delete paths;
+	paths = NULL;
 }
 
 const char* Load::Path(const char* filename)
 {
 	int size = strlen(basePath) + strlen(relativePath) + strlen(filename) + 1;
-	paths = new Node
+	Node* temp = new Node
 	{
 		new PathNode
 		{
 			new char[size + 1]
 		},
-		paths->next
+		paths
 	};
 	for (int i = 0; i < size; ++i)
 	{
 		if (i < (int)strlen(basePath))
 		{
-			((PathNode*)(paths->data))->path[i] = basePath[i];
+			((PathNode*)(temp->data))->path[i] = basePath[i];
 		}
 		else if (i < (int)strlen(basePath) + (int)strlen(relativePath))
 		{
-			((PathNode*)(paths->data))->path[i] = relativePath[i - strlen(basePath)];
+			((PathNode*)(temp->data))->path[i] = relativePath[i - strlen(basePath)];
 		}
 		else if (i < (int)strlen(basePath) + (int)strlen(relativePath) + (int)strlen(filename))
 		{
-			((PathNode*)(paths->data))->path[i] = filename[i - strlen(basePath) - strlen(relativePath)];
+			((PathNode*)(temp->data))->path[i] = filename[i - strlen(basePath) - strlen(relativePath)];
 		}
 	}
-	((PathNode*)(paths->data))->path[size - 1] = '\0';
+	((PathNode*)(temp->data))->path[size - 1] = '\0';
+	paths = temp;
 	
 	return ((PathNode*)(paths->data))->path;
 }
