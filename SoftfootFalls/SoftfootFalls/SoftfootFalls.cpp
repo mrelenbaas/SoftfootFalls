@@ -16,6 +16,7 @@
 #elif __linux__
 #include <SDL2/SDL.h>
 #endif
+#include "Load.h"
 
 #ifdef _WIN32
 #elif __linux__
@@ -32,6 +33,7 @@ void close();
 SDL_Window* gWindow = NULL;
 SDL_Surface* gScreenSurface = NULL;
 SDL_Surface* gHelloWorld = NULL;
+SDL_Surface* gXOut = NULL;
 
 bool init()
 {
@@ -55,9 +57,7 @@ bool init()
 #endif
 		if (gWindow == NULL)
 		{
-			SDL_Log(
-				"Window could not be created! SDL_Error: %s\n",
-				SDL_GetError());
+			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 			success = false;
 		}
 		else
@@ -73,7 +73,11 @@ bool loadMedia()
 {
 	using namespace std;
 
+	Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
+
+	const char* p = load->Path("hello_world.bmp");
+	printf("> %s\n", p);
 
 	const char* basePath = SDL_GetBasePath();
 #ifdef _WIN32
@@ -83,20 +87,18 @@ bool loadMedia()
 #endif
 	int pathSize = strlen(basePath) + strlen(relativePath) + 1;
 	char* path = new char[pathSize];
-	printf("%s\n", basePath);
-	printf("%s\n", relativePath);
 	for(int i = 0; i < pathSize; ++i)
 	{
 		path[i] = (i < (int)strlen(basePath)) ? basePath[i] : relativePath[i - strlen(basePath)];
 	}
-	printf("%s\n", path);
-	gHelloWorld = SDL_LoadBMP(path);
+	gHelloWorld = SDL_LoadBMP(p);
 	if (gHelloWorld == NULL)
 	{
 		SDL_Log("Unable to load image %s! SDL Error: %s\n", "hello_world.bmp", SDL_GetError());
 		success = false;
 	}
 	delete[] path;
+	delete load;
 
 	return success;
 }
