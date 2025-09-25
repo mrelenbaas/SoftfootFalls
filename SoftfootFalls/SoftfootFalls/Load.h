@@ -1,20 +1,11 @@
+#include "Node.h"
+
 #ifdef _WIN32
 #include <SDL3/SDL.h>
 #elif __linux__
 #include <SDL2/SDL.h>
 #endif
 
-
-struct Node
-{
-	void* data = NULL;
-	Node* next = NULL;
-};
-
-struct PathNode
-{
-	char* path = NULL;
-};
 
 class Load
 {

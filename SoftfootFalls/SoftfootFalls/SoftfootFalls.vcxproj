@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClCompile Include="Clock.cpp" />
     <ClCompile Include="Load.cpp" />
+    <ClCompile Include="Node.cpp" />
     <ClCompile Include="Print.cpp" />
     <ClCompile Include="SoftfootFalls.cpp" />
     <ClCompile Include="Time.cpp" />
@@ -138,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="Clock.h" />
     <ClInclude Include="Load.h" />
+    <ClInclude Include="Node.h" />
     <ClInclude Include="Print.h" />
     <ClInclude Include="SoftfootFalls.h" />
     <ClInclude Include="Time.h" />

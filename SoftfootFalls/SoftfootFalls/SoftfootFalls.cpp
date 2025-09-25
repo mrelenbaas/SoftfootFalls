@@ -4,6 +4,7 @@
 #include <thread>
 #include <chrono>
 #include <functional>
+#include <string>
 
 #include "Print.h"
 #include "Time.h"
@@ -26,14 +27,25 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+enum KeyPressSurfaces
+{
+	KEY_PRESS_SURFACE_DEFAULT,
+	KEY_PRESS_SURFACE_UP,
+	KEY_PRESS_SURFACE_DOWN,
+	KEY_PRESS_SURFACE_LEFT,
+	KEY_PRESS_SURFACE_RIGHT,
+	KEY_PRESS_SURFACE_TOTAL
+};
+
 bool init();
 bool loadMedia();
 void close();
+SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
 
 SDL_Window* gWindow = NULL;
 SDL_Surface* gScreenSurface = NULL;
-SDL_Surface* gHelloWorld = NULL;
-SDL_Surface* gXOut = NULL;
+SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
+SDL_Surface* gCurrentSurface = NULL;
 
 bool init()
 {
@@ -76,13 +88,11 @@ bool loadMedia()
 	Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
 
-	const char* helloWorld = load->Path("hello_world.bmp");
-	gHelloWorld = SDL_LoadBMP(helloWorld);
-	load->Print(gHelloWorld, helloWorld);
-
-	const char* xOut = load->Path("x.bmp");
-	gXOut = SDL_LoadBMP(xOut);
-	load->Print(gXOut, xOut);
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = loadSurface(load->Path("press.bmp"), load, &success);
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = loadSurface(load->Path("up.bmp"), load, &success);
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = loadSurface(load->Path("down.bmp"), load, &success);
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = loadSurface(load->Path("left.bmp"), load, &success);
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = loadSurface(load->Path("right.bmp"), load, &success);
 	
 	delete load;
 	return success;
@@ -90,22 +100,32 @@ bool loadMedia()
 
 void close()
 {
+	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i)
+	{
 #ifdef _WIN32
-	SDL_DestroySurface(gHelloWorld);
+		SDL_DestroySurface(gKeyPressSurfaces[i]);
 #elif __linux__
-	SDL_FreeSurface(gHelloWorld);
+		SDL_FreeSurface(gKeyPressSurfaces[i]);
 #endif
-	gHelloWorld = NULL;
-#ifdef _WIN32
-	SDL_DestroySurface(gXOut);
-#elif __linux__
-	SDL_FreeSurface(gXOut);
-#endif
-	gXOut = NULL;
+		gKeyPressSurfaces[i] = NULL;
+	}
 
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
 	SDL_Quit();
+}
+
+SDL_Surface* loadSurface(const char* path, Load* load, bool* success)
+{
+	SDL_Surface* loadedSurface = SDL_LoadBMP(path);
+	load->Print(loadedSurface, path);
+	if (loadedSurface == NULL)
+	{
+		SDL_Log("Unable to load image %s! SDL Error: %s\n", path, SDL_GetError());
+		(*success) = false;
+	}
+
+	return loadedSurface;
 }
 
 int main(int argc, char* argv[])
@@ -127,6 +147,7 @@ int main(int argc, char* argv[])
 		{
 			bool quit = false;
 			SDL_Event e;
+			gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
 			while (!quit)
 			{
 				timer->Update();
@@ -138,9 +159,29 @@ int main(int argc, char* argv[])
 					if (e.type == SDL_QUIT)
 #endif
 						quit = true;
+					else if (e.key.key)
+					{
+						switch (e.key.key)
+						{
+						case SDLK_UP:
+							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
+							break;
+						case SDLK_DOWN:
+							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN];
+							break;
+						case SDLK_LEFT:
+							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT];
+							break;
+						case SDLK_RIGHT:
+							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT];
+							break;
+						default:
+							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+							break;
+						}
+					}
 				}
-				SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
-				SDL_BlitSurface(gXOut, NULL, gScreenSurface, NULL);
+				SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
 				SDL_UpdateWindowSurface(gWindow);
 			}
 		}

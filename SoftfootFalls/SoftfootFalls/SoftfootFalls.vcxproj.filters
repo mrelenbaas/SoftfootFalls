@@ -15,6 +15,12 @@
     <Filter Include="Header Files\System Calls">
       <UniqueIdentifier>{7080a32c-1809-4337-a449-b8f9d3172c0e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Data Structures">
+      <UniqueIdentifier>{46d85f96-7f4e-414c-92e7-f28ba1445f04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Data Structures">
+      <UniqueIdentifier>{5c0fb8f2-af6f-46bd-bbc9-3bbe78bf9bd8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SoftfootFalls.cpp">
@@ -35,6 +41,9 @@
     <ClCompile Include="Load.cpp">
       <Filter>Source Files\System Calls</Filter>
     </ClCompile>
+    <ClCompile Include="Node.cpp">
+      <Filter>Source Files\Data Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Clock.h">
@@ -54,6 +63,9 @@
     </ClInclude>
     <ClInclude Include="Load.h">
       <Filter>Header Files\System Calls</Filter>
+    </ClInclude>
+    <ClInclude Include="Node.h">
+      <Filter>Header Files\Data Structures</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
