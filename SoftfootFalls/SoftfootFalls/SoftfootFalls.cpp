@@ -17,6 +17,7 @@
 #include <SDL3_image/SDL_image.h>
 #elif __linux__
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #endif
 #include "Load.h"
 
@@ -120,7 +121,6 @@ SDL_Surface* loadSurface(const char* path, Load* load, bool* success)
 {
 	SDL_Surface* optimizedSurface = NULL;
 	SDL_Surface* loadedSurface = IMG_Load(path);
-	SDL_Surface* loadedSurface = SDL_CreateRGBSurfaceWithFormat(path);
 	load->Print(loadedSurface, path);
 	if (loadedSurface == NULL)
 	{
@@ -129,7 +129,11 @@ SDL_Surface* loadSurface(const char* path, Load* load, bool* success)
 	}
 	else
 	{
+#ifdef _WIN32
 		optimizedSurface = SDL_ConvertSurface(loadedSurface, gScreenSurface->format);
+#elif __linux__
+		optimizedSurface = SDL_ConvertSurface(loadedSurface, gScreenSurface->format, 0);
+#endif
 		if (optimizedSurface == NULL)
 		{
 			SDL_Log("Unable to optimize image %s! SDL Error: %s\n", path, SDL_GetError());
@@ -211,8 +215,16 @@ int main(int argc, char* argv[])
 				stretchRect.y = 0;
 				stretchRect.w = SCREEN_WIDTH;
 				stretchRect.h = SCREEN_HEIGHT;
+#ifdef _WIN32
 				SDL_BlitSurfaceScaled(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT], NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
+#elif __linux__
+				SDL_BlitSurface(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT], NULL, gScreenSurface, NULL);
+#endif
+#ifdef _WIN32
 				SDL_BlitSurfaceScaled(gCurrentSurface, NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
+#elif __linux__
+				SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
+#endif
 				SDL_UpdateWindowSurface(gWindow);
 			}
 		}
