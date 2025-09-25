@@ -159,9 +159,17 @@ int main(int argc, char* argv[])
 					if (e.type == SDL_QUIT)
 #endif
 						quit = true;
+#ifdef _WIN32
 					else if (e.key.key)
+#elif __linux__
+					else if (e.type == SDL_KEYDOWN)
+#endif
 					{
+#ifdef _WIN32
 						switch (e.key.key)
+#elif __linux__
+						switch (e.key.keysym.sym)
+#endif
 						{
 						case SDLK_UP:
 							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
