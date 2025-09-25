@@ -14,6 +14,7 @@
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
 #elif __linux__
 #include <SDL2/SDL.h>
 #endif
@@ -88,12 +89,12 @@ bool loadMedia()
 	Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
 
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = loadSurface(load->Path("press.bmp"), load, &success);
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = loadSurface(load->Path("up.bmp"), load, &success);
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = loadSurface(load->Path("down.bmp"), load, &success);
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = loadSurface(load->Path("left.bmp"), load, &success);
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = loadSurface(load->Path("right.bmp"), load, &success);
-	
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = loadSurface(load->Path("press.png"), load, &success);
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = loadSurface(load->Path("up.png"), load, &success);
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = loadSurface(load->Path("down.png"), load, &success);
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = loadSurface(load->Path("left.png"), load, &success);
+	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = loadSurface(load->Path("right.png"), load, &success);
+
 	delete load;
 	return success;
 }
@@ -117,15 +118,30 @@ void close()
 
 SDL_Surface* loadSurface(const char* path, Load* load, bool* success)
 {
-	SDL_Surface* loadedSurface = SDL_LoadBMP(path);
+	SDL_Surface* optimizedSurface = NULL;
+	SDL_Surface* loadedSurface = IMG_Load(path);
+	SDL_Surface* loadedSurface = SDL_CreateRGBSurfaceWithFormat(path);
 	load->Print(loadedSurface, path);
 	if (loadedSurface == NULL)
 	{
 		SDL_Log("Unable to load image %s! SDL Error: %s\n", path, SDL_GetError());
 		(*success) = false;
 	}
+	else
+	{
+		optimizedSurface = SDL_ConvertSurface(loadedSurface, gScreenSurface->format);
+		if (optimizedSurface == NULL)
+		{
+			SDL_Log("Unable to optimize image %s! SDL Error: %s\n", path, SDL_GetError());
+		}
+#ifdef _WIN32
+		SDL_DestroySurface(loadedSurface);
+#elif __linux__
+		SDL_FreeSurface(loadedSurface);
+#endif
+	}
 
-	return loadedSurface;
+	return optimizedSurface;
 }
 
 int main(int argc, char* argv[])
@@ -184,12 +200,19 @@ int main(int argc, char* argv[])
 							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT];
 							break;
 						default:
-							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+							//gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+							gCurrentSurface = NULL;
 							break;
 						}
 					}
 				}
-				SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
+				SDL_Rect stretchRect;
+				stretchRect.x = 0;
+				stretchRect.y = 0;
+				stretchRect.w = SCREEN_WIDTH;
+				stretchRect.h = SCREEN_HEIGHT;
+				SDL_BlitSurfaceScaled(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT], NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
+				SDL_BlitSurfaceScaled(gCurrentSurface, NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
 				SDL_UpdateWindowSurface(gWindow);
 			}
 		}
