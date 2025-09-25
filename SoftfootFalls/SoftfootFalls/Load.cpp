@@ -23,8 +23,12 @@ Load::~Load()
 	Node* temp;
 	do
 	{
-		delete[] ((PathNode*)(paths->data))->path;
-		((PathNode*)(paths->data))->path = NULL;
+		if ((PathNode*)(paths->data) != NULL
+			&& ((PathNode*)(paths->data))->path != NULL)
+		{
+			delete[]((PathNode*)(paths->data))->path;
+			((PathNode*)(paths->data))->path = NULL;
+		}
 		delete ((PathNode*)(paths->data));
 		paths->data = NULL;
 		temp = paths;
@@ -34,6 +38,21 @@ Load::~Load()
 	} while (paths != NULL);
 	delete paths;
 	paths = NULL;
+}
+
+bool Load::Print(SDL_Surface* surface, const char* filename)
+{
+	bool result = false;
+
+	if (surface == NULL)
+		SDL_Log("Error: Load failed: %s, %s\n", filename, SDL_GetError());
+	else
+	{
+		SDL_Log("Loaded: %s\n", filename);
+		result = true;
+	}
+
+	return result;
 }
 
 const char* Load::Path(const char* filename)

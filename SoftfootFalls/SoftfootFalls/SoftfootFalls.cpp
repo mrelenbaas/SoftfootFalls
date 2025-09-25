@@ -76,30 +76,15 @@ bool loadMedia()
 	Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
 
-	const char* p = load->Path("hello_world.bmp");
-	printf("> %s\n", p);
+	const char* helloWorld = load->Path("hello_world.bmp");
+	gHelloWorld = SDL_LoadBMP(helloWorld);
+	load->Print(gHelloWorld, helloWorld);
 
-	const char* basePath = SDL_GetBasePath();
-#ifdef _WIN32
-	const char* relativePath = "\\art\\hello_world.bmp";
-#elif __linux__
-	const char* relativePath = "SoftfootFalls/x64/debug/art/hello_world.bmp";
-#endif
-	int pathSize = strlen(basePath) + strlen(relativePath) + 1;
-	char* path = new char[pathSize];
-	for(int i = 0; i < pathSize; ++i)
-	{
-		path[i] = (i < (int)strlen(basePath)) ? basePath[i] : relativePath[i - strlen(basePath)];
-	}
-	gHelloWorld = SDL_LoadBMP(p);
-	if (gHelloWorld == NULL)
-	{
-		SDL_Log("Unable to load image %s! SDL Error: %s\n", "hello_world.bmp", SDL_GetError());
-		success = false;
-	}
-	delete[] path;
+	const char* xOut = load->Path("x.bmp");
+	gXOut = SDL_LoadBMP(xOut);
+	load->Print(gXOut, xOut);
+	
 	delete load;
-
 	return success;
 }
 
@@ -111,6 +96,13 @@ void close()
 	SDL_FreeSurface(gHelloWorld);
 #endif
 	gHelloWorld = NULL;
+#ifdef _WIN32
+	SDL_DestroySurface(gXOut);
+#elif __linux__
+	SDL_FreeSurface(gXOut);
+#endif
+	gXOut = NULL;
+
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
 	SDL_Quit();
@@ -133,28 +125,27 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
-			SDL_UpdateWindowSurface(gWindow);
-		}
-	}
-	SDL_UpdateWindowSurface(gWindow);
-	SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
-
-	SDL_Event e;
-	bool quit = false;
-	while (quit == false)
-	{
-		timer->Update();
-		while (SDL_PollEvent(&e))
-		{
+			bool quit = false;
+			SDL_Event e;
+			while (!quit)
+			{
+				timer->Update();
+				while (SDL_PollEvent(&e) != 0)
+				{
 #ifdef _WIN32
-			if (e.type == SDL_EVENT_QUIT)
+					if (e.type == SDL_EVENT_QUIT)
 #elif __linux__
-			if (e.type == SDL_QUIT)
+					if (e.type == SDL_QUIT)
 #endif
-				quit = true;
+						quit = true;
+				}
+				SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+				SDL_BlitSurface(gXOut, NULL, gScreenSurface, NULL);
+				SDL_UpdateWindowSurface(gWindow);
+			}
 		}
 	}
+	
 	close();
 	delete timer;
     delete clock;

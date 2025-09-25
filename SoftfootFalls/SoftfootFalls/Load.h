@@ -1,3 +1,10 @@
+#ifdef _WIN32
+#include <SDL3/SDL.h>
+#elif __linux__
+#include <SDL2/SDL.h>
+#endif
+
+
 struct Node
 {
 	void* data = NULL;
@@ -14,6 +21,7 @@ class Load
 public:
 	Load(const char*);
 	~Load();
+	bool Print(SDL_Surface*, const char*);
 	const char* Path(const char*);
 private:
 	char* basePath;
