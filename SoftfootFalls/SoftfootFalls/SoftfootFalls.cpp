@@ -43,7 +43,7 @@ bool init();
 bool loadMedia();
 void close();
 SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
-SDL_Texture* loadTexture(const char* path);
+SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
@@ -79,6 +79,24 @@ bool init()
 		}
 		else
 		{
+#ifdef __linux__
+			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+			if (gRenderer == NULL)
+			{
+				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
+				success = false;
+			}
+			else
+			{
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+				int imgFlags = IMG_INIT_PNG;
+				if (!(IMG_Init(imgFlags) & imgFlags))
+				{
+					printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+					success = false;
+				}
+			}
+#endif
 			gScreenSurface = SDL_GetWindowSurface(gWindow);
 		}
 	}
@@ -98,12 +116,7 @@ bool loadMedia()
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = loadSurface(load->Path("down.png"), load, &success);
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = loadSurface(load->Path("left.png"), load, &success);
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = loadSurface(load->Path("right.png"), load, &success);
-	gTexture = loadTexture(load->Path("texture.png"));
-	if (gTexture == NULL)
-	{
-		SDL_Log("Failed to load texture image!\n");
-		success = false;
-	}
+	gTexture = loadTexture(load->Path("texture.png"), load, &success);
 
 	delete load;
 	return success;
@@ -161,14 +174,15 @@ SDL_Surface* loadSurface(const char* path, Load* load, bool* success)
 	return optimizedSurface;
 }
 
-SDL_Texture* loadTexture(const char* path)
+SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
 {
 	SDL_Texture* newTexture = NULL;
 	SDL_Surface* loadedSurface = IMG_Load(path);
+	load->Print(loadedSurface, path);
 	if (loadedSurface == NULL)
 	{
 		SDL_Log("Unable to load image %s! SDL_image: %s\n", path, SDL_GetError());
-
+		(*success) = false;
 	}
 	else
 	{
@@ -177,7 +191,11 @@ SDL_Texture* loadTexture(const char* path)
 		{
 			SDL_Log("Unable to create texture from %s! SDL Error: %s\n", path, SDL_GetError());
 		}
+#ifdef _WIN32
 		SDL_DestroySurface(loadedSurface);
+#elif __linux__
+		SDL_FreeSurface(loadedSurface);
+#endif
 	}
 
 	return newTexture;
@@ -261,7 +279,11 @@ int main(int argc, char* argv[])
 #elif __linux__
 				SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
 #endif
+#ifdef _WIN32
 				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+#elif __linux__
+				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+#endif
 				SDL_RenderPresent(gRenderer);
 			}
 		}
