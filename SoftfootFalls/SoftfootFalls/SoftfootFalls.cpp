@@ -40,6 +40,22 @@ enum KeyPressSurfaces
 	KEY_PRESS_SURFACE_TOTAL
 };
 
+class LTexture
+{
+public:
+	LTexture();
+	~LTexture();
+	bool loadFromFile(const char* path);
+	void free();
+	void render(int x, int y);
+	int getWidth();
+	int getHeight();
+private:
+	SDL_Texture* mTexture;
+	int mWidth;
+	int mHeight;
+};
+
 bool init();
 bool loadMedia();
 void close();
@@ -52,6 +68,76 @@ SDL_Surface* gScreenSurface = NULL;
 SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
 SDL_Surface* gCurrentSurface = NULL;
 SDL_Texture* gTexture = NULL;
+LTexture gFooTexture;
+LTexture gBackgroundTexture;
+
+
+LTexture::LTexture()
+{
+	mTexture = NULL;
+	mWidth = 0;
+	mHeight = 0;
+}
+
+LTexture::~LTexture()
+{
+	free();
+}
+
+bool LTexture::loadFromFile(const char* path)
+{
+	free();
+	SDL_Texture* newTexture = NULL;
+	SDL_Surface* loadedSurface = IMG_Load(path);
+	if (loadedSurface == NULL)
+	{
+		SDL_Log("Unable to load image %s! SDL_image Error: %s\n", path, SDL_GetError());
+	}
+	else
+	{
+		SDL_SetSurfaceColorKey(loadedSurface, true, SDL_MapSurfaceRGB(loadedSurface, 0, 0xFF, 0xFF));
+		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
+		if (newTexture == NULL)
+		{
+			SDL_Log("Unable to create texture from %s! SDL Error %s\n", path, SDL_GetError());
+		}
+		else
+		{
+			mWidth = loadedSurface->w;
+			mHeight = loadedSurface->h;
+		}
+		SDL_DestroySurface(loadedSurface);
+	}
+	mTexture = newTexture;
+	return mTexture != NULL;
+}
+
+void LTexture::free()
+{
+	if (mTexture != NULL)
+	{
+		SDL_DestroyTexture(mTexture);
+		mTexture = NULL;
+		mWidth = 0;
+		mHeight = 0;
+	}
+}
+
+void LTexture::render(int x, int y)
+{
+	SDL_FRect renderQuad = { (float)x, (float)y, (float)mWidth, (float)mHeight };
+	SDL_RenderTexture(gRenderer, mTexture, NULL, &renderQuad);
+}
+
+int LTexture::getWidth()
+{
+	return mWidth;
+}
+
+int LTexture::getHeight()
+{
+	return mHeight;
+}
 
 bool init()
 {
@@ -120,6 +206,16 @@ bool loadMedia()
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = loadSurface(load->Path("left.png"), load, &success);
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = loadSurface(load->Path("right.png"), load, &success);
 	gTexture = loadTexture(load->Path("texture.png"), load, &success);
+	if (!gFooTexture.loadFromFile(load->Path("foo.png")))
+	{
+		SDL_Log("Failed to load foo' texture image!\n");
+		success = false;
+	}
+	if (!gBackgroundTexture.loadFromFile(load->Path("background.png")))
+	{
+		SDL_Log("Failed to load background texture image!\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -138,6 +234,8 @@ void close()
 	}
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
+	gFooTexture.free();
+	gBackgroundTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -356,6 +454,10 @@ int main(int argc, char* argv[])
 				bottomViewport.h = SCREEN_HEIGHT / 2;
 				SDL_SetRenderViewport(gRenderer, &bottomViewport);
 				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+
+				SDL_SetRenderViewport(gRenderer, NULL);
+				gBackgroundTexture.render(0, 0);
+				gFooTexture.render(240, 190);
 
 				SDL_RenderPresent(gRenderer);
 			}
