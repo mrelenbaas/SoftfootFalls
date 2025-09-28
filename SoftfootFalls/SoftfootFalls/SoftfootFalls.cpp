@@ -5,6 +5,7 @@
 #include <chrono>
 #include <functional>
 #include <string>
+#include <cmath>
 
 #include "Print.h"
 #include "Time.h"
@@ -74,12 +75,14 @@ bool init()
 		if (gWindow == NULL)
 #endif
 		{
-			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+			SDL_Log("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
 			success = false;
 		}
 		else
 		{
-#ifdef __linux__
+#ifdef _WIN32
+			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+#elif __linux__
 			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
 			if (gRenderer == NULL)
 			{
@@ -279,11 +282,33 @@ int main(int argc, char* argv[])
 #elif __linux__
 				SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
 #endif
+
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+				SDL_RenderClear(gRenderer);
+
 #ifdef _WIN32
 				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
 #elif __linux__
 				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 #endif
+
+				SDL_FRect fillRect = {SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+				SDL_RenderFillRect(gRenderer, &fillRect);
+
+				SDL_FRect outlineRect = {SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3};
+				SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+				SDL_RenderRect(gRenderer, &outlineRect);
+
+				SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+				SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
+				for (int i = 0; i < SCREEN_HEIGHT; i += 4)
+				{
+					SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
+				}
+
 				SDL_RenderPresent(gRenderer);
 			}
 		}
