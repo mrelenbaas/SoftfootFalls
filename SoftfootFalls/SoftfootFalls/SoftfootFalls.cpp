@@ -333,6 +333,30 @@ int main(int argc, char* argv[])
 #endif
 				}
 
+				SDL_Rect topLeftViewport;
+				topLeftViewport.x = 0;
+				topLeftViewport.y = 0;
+				topLeftViewport.w = SCREEN_WIDTH / 2;
+				topLeftViewport.h = SCREEN_HEIGHT / 2;
+				SDL_SetRenderViewport(gRenderer, &topLeftViewport);
+				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+
+				SDL_Rect topRightViewport;
+				topRightViewport.x = SCREEN_WIDTH / 2;
+				topRightViewport.y = 0;
+				topRightViewport.w = SCREEN_WIDTH / 2;
+				topRightViewport.h = SCREEN_HEIGHT / 2;
+				SDL_SetRenderViewport(gRenderer, &topRightViewport);
+				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+
+				SDL_Rect bottomViewport;
+				bottomViewport.x = 0;
+				bottomViewport.y = SCREEN_HEIGHT / 2;
+				bottomViewport.w = SCREEN_WIDTH;
+				bottomViewport.h = SCREEN_HEIGHT / 2;
+				SDL_SetRenderViewport(gRenderer, &bottomViewport);
+				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+
 				SDL_RenderPresent(gRenderer);
 			}
 		}
