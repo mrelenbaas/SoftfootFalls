@@ -292,21 +292,45 @@ int main(int argc, char* argv[])
 				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 #endif
 
+#ifdef _WIN32
+#elif __linux__
+#endif
+
+#ifdef _WIN32
 				SDL_FRect fillRect = {SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
+#elif __linux__
+				SDL_Rect fillRect = {SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
+#endif
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
 				SDL_RenderFillRect(gRenderer, &fillRect);
 
+#ifdef _WIN32
 				SDL_FRect outlineRect = {SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3};
+#elif __linux__
+				SDL_Rect outlineRect = {SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3};
+#endif
 				SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+#ifdef _WIN32
 				SDL_RenderRect(gRenderer, &outlineRect);
+#elif __linux__
+				SDL_RenderDrawRect(gRenderer, &outlineRect);
+#endif
 
 				SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+#ifdef _WIN32
 				SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+#elif __linux__
+				SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+#endif
 
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
 				for (int i = 0; i < SCREEN_HEIGHT; i += 4)
 				{
+#ifdef _WIN32
 					SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
+#elif __linux__
+					SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
+#endif
 				}
 
 				SDL_RenderPresent(gRenderer);
