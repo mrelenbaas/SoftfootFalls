@@ -47,7 +47,11 @@ public:
 	~LTexture();
 	bool loadFromFile(const char* path);
 	void free();
+#ifdef _WIN32
 	void render(int x, int y, SDL_FRect* clip = NULL);
+#elif __linux__
+	void render(int x, int y, SDL_Rect* clip = NULL);
+#endif
 	int getWidth();
 	int getHeight();
 private:
@@ -70,7 +74,11 @@ SDL_Surface* gCurrentSurface = NULL;
 SDL_Texture* gTexture = NULL;
 LTexture gFooTexture;
 LTexture gBackgroundTexture;
+#ifdef _WIN32
 SDL_FRect gSpriteClips[4];
+#elif __linux__
+SDL_Rect gSpriteClips[4];
+#endif
 LTexture gSpriteSheetTexture;
 
 
@@ -97,7 +105,11 @@ bool LTexture::loadFromFile(const char* path)
 	}
 	else
 	{
+#ifdef _WIN32
 		SDL_SetSurfaceColorKey(loadedSurface, true, SDL_MapSurfaceRGB(loadedSurface, 0, 0xFF, 0xFF));
+#elif __linux__
+		SDL_SetColorKey(loadedSurface, SDL_TRUE, SDL_MapRGB(loadedSurface->format, 0, 0xFF, 0xFF));
+#endif
 		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 		if (newTexture == NULL)
 		{
@@ -108,7 +120,11 @@ bool LTexture::loadFromFile(const char* path)
 			mWidth = loadedSurface->w;
 			mHeight = loadedSurface->h;
 		}
+#ifdef _WIN32
 		SDL_DestroySurface(loadedSurface);
+#elif __linux__
+		SDL_FreeSurface(loadedSurface);
+#endif
 	}
 	mTexture = newTexture;
 	return mTexture != NULL;
@@ -125,15 +141,27 @@ void LTexture::free()
 	}
 }
 
+#ifdef _WIN32
 void LTexture::render(int x, int y, SDL_FRect* clip)
+#elif __linux__
+void LTexture::render(int x, int y, SDL_Rect* clip)
+#endif
 {
+#ifdef _WIN32
 	SDL_FRect renderQuad = { (float)x, (float)y, (float)mWidth, (float)mHeight };
+#elif __linux__
+	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
+#endif
 	if (clip != NULL)
 	{
 		renderQuad.w = clip->w;
 		renderQuad.h = clip->h;
 	}
+#ifdef _WIN32
 	SDL_RenderTexture(gRenderer, mTexture, clip, &renderQuad);
+#elif __linux__
+	SDL_RenderCopy(gRenderer, mTexture, clip, &renderQuad);
+#endif
 }
 
 int LTexture::getWidth()
@@ -468,26 +496,54 @@ int main(int argc, char* argv[])
 				topLeftViewport.y = 0;
 				topLeftViewport.w = SCREEN_WIDTH / 2;
 				topLeftViewport.h = SCREEN_HEIGHT / 2;
+#ifdef _WIN32
 				SDL_SetRenderViewport(gRenderer, &topLeftViewport);
+#elif __linux__
+				SDL_RenderSetViewport(gRenderer, &topLeftViewport);
+#endif
+#ifdef _WIN32
 				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+#elif __linux__
+				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+#endif
 
 				SDL_Rect topRightViewport;
 				topRightViewport.x = SCREEN_WIDTH / 2;
 				topRightViewport.y = 0;
 				topRightViewport.w = SCREEN_WIDTH / 2;
 				topRightViewport.h = SCREEN_HEIGHT / 2;
+#ifdef _WIN32
 				SDL_SetRenderViewport(gRenderer, &topRightViewport);
+#elif __linux__
+				SDL_RenderSetViewport(gRenderer, &topRightViewport);
+#endif
+#ifdef _WIN32
 				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+#elif __linux__
+				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+#endif
 
 				SDL_Rect bottomViewport;
 				bottomViewport.x = 0;
 				bottomViewport.y = SCREEN_HEIGHT / 2;
 				bottomViewport.w = SCREEN_WIDTH;
 				bottomViewport.h = SCREEN_HEIGHT / 2;
+#ifdef _WIN32
 				SDL_SetRenderViewport(gRenderer, &bottomViewport);
+#elif __linux__
+				SDL_RenderSetViewport(gRenderer, &bottomViewport);
+#endif
+#ifdef _WIN32
 				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+#elif __linux__
+				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+#endif
 
+#ifdef _WIN32
 				SDL_SetRenderViewport(gRenderer, NULL);
+#elif __linux__
+				SDL_RenderSetViewport(gRenderer, NULL);
+#endif
 				gBackgroundTexture.render(0, 0);
 				gFooTexture.render(240, 190);
 
