@@ -421,22 +421,46 @@ int main(int argc, char* argv[])
 						switch (e.key.keysym.sym)
 #endif
 						{
+#ifdef _WIN32
 						case SDLK_Q:
+#elif __linux__
+						case SDLK_q:
+#endif
 							r += 32;
 							break;
+#ifdef _WIN32
 						case SDLK_W:
+#elif __linux__
+						case SDLK_w:
+#endif
 							g += 32;
 							break;
+#ifdef _WIN32
 						case SDLK_E:
+#elif __linux__
+						case SDLK_e:
+#endif
 							b += 32;
 							break;
+#ifdef _WIN32
 						case SDLK_A:
+#elif __linux__
+						case SDLK_a:
+#endif
 							r -= 32;
 							break;
+#ifdef _WIN32
 						case SDLK_S:
+#elif __linux__
+						case SDLK_s:
+#endif
 							g -= 32;
 							break;
+#ifdef _WIN32
 						case SDLK_D:
+#elif __linux__
+						case SDLK_d:
+#endif
 							b -= 32;
 							break;
 						case SDLK_UP:
