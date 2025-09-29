@@ -47,6 +47,7 @@ public:
 	~LTexture();
 	bool loadFromFile(const char* path);
 	void free();
+	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 #ifdef _WIN32
 	void render(int x, int y, SDL_FRect* clip = NULL);
 #elif __linux__
@@ -80,6 +81,7 @@ SDL_FRect gSpriteClips[4];
 SDL_Rect gSpriteClips[4];
 #endif
 LTexture gSpriteSheetTexture;
+LTexture gModulatedTexture;
 
 
 LTexture::LTexture()
@@ -139,6 +141,11 @@ void LTexture::free()
 		mWidth = 0;
 		mHeight = 0;
 	}
+}
+
+void LTexture::setColor(Uint8 red, Uint8 green, Uint8 blue)
+{
+	SDL_SetTextureColorMod(mTexture, red, green, blue);
 }
 
 #ifdef _WIN32
@@ -275,6 +282,11 @@ bool loadMedia()
 		gSpriteClips[3].w = 100;
 		gSpriteClips[3].h = 100;
 	}
+	if (!gModulatedTexture.loadFromFile(load->Path("colors.png")))
+	{
+		SDL_Log("Failed to load colors texture!\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -296,6 +308,7 @@ void close()
 	gFooTexture.free();
 	gBackgroundTexture.free();
 	gSpriteSheetTexture.free();
+	gModulatedTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -382,6 +395,9 @@ int main(int argc, char* argv[])
 			bool quit = false;
 			SDL_Event e;
 			gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+			Uint8 r = 255;
+			Uint8 g = 255;
+			Uint8 b = 255;
 			while (!quit)
 			{
 				timer->Update();
@@ -405,6 +421,24 @@ int main(int argc, char* argv[])
 						switch (e.key.keysym.sym)
 #endif
 						{
+						case SDLK_Q:
+							r += 32;
+							break;
+						case SDLK_W:
+							g += 32;
+							break;
+						case SDLK_E:
+							b += 32;
+							break;
+						case SDLK_A:
+							r -= 32;
+							break;
+						case SDLK_S:
+							g -= 32;
+							break;
+						case SDLK_D:
+							b -= 32;
+							break;
 						case SDLK_UP:
 							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
 							break;
@@ -551,6 +585,9 @@ int main(int argc, char* argv[])
 				gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[1].w, 0, &gSpriteClips[1]);
 				gSpriteSheetTexture.render(0, SCREEN_HEIGHT - gSpriteClips[2].h, &gSpriteClips[2]);
 				gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[3].w, SCREEN_HEIGHT - gSpriteClips[3].h, &gSpriteClips[3]);
+
+				gModulatedTexture.setColor(r, g, b);
+				gModulatedTexture.render(0, 0);
 
 				SDL_RenderPresent(gRenderer);
 			}
