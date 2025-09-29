@@ -77,13 +77,16 @@ SDL_Surface* gCurrentSurface = NULL;
 SDL_Texture* gTexture = NULL;
 LTexture gFooTexture;
 #ifdef _WIN32
-SDL_FRect gSpriteClips[4];
+SDL_FRect gDotSpriteClips[4];
 #elif __linux__
-SDL_Rect gSpriteClips[4];
+SDL_Rect gDotSpriteClips[4];
 #endif
-LTexture gSpriteSheetTexture;
+LTexture gDotSpriteSheetTexture;
 LTexture gBackgroundTexture;
 LTexture gModulatedTexture;
+const int WALKING_ANIMATION_FRAMES = 4;
+SDL_FRect gSpriteClips[WALKING_ANIMATION_FRAMES];
+LTexture gSpriteSheetTexture;
 
 
 LTexture::LTexture()
@@ -260,7 +263,7 @@ bool loadMedia()
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = loadSurface(load->Path("left.png"), load, &success);
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = loadSurface(load->Path("right.png"), load, &success);
 	gTexture = loadTexture(load->Path("texture.png"), load, &success);
-	if (!gFooTexture.loadFromFile(load->Path("foo.png")))
+	if (!gFooTexture.loadFromFile(load->Path("foo2.png")))
 	{
 		SDL_Log("Failed to load foo' texture image!\n");
 		success = false;
@@ -270,29 +273,29 @@ bool loadMedia()
 		SDL_Log("Failed to load background texture image!\n");
 		success = false;
 	}
-	if (!gSpriteSheetTexture.loadFromFile(load->Path("dots.png")))
+	if (!gDotSpriteSheetTexture.loadFromFile(load->Path("dots.png")))
 	{
 		SDL_Log("Failed to load sprite sheet texture!\n");
 		success = false;
 	}
 	else
 	{
-		gSpriteClips[0].x = 0;
-		gSpriteClips[0].y = 0;
-		gSpriteClips[0].w = 100;
-		gSpriteClips[0].h = 100;
-		gSpriteClips[1].x = 100;
-		gSpriteClips[1].y = 0;
-		gSpriteClips[1].w = 100;
-		gSpriteClips[1].h = 100;
-		gSpriteClips[2].x = 0;
-		gSpriteClips[2].y = 100;
-		gSpriteClips[2].w = 100;
-		gSpriteClips[2].h = 100;
-		gSpriteClips[3].x = 100;
-		gSpriteClips[3].y = 100;
-		gSpriteClips[3].w = 100;
-		gSpriteClips[3].h = 100;
+		gDotSpriteClips[0].x = 0;
+		gDotSpriteClips[0].y = 0;
+		gDotSpriteClips[0].w = 100;
+		gDotSpriteClips[0].h = 100;
+		gDotSpriteClips[1].x = 100;
+		gDotSpriteClips[1].y = 0;
+		gDotSpriteClips[1].w = 100;
+		gDotSpriteClips[1].h = 100;
+		gDotSpriteClips[2].x = 0;
+		gDotSpriteClips[2].y = 100;
+		gDotSpriteClips[2].w = 100;
+		gDotSpriteClips[2].h = 100;
+		gDotSpriteClips[3].x = 100;
+		gDotSpriteClips[3].y = 100;
+		gDotSpriteClips[3].w = 100;
+		gDotSpriteClips[3].h = 100;
 	}
 	if (!gModulatedTexture.loadFromFile(load->Path("fadeout.png")))
 	{
@@ -307,6 +310,30 @@ bool loadMedia()
 	{
 		SDL_Log("Failed to load background texture!\n");
 		success = false;
+	}
+	if (!gSpriteSheetTexture.loadFromFile(load->Path("foo.png")))
+	{
+		SDL_Log("Failed to load walking animation texture!\n");
+		success = false;
+	}
+	else
+	{
+		gSpriteClips[0].x = 0;
+		gSpriteClips[0].y = 0;
+		gSpriteClips[0].w = 64;
+		gSpriteClips[0].h = 205;
+		gSpriteClips[1].x = 64;
+		gSpriteClips[1].y = 0;
+		gSpriteClips[1].w = 64;
+		gSpriteClips[1].h = 205;
+		gSpriteClips[2].x = 128;
+		gSpriteClips[2].y = 0;
+		gSpriteClips[2].w = 64;
+		gSpriteClips[2].h = 205;
+		gSpriteClips[3].x = 192;
+		gSpriteClips[3].y = 0;
+		gSpriteClips[3].w = 64;
+		gSpriteClips[3].h = 205;
 	}
 
 	delete load;
@@ -328,9 +355,10 @@ void close()
 	gTexture = NULL;
 	gFooTexture.free();
 	gBackgroundTexture.free();
-	gSpriteSheetTexture.free();
+	gDotSpriteSheetTexture.free();
 	gModulatedTexture.free();
 	gBackgroundTexture.free();
+	gSpriteSheetTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -421,6 +449,7 @@ int main(int argc, char* argv[])
 			Uint8 g = 255;
 			Uint8 b = 255;
 			Uint8 a = 255;
+			int frame = 0;
 			while (!quit)
 			{
 				timer->Update();
@@ -656,17 +685,26 @@ int main(int argc, char* argv[])
 				gBackgroundTexture.render(0, 0);
 				gFooTexture.render(240, 190);
 
-				gSpriteSheetTexture.render(0, 0, &gSpriteClips[0]);
-				gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[1].w, 0, &gSpriteClips[1]);
-				gSpriteSheetTexture.render(0, SCREEN_HEIGHT - gSpriteClips[2].h, &gSpriteClips[2]);
-				gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[3].w, SCREEN_HEIGHT - gSpriteClips[3].h, &gSpriteClips[3]);
+				gDotSpriteSheetTexture.render(0, 0, &gDotSpriteClips[0]);
+				gDotSpriteSheetTexture.render(SCREEN_WIDTH - gDotSpriteClips[1].w, 0, &gDotSpriteClips[1]);
+				gDotSpriteSheetTexture.render(0, SCREEN_HEIGHT - gDotSpriteClips[2].h, &gDotSpriteClips[2]);
+				gDotSpriteSheetTexture.render(SCREEN_WIDTH - gDotSpriteClips[3].w, SCREEN_HEIGHT - gDotSpriteClips[3].h, &gDotSpriteClips[3]);
 
 				gBackgroundTexture.render(0, 0);
 				gModulatedTexture.setColor(r, g, b);
 				gModulatedTexture.setAlpha(a);
 				gModulatedTexture.render(0, 0);
 
+				SDL_FRect* currentClip = &gSpriteClips[frame / 4];
+				gSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
+
 				SDL_RenderPresent(gRenderer);
+
+				++frame;
+				if (frame / 4 >= WALKING_ANIMATION_FRAMES)
+				{
+					frame = 0;
+				}
 			}
 		}
 	}
