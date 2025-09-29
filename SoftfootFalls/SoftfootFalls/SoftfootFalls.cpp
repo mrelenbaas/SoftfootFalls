@@ -85,7 +85,11 @@ LTexture gDotSpriteSheetTexture;
 LTexture gBackgroundTexture;
 LTexture gModulatedTexture;
 const int WALKING_ANIMATION_FRAMES = 4;
+#ifdef _WIN32
 SDL_FRect gSpriteClips[WALKING_ANIMATION_FRAMES];
+#elif __linux__
+SDL_Rect gSpriteClips[WALKING_ANIMATION_FRAMES];
+#endif
 LTexture gSpriteSheetTexture;
 
 
@@ -695,7 +699,11 @@ int main(int argc, char* argv[])
 				gModulatedTexture.setAlpha(a);
 				gModulatedTexture.render(0, 0);
 
+#ifdef _WIN32
 				SDL_FRect* currentClip = &gSpriteClips[frame / 4];
+#elif __linux__
+				SDL_Rect* currentClip = &gSpriteClips[frame / 4];
+#endif
 				gSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
 
 				SDL_RenderPresent(gRenderer);
