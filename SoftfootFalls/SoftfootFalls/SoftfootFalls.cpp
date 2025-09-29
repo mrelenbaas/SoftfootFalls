@@ -48,6 +48,8 @@ public:
 	bool loadFromFile(const char* path);
 	void free();
 	void setColor(Uint8 red, Uint8 green, Uint8 blue);
+	void setBlendMode(SDL_BlendMode blending);
+	void setAlpha(Uint8 alpha);
 #ifdef _WIN32
 	void render(int x, int y, SDL_FRect* clip = NULL);
 #elif __linux__
@@ -74,13 +76,13 @@ SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
 SDL_Surface* gCurrentSurface = NULL;
 SDL_Texture* gTexture = NULL;
 LTexture gFooTexture;
-LTexture gBackgroundTexture;
 #ifdef _WIN32
 SDL_FRect gSpriteClips[4];
 #elif __linux__
 SDL_Rect gSpriteClips[4];
 #endif
 LTexture gSpriteSheetTexture;
+LTexture gBackgroundTexture;
 LTexture gModulatedTexture;
 
 
@@ -146,6 +148,16 @@ void LTexture::free()
 void LTexture::setColor(Uint8 red, Uint8 green, Uint8 blue)
 {
 	SDL_SetTextureColorMod(mTexture, red, green, blue);
+}
+
+void LTexture::setBlendMode(SDL_BlendMode blending)
+{
+	SDL_SetTextureBlendMode(mTexture, blending);
+}
+
+void LTexture::setAlpha(Uint8 alpha)
+{
+	SDL_SetTextureAlphaMod(mTexture, alpha);
 }
 
 #ifdef _WIN32
@@ -282,9 +294,18 @@ bool loadMedia()
 		gSpriteClips[3].w = 100;
 		gSpriteClips[3].h = 100;
 	}
-	if (!gModulatedTexture.loadFromFile(load->Path("colors.png")))
+	if (!gModulatedTexture.loadFromFile(load->Path("fadeout.png")))
 	{
-		SDL_Log("Failed to load colors texture!\n");
+		SDL_Log("Failed to load front texture!\n");
+		success = false;
+	}
+	else
+	{
+		gModulatedTexture.setBlendMode(SDL_BLENDMODE_BLEND);
+	}
+	if (!gBackgroundTexture.loadFromFile(load->Path("fadein.png")))
+	{
+		SDL_Log("Failed to load background texture!\n");
 		success = false;
 	}
 
@@ -309,6 +330,7 @@ void close()
 	gBackgroundTexture.free();
 	gSpriteSheetTexture.free();
 	gModulatedTexture.free();
+	gBackgroundTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -398,6 +420,7 @@ int main(int argc, char* argv[])
 			Uint8 r = 255;
 			Uint8 g = 255;
 			Uint8 b = 255;
+			Uint8 a = 255;
 			while (!quit)
 			{
 				timer->Update();
@@ -462,6 +485,34 @@ int main(int argc, char* argv[])
 						case SDLK_d:
 #endif
 							b -= 32;
+							break;
+#ifdef _WIN32
+						case SDLK_R:
+#elif __linux__
+						case SDLK_r:
+#endif
+							if (a + 32 > 255)
+							{
+								a = 255;
+							}
+							else
+							{
+								a += 32;
+							}
+							break;
+#ifdef _WIN32
+						case SDLK_F:
+#elif __linux__
+						case SDLK_f:
+#endif
+							if (a - 32 < 0)
+							{
+								a = 0;
+							}
+							else
+							{
+								a -= 32;
+							}
 							break;
 						case SDLK_UP:
 							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
@@ -610,7 +661,9 @@ int main(int argc, char* argv[])
 				gSpriteSheetTexture.render(0, SCREEN_HEIGHT - gSpriteClips[2].h, &gSpriteClips[2]);
 				gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[3].w, SCREEN_HEIGHT - gSpriteClips[3].h, &gSpriteClips[3]);
 
+				gBackgroundTexture.render(0, 0);
 				gModulatedTexture.setColor(r, g, b);
+				gModulatedTexture.setAlpha(a);
 				gModulatedTexture.render(0, 0);
 
 				SDL_RenderPresent(gRenderer);
