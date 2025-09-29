@@ -47,7 +47,7 @@ public:
 	~LTexture();
 	bool loadFromFile(const char* path);
 	void free();
-	void render(int x, int y);
+	void render(int x, int y, SDL_FRect* clip = NULL);
 	int getWidth();
 	int getHeight();
 private:
@@ -70,6 +70,8 @@ SDL_Surface* gCurrentSurface = NULL;
 SDL_Texture* gTexture = NULL;
 LTexture gFooTexture;
 LTexture gBackgroundTexture;
+SDL_FRect gSpriteClips[4];
+LTexture gSpriteSheetTexture;
 
 
 LTexture::LTexture()
@@ -123,10 +125,15 @@ void LTexture::free()
 	}
 }
 
-void LTexture::render(int x, int y)
+void LTexture::render(int x, int y, SDL_FRect* clip)
 {
 	SDL_FRect renderQuad = { (float)x, (float)y, (float)mWidth, (float)mHeight };
-	SDL_RenderTexture(gRenderer, mTexture, NULL, &renderQuad);
+	if (clip != NULL)
+	{
+		renderQuad.w = clip->w;
+		renderQuad.h = clip->h;
+	}
+	SDL_RenderTexture(gRenderer, mTexture, clip, &renderQuad);
 }
 
 int LTexture::getWidth()
@@ -216,6 +223,30 @@ bool loadMedia()
 		SDL_Log("Failed to load background texture image!\n");
 		success = false;
 	}
+	if (!gSpriteSheetTexture.loadFromFile(load->Path("dots.png")))
+	{
+		SDL_Log("Failed to load sprite sheet texture!\n");
+		success = false;
+	}
+	else
+	{
+		gSpriteClips[0].x = 0;
+		gSpriteClips[0].y = 0;
+		gSpriteClips[0].w = 100;
+		gSpriteClips[0].h = 100;
+		gSpriteClips[1].x = 100;
+		gSpriteClips[1].y = 0;
+		gSpriteClips[1].w = 100;
+		gSpriteClips[1].h = 100;
+		gSpriteClips[2].x = 0;
+		gSpriteClips[2].y = 100;
+		gSpriteClips[2].w = 100;
+		gSpriteClips[2].h = 100;
+		gSpriteClips[3].x = 100;
+		gSpriteClips[3].y = 100;
+		gSpriteClips[3].w = 100;
+		gSpriteClips[3].h = 100;
+	}
 
 	delete load;
 	return success;
@@ -236,6 +267,7 @@ void close()
 	gTexture = NULL;
 	gFooTexture.free();
 	gBackgroundTexture.free();
+	gSpriteSheetTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -458,6 +490,11 @@ int main(int argc, char* argv[])
 				SDL_SetRenderViewport(gRenderer, NULL);
 				gBackgroundTexture.render(0, 0);
 				gFooTexture.render(240, 190);
+
+				gSpriteSheetTexture.render(0, 0, &gSpriteClips[0]);
+				gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[1].w, 0, &gSpriteClips[1]);
+				gSpriteSheetTexture.render(0, SCREEN_HEIGHT - gSpriteClips[2].h, &gSpriteClips[2]);
+				gSpriteSheetTexture.render(SCREEN_WIDTH - gSpriteClips[3].w, SCREEN_HEIGHT - gSpriteClips[3].h, &gSpriteClips[3]);
 
 				SDL_RenderPresent(gRenderer);
 			}
