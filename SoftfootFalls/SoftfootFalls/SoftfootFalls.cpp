@@ -16,6 +16,7 @@
 #ifdef _WIN32
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #elif __linux__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -46,6 +47,7 @@ public:
 	LTexture();
 	~LTexture();
 	bool loadFromFile(const char* path);
+	bool loadFromRenderedText(const char* textureText, SDL_Color textColor);
 	void free();
 	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 	void setBlendMode(SDL_BlendMode blending);
@@ -92,6 +94,8 @@ SDL_Rect gSpriteClips[WALKING_ANIMATION_FRAMES];
 #endif
 LTexture gSpriteSheetTexture;
 LTexture gArrowTexture;
+TTF_Font* gFont = NULL;
+LTexture gTextTexture;
 
 
 LTexture::LTexture()
@@ -139,6 +143,35 @@ bool LTexture::loadFromFile(const char* path)
 #endif
 	}
 	mTexture = newTexture;
+	return mTexture != NULL;
+}
+
+bool LTexture::loadFromRenderedText(const char* textureText, SDL_Color textColor)
+{
+	free();
+	SDL_Surface* textSurface = TTF_RenderText_Blended(gFont, textureText, 0, textColor);
+	if (textSurface == NULL)
+	{
+		SDL_Log("Unable to render text surface! SDL_ttf Error: %s\n", SDL_GetError());
+	}
+	else
+	{
+		mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
+		if (mTexture == NULL)
+		{
+			SDL_Log("Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError());
+		}
+		else
+		{
+			mWidth = textSurface->w;
+			mHeight = textSurface->h;
+		}
+#ifdef _WIN32
+		SDL_DestroySurface(textSurface);
+#elif __linux__
+		SDL_FreeSurface(textSurface);
+#endif
+	}
 	return mTexture != NULL;
 }
 
@@ -251,6 +284,11 @@ bool init()
 				}
 			}
 #endif
+			if (!TTF_Init())
+			{
+				SDL_Log("SDL_ttf could not initialize! SDL_ttf Error: %s\n", SDL_GetError());
+				success = false;
+			}
 			gScreenSurface = SDL_GetWindowSurface(gWindow);
 		}
 	}
@@ -348,6 +386,21 @@ bool loadMedia()
 		SDL_Log("Failed to load arrow texture!\n");
 		success = false;
 	}
+	gFont = TTF_OpenFont(load->Path("lazy.ttf"), 28);
+	if (gFont == NULL)
+	{
+		SDL_Log("Failed to load lazy font! SDL_ttf Error: %s\n", SDL_GetError());
+		success = false;
+	}
+	else
+	{
+		SDL_Color textColor = { 0, 0, 0 };
+		if (!gTextTexture.loadFromRenderedText("The quick brown fox jumps over the lazy dog", textColor))
+		{
+			SDL_Log("Failed to render text texture!\n");
+			success = false;
+		}
+	}
 
 	delete load;
 	return success;
@@ -373,11 +426,15 @@ void close()
 	gBackgroundTexture.free();
 	gSpriteSheetTexture.free();
 	gArrowTexture.free();
+	gTextTexture.free();
+	TTF_CloseFont(gFont);
+	gFont = NULL;
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
 	gRenderer = NULL;
+	TTF_Quit();
 	SDL_Quit();
 }
 
@@ -728,6 +785,8 @@ int main(int argc, char* argv[])
 				gSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
 
 				gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
+
+				gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
 
 				SDL_RenderPresent(gRenderer);
 
