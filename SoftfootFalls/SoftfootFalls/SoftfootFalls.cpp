@@ -15,8 +15,9 @@
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
-#include <SDL3_ttf/SDL_ttf.h>
+#include <SDL3/SDL_image.h>
+#include <SDL3/SDL_ttf.h>
+#include <SDL3/SDL_mixer.h>
 #elif __linux__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -149,6 +150,16 @@ SDL_GameController* gGameController;
 #endif
 SDL_Joystick* gJoystick = NULL;
 SDL_Haptic* gJoyHaptic = NULL;
+//LTexture gPromptTexture;
+//MIX_Mixer* gMusic = NULL;
+//MIX_Audio* gBeat = NULL;
+//MIX_Audio* gScratch = NULL;
+//MIX_Audio* gHigh = NULL;
+//MIX_Audio* gMedium = NULL;
+//MIX_Audio* gLow = NULL;
+static SDL_AudioStream* stream = NULL;
+static int current_sine_sample = 0;
+
 
 
 LTexture::LTexture()
@@ -383,9 +394,9 @@ bool init()
 	bool success = true;
 
 #ifdef _WIN32
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD))
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO))
 #elif __linux__
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0)
 #endif
 	{
 		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -522,6 +533,7 @@ bool init()
 		else
 		{
 #ifdef _WIN32
+			//SDL_AudioSpec audio_spec;
 			SDL_SetRenderVSync(gRenderer, 1);
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #elif __linux__
@@ -551,6 +563,37 @@ bool init()
 				SDL_Log("SDL_ttf could not initialize! SDL_ttf Error: %s\n", SDL_GetError());
 				success = false;
 			}
+			if (!MIX_Init())
+			{
+				printf("MIX_Init failed");
+			}
+			//SDL_zero(audio_spec);
+			//audio_spec.format = SDL_AUDIO_F32;
+			//audio_spec.channels = 2;
+			//audio_spec.freq = 48000;
+			//gMusic = MIX_CreateMixerDevice(0, NULL);
+			//gMusic = MIX_CreateMixer(NULL);
+			//if (gMusic == NULL)
+			//{
+			//	SDL_Log("Could not create mixer: %s\n", SDL_GetError());
+			//}
+			//gMusic = MIX_CreateMixerDevice(0, nullptr);
+			//if (gMusic != 0) {
+			//	SDL_Log("Unable to initialize SDL_mixer\n");
+			//	SDL_Quit();
+			//	return 1;
+			//}
+			SDL_AudioSpec spec;
+			spec.channels = 1;
+			spec.format = SDL_AUDIO_F32;
+			spec.freq = 8000;
+			stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
+			if (!stream) {
+				SDL_Log("Couldn't create audio stream: %s", SDL_GetError());
+				return SDL_APP_FAILURE;
+			}
+			/* SDL_OpenAudioDeviceStream starts the device paused. You have to tell it to start! */
+			SDL_ResumeAudioStreamDevice(stream);
 			gScreenSurface = SDL_GetWindowSurface(gWindow);
 		}
 	}
@@ -712,6 +755,42 @@ bool loadMedia()
 		SDL_Log("Failed to load splash texture!\n");
 		success = false;
 	}
+	/*if (!gPromptTexture.loadFromFile(load->Path("prompt.png")))
+	{
+		SDL_Log("Failed to load prompt texture!\n");
+		success = false;
+	}
+	//gMusic = Mix_LoadMUS(load->Path("beat.wav"));
+	gBeat = MIX_LoadAudio(gMusic, load->Path("beat.wav"), false);
+	if (gBeat == NULL)
+	{
+		SDL_Log("Failed to load beat music! SDL_mixer Error: %s\n", SDL_GetError());
+		success = false;
+	}
+	gScratch = MIX_LoadAudio(gMusic, load->Path("scratch.wav"), false);
+	if (gScratch == NULL)
+	{
+		SDL_Log("Failed to load scratch music! SDL_mixer Error: %s\n", SDL_GetError());
+		success = false;
+	}
+	gHigh = MIX_LoadAudio(gMusic, load->Path("high.wav"), false);
+	if (gHigh == NULL)
+	{
+		SDL_Log("Failed to load high music! SDL_mixer Error: %s\n", SDL_GetError());
+		success = false;
+	}
+	gMedium = MIX_LoadAudio(gMusic, load->Path("medium.wav"), false);
+	if (gMedium == NULL)
+	{
+		SDL_Log("Failed to load medium music! SDL_mixer Error: %s\n", SDL_GetError());
+		success = false;
+	}
+	gLow = MIX_LoadAudio(gMusic, load->Path("low.wav"), false);
+	if (gLow == NULL)
+	{
+		SDL_Log("Failed to load low music! SDL_mixer Error: %s\n", SDL_GetError());
+		success = false;
+	}*/
 
 	delete load;
 	return success;
@@ -774,12 +853,26 @@ void close()
 	gGameController = NULL;
 	gJoystick = NULL;
 	gJoyHaptic = NULL;
+	//gPromptTexture.free();
+	//MIX_DestroyAudio(gBeat);
+	//MIX_DestroyAudio(gScratch);
+	//MIX_DestroyAudio(gHigh);
+	//MIX_DestroyAudio(gMedium);
+	//MIX_DestroyAudio(gLow);
+	//gBeat = NULL;
+	//gScratch = NULL;
+	//gHigh = NULL;
+	//gMedium = NULL;
+	//gLow = NULL;
+	//MIX_DestroyMixer(gMusic);
+	//gMusic = NULL;
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
 	gRenderer = NULL;
 	TTF_Quit();
+	MIX_Quit();
 	SDL_Quit();
 }
 
@@ -877,6 +970,25 @@ int main(int argc, char* argv[])
 			int yDir = 0;
 			while (!quit)
 			{
+				const int minimum_audio = (8000 * sizeof(float)) / 2;  /* 8000 float samples per second. Half of that. */
+				if (SDL_GetAudioStreamQueued(stream) < minimum_audio) {
+					static float samples[512];  /* this will feed 512 samples each frame until we get to our maximum. */
+					int i;
+
+					/* generate a 440Hz pure tone */
+					for (i = 0; i < SDL_arraysize(samples); i++) {
+						const int freq = 440;
+						const float phase = current_sine_sample * freq / 8000.0f;
+						samples[i] = SDL_sinf(phase * 2 * SDL_PI_F);
+						current_sine_sample++;
+					}
+
+					/* wrapping around to avoid floating-point errors */
+					current_sine_sample %= 8000;
+
+					/* feed the new data to the stream. It will queue at the end, and trickle out as the hardware needs more data. */
+					SDL_PutAudioStreamData(stream, samples, sizeof(samples));
+				}
 				timer->Update();
 				while (SDL_PollEvent(&e) != 0)
 				{
@@ -954,7 +1066,7 @@ int main(int argc, char* argv[])
 								}
 							}
 						//}
-						printf("%i, %i\n", xDir, yDir);
+						//printf("%i, %i\n", xDir, yDir);
 					}
 #ifdef _WIN32
 					else if (e.key.key)
