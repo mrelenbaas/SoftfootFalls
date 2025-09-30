@@ -131,6 +131,11 @@ SDL_Rect gSpriteClips[BUTTON_SPRITE_TOTAL];
 #endif
 LTexture gButtonSpriteSheetTexture;
 LButton gButtons[TOTAL_BUTTONS];
+LTexture gPressTexture;
+LTexture gUpTexture;
+LTexture gDownTexture;
+LTexture gLeftTexture;
+LTexture gRightTexture;
 
 
 LTexture::LTexture()
@@ -549,6 +554,31 @@ bool loadMedia()
 		gButtons[2].setPosition(0, SCREEN_HEIGHT - BUTTON_HEIGHT);
 		gButtons[3].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT);
 	}
+	if (!gPressTexture.loadFromFile(load->Path("press.png")))
+	{
+		SDL_Log("Failed to load press texture!\n");
+		success = false;
+	}
+	if (!gUpTexture.loadFromFile(load->Path("up.png")))
+	{
+		SDL_Log("Failed to load up texture!\n");
+		success = false;
+	}
+	if (!gDownTexture.loadFromFile(load->Path("down.png")))
+	{
+		SDL_Log("Failed to load down texture!\n");
+		success = false;
+	}
+	if (!gLeftTexture.loadFromFile(load->Path("left.png")))
+	{
+		SDL_Log("Failed to load left texture!\n");
+		success = false;
+	}
+	if (!gRightTexture.loadFromFile(load->Path("right.png")))
+	{
+		SDL_Log("Failed to load right texture!\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -578,6 +608,11 @@ void close()
 	TTF_CloseFont(gFont);
 	gFont = NULL;
 	gButtonSpriteSheetTexture.free();
+	gPressTexture.free();
+	gUpTexture.free();
+	gDownTexture.free();
+	gLeftTexture.free();
+	gRightTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -674,8 +709,9 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 			SDL_FlipMode flipType = SDL_FLIP_NONE;
 #elif __linux__
-		SDL_RendererFlip flipType = SDL_FLIP_NONE;
+			SDL_RendererFlip flipType = SDL_FLIP_NONE;
 #endif
+			LTexture* currentTexture;
 			while (!quit)
 			{
 				timer->Update();
@@ -945,6 +981,29 @@ int main(int argc, char* argv[])
 				{
 					gButtons[i].render();
 				}
+
+				const bool* currentKeyStates = SDL_GetKeyboardState(NULL);
+				if (currentKeyStates[SDL_SCANCODE_UP])
+				{
+					currentTexture = &gUpTexture;
+				}
+				else if (currentKeyStates[SDL_SCANCODE_DOWN])
+				{
+					currentTexture = &gDownTexture;
+				}
+				else if (currentKeyStates[SDL_SCANCODE_LEFT])
+				{
+					currentTexture = &gLeftTexture;
+				}
+				else if (currentKeyStates[SDL_SCANCODE_RIGHT])
+				{
+					currentTexture = &gRightTexture;
+				}
+				else
+				{
+					currentTexture = &gPressTexture;
+				}
+				currentTexture->render(0, 0);
 
 				SDL_RenderPresent(gRenderer);
 
