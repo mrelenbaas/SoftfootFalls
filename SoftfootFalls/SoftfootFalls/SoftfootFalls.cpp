@@ -51,9 +51,9 @@ public:
 	void setBlendMode(SDL_BlendMode blending);
 	void setAlpha(Uint8 alpha);
 #ifdef _WIN32
-	void render(int x, int y, SDL_FRect* clip = NULL);
+	void render(int x, int y, SDL_FRect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE);
 #elif __linux__
-	void render(int x, int y, SDL_Rect* clip = NULL);
+	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE);
 #endif
 	int getWidth();
 	int getHeight();
@@ -87,6 +87,7 @@ LTexture gModulatedTexture;
 const int WALKING_ANIMATION_FRAMES = 4;
 SDL_FRect gSpriteClips[WALKING_ANIMATION_FRAMES];
 LTexture gSpriteSheetTexture;
+LTexture gArrowTexture;
 
 
 LTexture::LTexture()
@@ -164,9 +165,9 @@ void LTexture::setAlpha(Uint8 alpha)
 }
 
 #ifdef _WIN32
-void LTexture::render(int x, int y, SDL_FRect* clip)
+void LTexture::render(int x, int y, SDL_FRect* clip, double angle, SDL_FPoint* center, SDL_FlipMode flip)
 #elif __linux__
-void LTexture::render(int x, int y, SDL_Rect* clip)
+void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_FlipMode flip)
 #endif
 {
 #ifdef _WIN32
@@ -180,9 +181,11 @@ void LTexture::render(int x, int y, SDL_Rect* clip)
 		renderQuad.h = clip->h;
 	}
 #ifdef _WIN32
-	SDL_RenderTexture(gRenderer, mTexture, clip, &renderQuad);
+	//SDL_RenderTexture(gRenderer, mTexture, clip, &renderQuad);
+	SDL_RenderTextureRotated(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 #elif __linux__
-	SDL_RenderCopy(gRenderer, mTexture, clip, &renderQuad);
+	//SDL_RenderCopy(gRenderer, mTexture, clip, &renderQuad);
+	SDL_RenderTextureRotated(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 #endif
 }
 
@@ -223,6 +226,7 @@ bool init()
 		}
 		else
 		{
+			SDL_SetRenderVSync(gRenderer, 1);
 #ifdef _WIN32
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #elif __linux__
@@ -335,6 +339,11 @@ bool loadMedia()
 		gSpriteClips[3].w = 64;
 		gSpriteClips[3].h = 205;
 	}
+	if (!gArrowTexture.loadFromFile(load->Path("arrow.png")))
+	{
+		SDL_Log("Failed to load arrow texture!\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -359,6 +368,7 @@ void close()
 	gModulatedTexture.free();
 	gBackgroundTexture.free();
 	gSpriteSheetTexture.free();
+	gArrowTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -450,6 +460,8 @@ int main(int argc, char* argv[])
 			Uint8 b = 255;
 			Uint8 a = 255;
 			int frame = 0;
+			double degrees = 0;
+			SDL_FlipMode flipType = SDL_FLIP_NONE;
 			while (!quit)
 			{
 				timer->Update();
@@ -479,6 +491,7 @@ int main(int argc, char* argv[])
 						case SDLK_q:
 #endif
 							r += 32;
+							flipType = SDL_FLIP_HORIZONTAL;
 							break;
 #ifdef _WIN32
 						case SDLK_W:
@@ -486,6 +499,7 @@ int main(int argc, char* argv[])
 						case SDLK_w:
 #endif
 							g += 32;
+							flipType = SDL_FLIP_NONE;
 							break;
 #ifdef _WIN32
 						case SDLK_E:
@@ -493,6 +507,7 @@ int main(int argc, char* argv[])
 						case SDLK_e:
 #endif
 							b += 32;
+							flipType = SDL_FLIP_VERTICAL;
 							break;
 #ifdef _WIN32
 						case SDLK_A:
@@ -500,6 +515,7 @@ int main(int argc, char* argv[])
 						case SDLK_a:
 #endif
 							r -= 32;
+							degrees -= 60;
 							break;
 #ifdef _WIN32
 						case SDLK_S:
@@ -514,6 +530,7 @@ int main(int argc, char* argv[])
 						case SDLK_d:
 #endif
 							b -= 32;
+							degrees += 60;
 							break;
 #ifdef _WIN32
 						case SDLK_R:
@@ -697,6 +714,8 @@ int main(int argc, char* argv[])
 
 				SDL_FRect* currentClip = &gSpriteClips[frame / 4];
 				gSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
+
+				gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
 
 				SDL_RenderPresent(gRenderer);
 
