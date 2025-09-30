@@ -142,7 +142,11 @@ LTexture gDownTexture;
 LTexture gLeftTexture;
 LTexture gRightTexture;
 LTexture gSplashTexture;
+#ifdef _WIN32
 SDL_Gamepad* gGameController;
+#elif __linux__
+SDL_GameController* gGameController;
+#endif
 SDL_Joystick* gJoystick = NULL;
 SDL_Haptic* gJoyHaptic = NULL;
 
@@ -381,7 +385,7 @@ bool init()
 #ifdef _WIN32
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD))
 #elif __linux__
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER) < 0)
 #endif
 	{
 		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -461,10 +465,47 @@ bool init()
 		}
 		else
 		{
-			gGameController = SDL_JoystickOpen(0);
+			if (!SDL_IsGameController(0))
+			{
+				printf("Warning: joystick is not game controller interface compatible! SDL Error: %s\n", SDL_GetError());
+			}
+			else
+			{
+				gGameController = SDL_GameControllerOpen(0);
+				if (!SDL_GameControllerHasRumble(gGameController))
+				{
+					printf("Warning: Game controller does not have rumble! SDL Error: %s\n", SDL_GetError());
+				}
+			}
 			if (gGameController == NULL)
 			{
-				printf("Warning: Unable to open game controller! SDL Error: %s\n", SDL_GetError());
+				gJoystick = SDL_JoystickOpen(0);
+				if (gJoystick == NULL)
+				{
+					printf("Warning: Unable to open joystick! SDL Error: %s\n", SDL_GetError());
+				}
+				else
+				{
+					if (!SDL_JoystickIsHaptic(gJoystick))
+					{
+						printf("Warning: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
+					}
+					else
+					{
+						gJoyHaptic = SDL_HapticOpenFromJoystick(gJoystick);
+						if (gJoyHaptic == NULL)
+						{
+							printf("Warning: Unable to get joystick haptics! SDL Error: %s\n", SDL_GetError());
+						}
+						else
+						{
+							if (SDL_HapticRumbleInit(gJoyHaptic) < 0)
+							{
+								printf("Warning: Unable to initialize haptic rumble! SDL Error: %s\n", SDL_GetError());
+							}
+						}
+					}
+				}
 			}
 		}
 #endif
@@ -708,15 +749,27 @@ void close()
 	gSplashTexture.free();
 	if (gGameController != NULL)
 	{
+#ifdef _WIN32
 		SDL_CloseGamepad(gGameController);
+#elif __linux__
+		SDL_GameControllerClose(gGameController);
+#endif
 	}
 	if (gJoyHaptic != NULL)
 	{
+#ifdef _WIN32
 		SDL_CloseHaptic(gJoyHaptic);
+#elif __linux__
+		SDL_HapticClose(gJoyHaptic);
+#endif
 	}
 	if (gJoystick != NULL)
 	{
+#ifdef _WIN32
 		SDL_CloseJoystick(gJoystick);
+#elif __linux__
+		SDL_JoystickClose(gJoystick);
+#endif
 	}
 	gGameController = NULL;
 	gJoystick = NULL;
@@ -833,18 +886,30 @@ int main(int argc, char* argv[])
 					if (e.type == SDL_QUIT)
 #endif
 						quit = true;
+#ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)
+#elif __linux__
+					else if (e.type == SDL_JOYBUTTONDOWN)
+#endif
 					{
 						if (gGameController != NULL)
 						{
+#ifdef _WIN32
 							if (!SDL_RumbleGamepad(gGameController, 0xFFFF * 3 / 4, 0xFFFF * 3 / 4, 500))
+#elif __linux__
+							if (SDL_GameControllerRumble(gGameController, 0xFFFF * 3 / 4, 0xFFFF * 3 / 4, 500) != 0)
+#endif
 							{
 								SDL_Log("Warning: Unable to play game controller rumble! %s\n", SDL_GetError());
 							}
 						}
 						else if (gJoyHaptic != NULL)
 						{
+#ifdef _WIN32
 							if (!SDL_PlayHapticRumble(gJoyHaptic, 0.75, 500))
+#elif __linux__
+							if (SDL_HapticRumblePlay(gJoyHaptic, 0.75, 500) != 0)
+#endif
 							{
 								SDL_Log("Warning: Unable to play haptic rumble! %s\n", SDL_GetError());
 							}
