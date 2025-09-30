@@ -20,6 +20,7 @@
 #elif __linux__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #endif
 #include "Load.h"
 
@@ -149,7 +150,11 @@ bool LTexture::loadFromFile(const char* path)
 bool LTexture::loadFromRenderedText(const char* textureText, SDL_Color textColor)
 {
 	free();
+#ifdef _WIN32
 	SDL_Surface* textSurface = TTF_RenderText_Blended(gFont, textureText, 0, textColor);
+#elif __linux__
+	SDL_Surface* textSurface = TTF_RenderText_Solid(gFont, textureText, textColor);
+#endif
 	if (textSurface == NULL)
 	{
 		SDL_Log("Unable to render text surface! SDL_ttf Error: %s\n", SDL_GetError());
@@ -284,7 +289,11 @@ bool init()
 				}
 			}
 #endif
+#ifdef _WIN32
 			if (!TTF_Init())
+#elif __linux__
+			if (TTF_Init() == -1)
+#endif
 			{
 				SDL_Log("SDL_ttf could not initialize! SDL_ttf Error: %s\n", SDL_GetError());
 				success = false;
@@ -394,7 +403,7 @@ bool loadMedia()
 	}
 	else
 	{
-		SDL_Color textColor = { 0, 0, 0 };
+		SDL_Color textColor = { 0, 0, 0, 0 };
 		if (!gTextTexture.loadFromRenderedText("The quick brown fox jumps over the lazy dog", textColor))
 		{
 			SDL_Log("Failed to render text texture!\n");
