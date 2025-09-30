@@ -37,7 +37,9 @@ const int BUTTON_HEIGHT = 200;
 const int TOTAL_BUTTONS = 4;
 
 const int JOYSTICK_DEAD_ZONE = 8000;
+#ifdef _WIN32
 const double M_PI = 3.14159265359;
+#endif
 
 enum LButtonSprite
 {
@@ -376,7 +378,7 @@ bool init()
 #ifdef _WIN32
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK))
 #elif __linux__
-	if (SDL_Init(SDL_INIT_VIDEO) < 0 | SDL_INIT_JOYSTICK)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0)
 #endif
 	{
 		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -384,6 +386,7 @@ bool init()
 	}
 	else
 	{
+#ifdef _WIN32
 		SDL_JoystickID* joysticks = SDL_GetJoysticks(NULL);
 		if (joysticks)
 		{
@@ -401,6 +404,24 @@ bool init()
 			}
 			SDL_free(joysticks);
 		}
+#elif __linux__
+		if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
+		{
+			printf("Warning: Linear texture filtering not enabled!\n");
+		}
+		if (SDL_NumJoysticks() < 1)
+		{
+			printf("Warning: No joysticks connected!\n");
+		}
+		else
+		{
+			gGameController = SDL_JoystickOpen(0);
+			if (gGameController == NULL)
+			{
+				printf("Warning: Unable to open game controller! SDL Error: %s\n", SDL_GetError());
+			}
+		}
+#endif
 #ifdef _WIN32
 		if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, 0, &gWindow, &gRenderer))
 #elif __linux__
@@ -746,39 +767,46 @@ int main(int argc, char* argv[])
 					if (e.type == SDL_QUIT)
 #endif
 						quit = true;
+#ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_AXIS_MOTION)
+#elif __linux__
+					else if (e.type == SDL_JOYAXISMOTION)
+#endif
 					{
-						if (e.jaxis.axis == 0)
-						{
-							if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
+						//if (e.jaxis.which == 0)
+						//{
+							if (e.jaxis.axis == 0)
 							{
-								xDir = -1;
+								if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
+								{
+									xDir = -1;
+								}
+								else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
+								{
+									xDir = 1;
+								}
+								else
+								{
+									xDir = 0;
+								}
 							}
-							else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
+							else if (e.jaxis.axis == 1)
 							{
-								xDir = 1;
+								if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
+								{
+									yDir = -1;
+								}
+								else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
+								{
+									yDir = 1;
+								}
+								else
+								{
+									yDir = 0;
+								}
 							}
-							else
-							{
-								xDir = 0;
-							}
-						}
-						else if (e.jaxis.axis == 1)
-						{
-							if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
-							{
-								yDir = -1;
-							}
-							else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
-							{
-								yDir = 1;
-							}
-							else
-							{
-								yDir = 0;
-							}
-						}
-						//printf("%i, %i\n", xDir, yDir);
+						//}
+						printf("%i, %i\n", xDir, yDir);
 					}
 #ifdef _WIN32
 					else if (e.key.key)
@@ -1067,7 +1095,7 @@ int main(int argc, char* argv[])
 				currentTexture->render(0, 0);
 
 				double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
-				printf("%lf\n", joystickAngle);
+				//printf("%lf\n", joystickAngle);
 				if (xDir == 0 && yDir == 0)
 				{
 					joystickAngle = 0;
