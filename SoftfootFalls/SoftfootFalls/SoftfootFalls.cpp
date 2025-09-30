@@ -124,7 +124,11 @@ LTexture gWalkingSpriteSheetTexture;
 LTexture gArrowTexture;
 TTF_Font* gFont = NULL;
 LTexture gTextTexture;
+#ifdef _WIN32
 SDL_FRect gSpriteClips[BUTTON_SPRITE_TOTAL];
+#elif __linux__
+SDL_Rect gSpriteClips[BUTTON_SPRITE_TOTAL];
+#endif
 LTexture gButtonSpriteSheetTexture;
 LButton gButtons[TOTAL_BUTTONS];
 
@@ -288,9 +292,17 @@ void LButton::setPosition(int x, int y)
 
 void LButton::handleEvent(SDL_Event* e)
 {
+#ifdef _WIN32
 	if (e->type == SDL_EVENT_MOUSE_MOTION || e->type == SDL_EVENT_MOUSE_BUTTON_DOWN || e->type == SDL_EVENT_MOUSE_BUTTON_UP)
+#elif __linix__
+	if (e->type == SDL_MOUSEMOTION || e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP)
+#endif
 	{
+#ifdef _WIN32
 		float x, y;
+#elif __linux__
+		int x, y;
+#endif
 		SDL_GetMouseState(&x, &y);
 		bool inside = true;
 		if (x < mPosition.x)
@@ -317,13 +329,25 @@ void LButton::handleEvent(SDL_Event* e)
 		{
 			switch (e->type)
 			{
+#ifdef _WIN32
 			case SDL_EVENT_MOUSE_MOTION:
+#elif __linux__
+			case SDL_MOUSEMOTION:
+#endif
 				mCurrentSprite = BUTTON_SPRITE_MOUSE_OVER_MOTION;
 				break;
+#ifdef _WIN32
 			case SDL_EVENT_MOUSE_BUTTON_DOWN:
+#elif __linux__
+			case SDL_MOUSEBUTTONDOWN:
+#endif
 				mCurrentSprite = BUTTON_SPRITE_MOUSE_DOWN;
 				break;
+#ifdef _WIN32
 			case SDL_EVENT_MOUSE_BUTTON_UP:
+#elif __linux__
+			case SDL_MOUSEBUTTONUP:
+#endif
 				mCurrentSprite = BUTTON_SPRITE_MOUSE_UP;
 				break;
 			}
@@ -767,10 +791,10 @@ int main(int argc, char* argv[])
 							gCurrentSurface = NULL;
 							break;
 						}
-						for (int i = 0; i < TOTAL_BUTTONS; ++i)
-						{
-							gButtons[i].handleEvent(&e);
-						}
+					}
+					for (int i = 0; i < TOTAL_BUTTONS; ++i)
+					{
+						gButtons[i].handleEvent(&e);
 					}
 				}
 				SDL_RenderClear(gRenderer);
