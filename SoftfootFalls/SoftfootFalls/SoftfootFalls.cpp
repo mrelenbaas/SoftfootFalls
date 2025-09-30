@@ -32,6 +32,19 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+const int BUTTON_WIDTH = 300;
+const int BUTTON_HEIGHT = 200;
+const int TOTAL_BUTTONS = 4;
+
+enum LButtonSprite
+{
+	BUTTON_SPRITE_MOUSE_OUT = 0,
+	BUTTON_SPRITE_MOUSE_OVER_MOTION = 1,
+	BUTTON_SPRITE_MOUSE_DOWN = 2,
+	BUTTON_SPRITE_MOUSE_UP = 3,
+	BUTTON_SPRITE_TOTAL = 4
+};
+
 enum KeyPressSurfaces
 {
 	KEY_PRESS_SURFACE_DEFAULT,
@@ -48,7 +61,9 @@ public:
 	LTexture();
 	~LTexture();
 	bool loadFromFile(const char* path);
+#if defined(SDL_TTF_MAJOR_VERSION)
 	bool loadFromRenderedText(const char* textureText, SDL_Color textColor);
+#endif
 	void free();
 	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 	void setBlendMode(SDL_BlendMode blending);
@@ -64,6 +79,18 @@ private:
 	SDL_Texture* mTexture;
 	int mWidth;
 	int mHeight;
+};
+
+class LButton
+{
+public:
+	LButton();
+	void setPosition(int x, int y);
+	void handleEvent(SDL_Event* e);
+	void render();
+private:
+	SDL_Point mPosition;
+	LButtonSprite mCurrentSprite;
 };
 
 bool init();
@@ -89,14 +116,17 @@ LTexture gBackgroundTexture;
 LTexture gModulatedTexture;
 const int WALKING_ANIMATION_FRAMES = 4;
 #ifdef _WIN32
-SDL_FRect gSpriteClips[WALKING_ANIMATION_FRAMES];
+SDL_FRect gWalkingSpriteClips[WALKING_ANIMATION_FRAMES];
 #elif __linux__
-SDL_Rect gSpriteClips[WALKING_ANIMATION_FRAMES];
+SDL_Rect gWalkingSpriteClips[WALKING_ANIMATION_FRAMES];
 #endif
-LTexture gSpriteSheetTexture;
+LTexture gWalkingSpriteSheetTexture;
 LTexture gArrowTexture;
 TTF_Font* gFont = NULL;
 LTexture gTextTexture;
+SDL_FRect gSpriteClips[BUTTON_SPRITE_TOTAL];
+LTexture gButtonSpriteSheetTexture;
+LButton gButtons[TOTAL_BUTTONS];
 
 
 LTexture::LTexture()
@@ -147,6 +177,7 @@ bool LTexture::loadFromFile(const char* path)
 	return mTexture != NULL;
 }
 
+#if defined(SDL_TTF_MAJOR_VERSION)
 bool LTexture::loadFromRenderedText(const char* textureText, SDL_Color textColor)
 {
 	free();
@@ -179,6 +210,7 @@ bool LTexture::loadFromRenderedText(const char* textureText, SDL_Color textColor
 	}
 	return mTexture != NULL;
 }
+#endif
 
 void LTexture::free()
 {
@@ -239,6 +271,69 @@ int LTexture::getWidth()
 int LTexture::getHeight()
 {
 	return mHeight;
+}
+
+LButton::LButton()
+{
+	mPosition.x = 0;
+	mPosition.y = 0;
+	mCurrentSprite = BUTTON_SPRITE_MOUSE_OUT;
+}
+
+void LButton::setPosition(int x, int y)
+{
+	mPosition.x = x;
+	mPosition.y = y;
+}
+
+void LButton::handleEvent(SDL_Event* e)
+{
+	if (e->type == SDL_EVENT_MOUSE_MOTION || e->type == SDL_EVENT_MOUSE_BUTTON_DOWN || e->type == SDL_EVENT_MOUSE_BUTTON_UP)
+	{
+		float x, y;
+		SDL_GetMouseState(&x, &y);
+		bool inside = true;
+		if (x < mPosition.x)
+		{
+			inside = false;
+		}
+		else if (x > mPosition.x + BUTTON_WIDTH)
+		{
+			inside = false;
+		}
+		else if (y < mPosition.y)
+		{
+			inside = false;
+		}
+		else if (y > mPosition.y + BUTTON_HEIGHT)
+		{
+			inside = false;
+		}
+		if (!inside)
+		{
+			mCurrentSprite = BUTTON_SPRITE_MOUSE_OUT;
+		}
+		else
+		{
+			switch (e->type)
+			{
+			case SDL_EVENT_MOUSE_MOTION:
+				mCurrentSprite = BUTTON_SPRITE_MOUSE_OVER_MOTION;
+				break;
+			case SDL_EVENT_MOUSE_BUTTON_DOWN:
+				mCurrentSprite = BUTTON_SPRITE_MOUSE_DOWN;
+				break;
+			case SDL_EVENT_MOUSE_BUTTON_UP:
+				mCurrentSprite = BUTTON_SPRITE_MOUSE_UP;
+				break;
+			}
+		}
+	}
+}
+
+void LButton::render()
+{
+	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
 }
 
 bool init()
@@ -366,29 +461,29 @@ bool loadMedia()
 		SDL_Log("Failed to load background texture!\n");
 		success = false;
 	}
-	if (!gSpriteSheetTexture.loadFromFile(load->Path("foo.png")))
+	if (!gWalkingSpriteSheetTexture.loadFromFile(load->Path("foo.png")))
 	{
 		SDL_Log("Failed to load walking animation texture!\n");
 		success = false;
 	}
 	else
 	{
-		gSpriteClips[0].x = 0;
-		gSpriteClips[0].y = 0;
-		gSpriteClips[0].w = 64;
-		gSpriteClips[0].h = 205;
-		gSpriteClips[1].x = 64;
-		gSpriteClips[1].y = 0;
-		gSpriteClips[1].w = 64;
-		gSpriteClips[1].h = 205;
-		gSpriteClips[2].x = 128;
-		gSpriteClips[2].y = 0;
-		gSpriteClips[2].w = 64;
-		gSpriteClips[2].h = 205;
-		gSpriteClips[3].x = 192;
-		gSpriteClips[3].y = 0;
-		gSpriteClips[3].w = 64;
-		gSpriteClips[3].h = 205;
+		gWalkingSpriteClips[0].x = 0;
+		gWalkingSpriteClips[0].y = 0;
+		gWalkingSpriteClips[0].w = 64;
+		gWalkingSpriteClips[0].h = 205;
+		gWalkingSpriteClips[1].x = 64;
+		gWalkingSpriteClips[1].y = 0;
+		gWalkingSpriteClips[1].w = 64;
+		gWalkingSpriteClips[1].h = 205;
+		gWalkingSpriteClips[2].x = 128;
+		gWalkingSpriteClips[2].y = 0;
+		gWalkingSpriteClips[2].w = 64;
+		gWalkingSpriteClips[2].h = 205;
+		gWalkingSpriteClips[3].x = 192;
+		gWalkingSpriteClips[3].y = 0;
+		gWalkingSpriteClips[3].w = 64;
+		gWalkingSpriteClips[3].h = 205;
 	}
 	if (!gArrowTexture.loadFromFile(load->Path("arrow.png")))
 	{
@@ -409,6 +504,26 @@ bool loadMedia()
 			SDL_Log("Failed to render text texture!\n");
 			success = false;
 		}
+	}
+
+	if (!gButtonSpriteSheetTexture.loadFromFile(load->Path("button.png")))
+	{
+		SDL_Log("Failed to load button sprite texture!\n");
+		success = false;
+	}
+	else
+	{
+		for (int i = 0; i < BUTTON_SPRITE_TOTAL; ++i)
+		{
+			gSpriteClips[i].x = 0;
+			gSpriteClips[i].y = i * 200;
+			gSpriteClips[i].w = BUTTON_WIDTH;
+			gSpriteClips[i].h = BUTTON_HEIGHT;
+		}
+		gButtons[0].setPosition(0, 0);
+		gButtons[1].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, 0);
+		gButtons[2].setPosition(0, SCREEN_HEIGHT - BUTTON_HEIGHT);
+		gButtons[3].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT);
 	}
 
 	delete load;
@@ -433,11 +548,12 @@ void close()
 	gDotSpriteSheetTexture.free();
 	gModulatedTexture.free();
 	gBackgroundTexture.free();
-	gSpriteSheetTexture.free();
+	gWalkingSpriteSheetTexture.free();
 	gArrowTexture.free();
 	gTextTexture.free();
 	TTF_CloseFont(gFont);
 	gFont = NULL;
+	gButtonSpriteSheetTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -651,6 +767,10 @@ int main(int argc, char* argv[])
 							gCurrentSurface = NULL;
 							break;
 						}
+						for (int i = 0; i < TOTAL_BUTTONS; ++i)
+						{
+							gButtons[i].handleEvent(&e);
+						}
 					}
 				}
 				SDL_RenderClear(gRenderer);
@@ -787,15 +907,20 @@ int main(int argc, char* argv[])
 				gModulatedTexture.render(0, 0);
 
 #ifdef _WIN32
-				SDL_FRect* currentClip = &gSpriteClips[frame / 4];
+				SDL_FRect* currentClip = &gWalkingSpriteClips[frame / 4];
 #elif __linux__
-				SDL_Rect* currentClip = &gSpriteClips[frame / 4];
+				SDL_Rect* currentClip = &gWalkingSpriteClips[frame / 4];
 #endif
-				gSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
+				gWalkingSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
 
 				gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
 
 				gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
+
+				for (int i = 0; i < TOTAL_BUTTONS; ++i)
+				{
+					gButtons[i].render();
+				}
 
 				SDL_RenderPresent(gRenderer);
 
