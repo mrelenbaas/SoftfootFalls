@@ -53,7 +53,7 @@ public:
 #ifdef _WIN32
 	void render(int x, int y, SDL_FRect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE);
 #elif __linux__
-	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE);
+	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
 #endif
 	int getWidth();
 	int getHeight();
@@ -171,7 +171,7 @@ void LTexture::setAlpha(Uint8 alpha)
 #ifdef _WIN32
 void LTexture::render(int x, int y, SDL_FRect* clip, double angle, SDL_FPoint* center, SDL_FlipMode flip)
 #elif __linux__
-void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_FlipMode flip)
+void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
 #endif
 {
 #ifdef _WIN32
@@ -189,7 +189,7 @@ void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* cen
 	SDL_RenderTextureRotated(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 #elif __linux__
 	//SDL_RenderCopy(gRenderer, mTexture, clip, &renderQuad);
-	SDL_RenderTextureRotated(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
+	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 #endif
 }
 
@@ -230,11 +230,11 @@ bool init()
 		}
 		else
 		{
-			SDL_SetRenderVSync(gRenderer, 1);
 #ifdef _WIN32
+			SDL_SetRenderVSync(gRenderer, 1);
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #elif __linux__
-			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 			if (gRenderer == NULL)
 			{
 				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
@@ -465,7 +465,11 @@ int main(int argc, char* argv[])
 			Uint8 a = 255;
 			int frame = 0;
 			double degrees = 0;
+#ifdef _WIN32
 			SDL_FlipMode flipType = SDL_FLIP_NONE;
+#elif __linux__
+		SDL_RendererFlip flipType = SDL_FLIP_NONE;
+#endif
 			while (!quit)
 			{
 				timer->Update();
