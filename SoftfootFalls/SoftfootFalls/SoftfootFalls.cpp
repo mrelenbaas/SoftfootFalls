@@ -141,7 +141,10 @@ LTexture gUpTexture;
 LTexture gDownTexture;
 LTexture gLeftTexture;
 LTexture gRightTexture;
-SDL_Joystick* gGameController;
+LTexture gSplashTexture;
+SDL_Gamepad* gGameController;
+SDL_Joystick* gJoystick = NULL;
+SDL_Haptic* gJoyHaptic = NULL;
 
 
 LTexture::LTexture()
@@ -376,9 +379,9 @@ bool init()
 	bool success = true;
 
 #ifdef _WIN32
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK))
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD))
 #elif __linux__
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD) < 0)
 #endif
 	{
 		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -387,22 +390,65 @@ bool init()
 	else
 	{
 #ifdef _WIN32
+		SDL_JoystickID joystickID = 0;
 		SDL_JoystickID* joysticks = SDL_GetJoysticks(NULL);
 		if (joysticks)
 		{
-			if (joysticks[0])
+			joystickID = joysticks[0];
+			SDL_free(joysticks);
+		}
+		if (joystickID == 0)
+		{
+			SDL_Log("Warning: No joysticks connected!\n");
+		}
+		else
+		{
+			if (!SDL_IsGamepad(joystickID))
 			{
-				gGameController = SDL_OpenJoystick(joysticks[0]);
-				if (gGameController == NULL)
-				{
-					SDL_Log("Warning: Unable to open game controller! SDL Error: %s\n", SDL_GetError());
-				}
+				SDL_Log("Warning: Joystick is not game controller interface compatible! SDL Error: %s\n", SDL_GetError());
 			}
 			else
 			{
-				SDL_Log("Warning: Noy joysticks connected!\n");
+				gGameController = SDL_OpenGamepad(joystickID);
+				if (!SDL_GetBooleanProperty(SDL_GetGamepadProperties(gGameController), SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN, false))
+				{
+					SDL_Log("Warning: Game controller does not have rumble! SDL Error: %s\n", SDL_GetError());
+				}
 			}
-			SDL_free(joysticks);
+			if (gGameController == NULL)
+			{
+				gJoystick = SDL_OpenJoystick(joystickID);
+				if (gJoystick == NULL)
+				{
+					SDL_Log("Warning: Unable to open joystick! SDL Error: %s\n", SDL_GetError());
+				}
+				else
+				{
+					if (!SDL_GetBooleanProperty(SDL_GetJoystickProperties(gJoystick), SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN, false))
+					{
+
+					}
+					if (!SDL_IsJoystickHaptic(gJoystick))
+					{
+						SDL_Log("Warning: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
+					}
+					else
+					{
+						gJoyHaptic = SDL_OpenHapticFromJoystick(gJoystick);
+						if (gJoyHaptic == NULL)
+						{
+							SDL_Log("Warning: Unable to get joystick haptics! SDL Error: %s\n", SDL_GetError());
+						}
+						else
+						{
+							if (!SDL_InitHapticRumble(gJoyHaptic))
+							{
+								SDL_Log("Warning: Unable to initialize haptic rumble! SDL Error: %s\n", SDL_GetError());
+							}
+						}
+					}
+				}
+			}
 		}
 #elif __linux__
 		if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
@@ -576,7 +622,6 @@ bool loadMedia()
 			success = false;
 		}
 	}
-
 	if (!gButtonSpriteSheetTexture.loadFromFile(load->Path("button.png")))
 	{
 		SDL_Log("Failed to load button sprite texture!\n");
@@ -621,6 +666,11 @@ bool loadMedia()
 		SDL_Log("Failed to load right texture!\n");
 		success = false;
 	}
+	if (!gSplashTexture.loadFromFile(load->Path("splash.png")))
+	{
+		SDL_Log("Failed to load splash texture!\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -655,6 +705,22 @@ void close()
 	gDownTexture.free();
 	gLeftTexture.free();
 	gRightTexture.free();
+	gSplashTexture.free();
+	if (gGameController != NULL)
+	{
+		SDL_CloseGamepad(gGameController);
+	}
+	if (gJoyHaptic != NULL)
+	{
+		SDL_CloseHaptic(gJoyHaptic);
+	}
+	if (gJoystick != NULL)
+	{
+		SDL_CloseJoystick(gJoystick);
+	}
+	gGameController = NULL;
+	gJoystick = NULL;
+	gJoyHaptic = NULL;
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -767,6 +833,23 @@ int main(int argc, char* argv[])
 					if (e.type == SDL_QUIT)
 #endif
 						quit = true;
+					else if (e.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)
+					{
+						if (gGameController != NULL)
+						{
+							if (!SDL_RumbleGamepad(gGameController, 0xFFFF * 3 / 4, 0xFFFF * 3 / 4, 500))
+							{
+								SDL_Log("Warning: Unable to play game controller rumble! %s\n", SDL_GetError());
+							}
+						}
+						else if (gJoyHaptic != NULL)
+						{
+							if (!SDL_PlayHapticRumble(gJoyHaptic, 0.75, 500))
+							{
+								SDL_Log("Warning: Unable to play haptic rumble! %s\n", SDL_GetError());
+							}
+						}
+					}
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_AXIS_MOTION)
 #elif __linux__
@@ -1101,6 +1184,8 @@ int main(int argc, char* argv[])
 					joystickAngle = 0;
 				}
 				gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, joystickAngle);
+
+				//gSplashTexture.render(0, 0);
 
 				SDL_RenderPresent(gRenderer);
 
