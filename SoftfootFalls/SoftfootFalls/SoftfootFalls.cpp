@@ -982,7 +982,11 @@ int main(int argc, char* argv[])
 					gButtons[i].render();
 				}
 
+#ifdef _WIN32
 				const bool* currentKeyStates = SDL_GetKeyboardState(NULL);
+#elif __linux__
+				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+#endif
 				if (currentKeyStates[SDL_SCANCODE_UP])
 				{
 					currentTexture = &gUpTexture;
