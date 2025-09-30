@@ -22,6 +22,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_mixer.h>
 #endif
 #include "Load.h"
 
@@ -157,7 +158,11 @@ SDL_Haptic* gJoyHaptic = NULL;
 //MIX_Audio* gHigh = NULL;
 //MIX_Audio* gMedium = NULL;
 //MIX_Audio* gLow = NULL;
+//#ifdef _WIN32
 static SDL_AudioStream* stream = NULL;
+//#elif __linux__
+//static SDL_AudioFormat stream;
+//#endif
 static int current_sine_sample = 0;
 
 
@@ -563,6 +568,7 @@ bool init()
 				SDL_Log("SDL_ttf could not initialize! SDL_ttf Error: %s\n", SDL_GetError());
 				success = false;
 			}
+#ifdef _WIN32
 			if (!MIX_Init())
 			{
 				printf("MIX_Init failed");
@@ -594,6 +600,13 @@ bool init()
 			}
 			/* SDL_OpenAudioDeviceStream starts the device paused. You have to tell it to start! */
 			SDL_ResumeAudioStreamDevice(stream);
+#elif __linux__
+			if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+			{
+				printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+				success = false;
+			}
+#endif
 			gScreenSurface = SDL_GetWindowSurface(gWindow);
 		}
 	}
@@ -872,7 +885,11 @@ void close()
 	gWindow = NULL;
 	gRenderer = NULL;
 	TTF_Quit();
+#ifdef _WIN32
 	MIX_Quit();
+#elif __linux__
+	Mix_Quit();
+#endif
 	SDL_Quit();
 }
 
@@ -970,6 +987,7 @@ int main(int argc, char* argv[])
 			int yDir = 0;
 			while (!quit)
 			{
+#ifdef _WIN32
 				const int minimum_audio = (8000 * sizeof(float)) / 2;  /* 8000 float samples per second. Half of that. */
 				if (SDL_GetAudioStreamQueued(stream) < minimum_audio) {
 					static float samples[512];  /* this will feed 512 samples each frame until we get to our maximum. */
@@ -989,6 +1007,48 @@ int main(int argc, char* argv[])
 					/* feed the new data to the stream. It will queue at the end, and trickle out as the hardware needs more data. */
 					SDL_PutAudioStreamData(stream, samples, sizeof(samples));
 				}
+#elif __linux__
+				SDL_AudioFormat src_format = AUDIO_S16;
+				Uint8 src_channels = 1;
+				int src_rate = 22050;
+				SDL_AudioFormat dst_format = AUDIO_F32;
+				Uint8 dst_channels = 2;
+				int dst_rate = 48000;
+				stream = SDL_NewAudioStream(src_format, src_channels, src_rate, dst_format, dst_channels, dst_rate);
+				if (stream == NULL) {
+					fprintf(stderr, "Failed to create audio stream: %s\n", SDL_GetError());
+					SDL_Quit();
+					return 1;
+				}
+				const int num_src_samples = 1024;
+				Sint16 src_audio_buffer[num_src_samples];
+				for (int i = 0; i < num_src_samples; ++i)
+				{
+					src_audio_buffer[i] = (Sint16)(30000 * sin(i * M_PI / 100.0));
+				}
+				int put_result = SDL_AudioStreamPut(stream, src_audio_buffer, num_src_samples * sizeof(Sint16));
+				if (put_result == -1)
+				{
+					fprintf(stderr, "Failed to put data into audio stream: %s\n", SDL_GetError());
+					SDL_FreeAudioStream(stream);
+					SDL_Quit();
+					return 1;
+				}
+				//printf("Put %d bytes of source audio into the stream.\n", num_src_samples * sizeof(Sint16));
+				const int num_dst_samples_estimate = (int)(num_src_samples * (double)dst_rate / src_rate * dst_channels / src_channels);
+				float dst_audio_buffer[num_dst_samples_estimate];
+				int available_bytes = SDL_AudioStreamAvailable(stream);
+				//printf("Available converted bytes in stream: %d\n", available_bytes);
+				int get_result = SDL_AudioStreamGet(stream, dst_audio_buffer, available_bytes);
+				if (get_result == -1)
+				{
+					fprintf(stderr, "Failed to get data from audio stream: %s\n", SDL_GetError());
+					SDL_FreeAudioStream(stream);
+					SDL_Quit();
+					return 1;
+				}
+				//printf("Got %d bytes of converted audio from the stream.\n", get_result);
+#endif
 				timer->Update();
 				while (SDL_PollEvent(&e) != 0)
 				{
