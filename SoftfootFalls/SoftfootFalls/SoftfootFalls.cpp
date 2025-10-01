@@ -130,11 +130,12 @@ public:
 	static const int DOT_VEL = 10;
 	Dot();
 	void handleEvent(SDL_Event& e);
-	void move();
+	void move(SDL_Rect& wall);
 	void render();
 private:
 	int mPosX, mPosY;
 	int mVelX, mVelY;
+	SDL_Rect mCollider;
 };
 
 bool init();
@@ -142,6 +143,7 @@ bool loadMedia();
 void close();
 SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
+bool checkCollision(SDL_Rect a, SDL_Rect b);
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
@@ -440,6 +442,8 @@ Dot::Dot()
 {
 	mPosX = 0;
 	mPosY = 0;
+	mCollider.w = DOT_WIDTH;
+	mCollider.h = DOT_HEIGHT;
 	mVelX = 0;
 	mVelY = 0;
 }
@@ -468,17 +472,21 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move()
+void Dot::move(SDL_Rect& wall)
 {
 	mPosX += mVelX;
-	if ((mPosX < 0) || (mPosX + DOT_WIDTH > SCREEN_WIDTH))
+	mCollider.x = mPosX;
+	if ((mPosX < 0) || (mPosX + DOT_WIDTH > SCREEN_WIDTH) || checkCollision(mCollider, wall))
 	{
 		mPosX -= mVelX;
+		mCollider.x = mPosX;
 	}
 	mPosY += mVelY;
-	if ((mPosY < 0) || (mPosY + DOT_HEIGHT > SCREEN_HEIGHT))
+	mCollider.y = mPosY;
+	if ((mPosY < 0) || (mPosY + DOT_HEIGHT > SCREEN_HEIGHT) || checkCollision(mCollider, wall))
 	{
 		mPosY -= mVelY;
+		mCollider.y = mPosY;
 	}
 }
 
@@ -1138,6 +1146,43 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
 	return newTexture;
 }
 
+bool checkCollision(SDL_Rect a, SDL_Rect b)
+{
+	int leftA, leftB;
+	int rightA, rightB;
+	int topA, topB;
+	int bottomA, bottomB;
+
+	leftA = a.x;
+	rightA = a.x + a.w;
+	topA = a.y;
+	bottomA = a.y + a.h;
+
+	leftB = b.x;
+	rightB = b.x + b.w;
+	topB = b.y;
+	bottomB = b.y + b.h;
+
+	if (bottomA <= topB)
+	{
+		return false;
+	}
+	if (topA >= bottomB)
+	{
+		return false;
+	}
+	if (rightA <= leftB)
+	{
+		return false;
+	}
+	if (leftA >= rightB)
+	{
+		return false;
+	}
+	
+	return true;
+}
+
 int main(int argc, char* argv[])
 {
     Clock* clock = new Clock();
@@ -1181,6 +1226,12 @@ int main(int argc, char* argv[])
 			int countedFrames = 0;
 			fpsTimer.start();
 			Dot dot;
+			SDL_FRect fwall;
+			SDL_Rect wall;
+			wall.x = 300;
+			wall.y = 40;
+			wall.w = 40;
+			wall.h = 400;
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1668,7 +1719,13 @@ int main(int argc, char* argv[])
 				//gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
 				gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 
-				dot.move();
+				dot.move(wall);
+				SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
+				fwall.x = (float)wall.x;
+				fwall.y = (float)wall.y;
+				fwall.w = (float)wall.w;
+				fwall.h = (float)wall.h;
+				SDL_RenderRect(gRenderer, &fwall);
 				dot.render();
 
 				SDL_RenderPresent(gRenderer);
