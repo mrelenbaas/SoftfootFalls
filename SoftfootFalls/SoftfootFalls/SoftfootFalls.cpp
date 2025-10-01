@@ -101,6 +101,24 @@ private:
 	LButtonSprite mCurrentSprite;
 };
 
+class LTimer
+{
+public:
+	LTimer();
+	void start();
+	void stop();
+	void pause();
+	void unpause();
+	Uint64 getTicks();
+	bool isStarted();
+	bool isPaused();
+private:
+	Uint64 mStartTicks;
+	Uint64 mPausedTicks;
+	bool mPaused;
+	bool mStarted;
+};
+
 bool init();
 bool loadMedia();
 void close();
@@ -167,6 +185,8 @@ static SDL_AudioStream* stream = NULL;
 static int current_sine_sample = 0;
 LTexture gTimeTextTexture;
 LTexture gPromptTextTexture;
+LTexture gPausePromptTexture;
+LTexture gStartPromptTexture;
 
 
 
@@ -395,6 +415,77 @@ void LButton::handleEvent(SDL_Event* e)
 void LButton::render()
 {
 	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
+}
+
+LTimer::LTimer()
+{
+	mStartTicks = 0;
+	mPausedTicks = 0;
+	mPaused = false;
+	mStarted = false;
+}
+
+void LTimer::start()
+{
+	mStarted = true;
+	mPaused = false;
+	mStartTicks = SDL_GetTicks();
+	mPausedTicks = 0;
+}
+
+void LTimer::stop()
+{
+	mStarted = false;
+	mPaused = false;
+	mStartTicks = 0;
+	mPausedTicks = 0;
+}
+
+void LTimer::pause()
+{
+	if (mStarted && !mPaused)
+	{
+		mPaused = true;
+		mPausedTicks = SDL_GetTicks() - mStartTicks;
+		mStartTicks = 0;
+	}
+}
+
+void LTimer::unpause()
+{
+	if (mStarted && mPaused)
+	{
+		mPaused = false;
+		mStartTicks = SDL_GetTicks() - mPausedTicks;
+		mPausedTicks = 0;
+	}
+}
+
+Uint64 LTimer::getTicks()
+{
+	Uint64 time = 0;
+	if (mStarted)
+	{
+		if (mPaused)
+		{
+			time = mPausedTicks;
+		}
+		else
+		{
+			time = SDL_GetTicks() - mStartTicks;
+		}
+	}
+	return time;
+}
+
+bool LTimer::isStarted()
+{
+	return mStarted;
+}
+
+bool LTimer::isPaused()
+{
+	return mPaused && mStarted;
 }
 
 bool init()
@@ -808,6 +899,18 @@ bool loadMedia()
 		success = false;
 	}*/
 
+	SDL_Color textColor = { 0, 0, 0, 255 };
+	if (!gStartPromptTexture.loadFromRenderedText("Press S to Start or Stop the Timer", textColor))
+	{
+		SDL_Log("Unable to render start/stop prompt texture!\n");
+		success = false;
+	}
+	if (!gPausePromptTexture.loadFromRenderedText("Press P to Pause or Unpause the Timer", textColor))
+	{
+		SDL_Log("Unable to render pause/unpause prompt texture!\n");
+		success = false;
+	}
+
 	delete load;
 	return success;
 }
@@ -884,6 +987,8 @@ void close()
 	//gMusic = NULL;
 	gTimeTextTexture.free();
 	gPromptTextTexture.free();
+	gStartPromptTexture.free();
+	gPausePromptTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -959,7 +1064,7 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
 int main(int argc, char* argv[])
 {
     Clock* clock = new Clock();
-	Timer* timer = new Timer(Timer::Print, 1);
+	Timer* myTimer = new Timer(Timer::Print, 1);
 
 	if (!init())
 	{
@@ -993,6 +1098,7 @@ int main(int argc, char* argv[])
 			SDL_Color textColor = { 0, 0, 0, 255 };
 			Uint64 startTime = 0;
 			std::stringstream timeText;
+			LTimer timer;
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1057,7 +1163,7 @@ int main(int argc, char* argv[])
 				}
 				//printf("Got %d bytes of converted audio from the stream.\n", get_result);
 #endif
-				timer->Update();
+				myTimer->Update();
 				while (SDL_PollEvent(&e) != 0)
 				{
 #ifdef _WIN32
@@ -1154,6 +1260,14 @@ int main(int argc, char* argv[])
 						case SDLK_p:
 #endif
 							startTime = SDL_GetTicks();
+							if (timer.isPaused())
+							{
+								timer.unpause();
+							}
+							else
+							{
+								timer.pause();
+							}
 							break;
 #ifdef _WIN32
 						case SDLK_Q:
@@ -1193,6 +1307,14 @@ int main(int argc, char* argv[])
 						case SDLK_s:
 #endif
 							g -= 32;
+							if (timer.isStarted())
+							{
+								timer.stop();
+							}
+							else
+							{
+								timer.start();
+							}
 							break;
 #ifdef _WIN32
 						case SDLK_D:
@@ -1440,13 +1562,16 @@ int main(int argc, char* argv[])
 				//gSplashTexture.render(0, 0);
 
 				timeText.str("");
-				timeText << "TIME: " << SDL_GetTicks() - startTime;
+				//timeText << "TIME: " << SDL_GetTicks() - startTime;
+				timeText << "TIME: " << (timer.getTicks() / 1000.f);
 				if (!gTimeTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
 				{
 					SDL_Log("Unable to render time texture!\n");
 				}
-				gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
-				gTimeTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gPromptTextTexture.getHeight()) / 2);
+				//gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
+				gStartPromptTexture.render((SCREEN_WIDTH - gStartPromptTexture.getWidth()) / 2, 0);
+				gPausePromptTexture.render((SCREEN_WIDTH - gPausePromptTexture.getWidth()) / 2, gStartPromptTexture.getHeight());
+				gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
 
 
 				SDL_RenderPresent(gRenderer);
@@ -1461,7 +1586,7 @@ int main(int argc, char* argv[])
 	}
 	
 	close();
-	delete timer;
+	delete myTimer;
     delete clock;
     return 0;
 }
