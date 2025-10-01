@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <vector>
 
 #include "Print.h"
 #include "Time.h"
@@ -127,15 +128,17 @@ class Dot
 public:
 	static const int DOT_WIDTH = 20;
 	static const int DOT_HEIGHT = 20;
-	static const int DOT_VEL = 10;
-	Dot();
+	static const int DOT_VEL = 1;
+	Dot(int x, int y);
 	void handleEvent(SDL_Event& e);
-	void move(SDL_Rect& wall);
+	void move(std::vector<SDL_Rect>& otherColliders);
 	void render();
+	std::vector<SDL_Rect>& getColliders();
 private:
 	int mPosX, mPosY;
 	int mVelX, mVelY;
-	SDL_Rect mCollider;
+	std::vector<SDL_Rect> mColliders;
+	void shiftColliders();
 };
 
 bool init();
@@ -143,7 +146,7 @@ bool loadMedia();
 void close();
 SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
-bool checkCollision(SDL_Rect a, SDL_Rect b);
+bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b);
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
@@ -438,16 +441,58 @@ void LButton::render()
 	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
 }
 
-Dot::Dot()
+Dot::Dot(int x, int y)
 {
-	mPosX = 0;
-	mPosY = 0;
-	mCollider.x = 0;
-	mCollider.y = 0;
-	mCollider.w = DOT_WIDTH;
-	mCollider.h = DOT_HEIGHT;
+	mPosX = x;
+	mPosY = y;
+	mColliders.resize(11);
 	mVelX = 0;
 	mVelY = 0;
+	mColliders[0].x = 0;
+	mColliders[0].y = 0;
+	mColliders[0].w = 6;
+	mColliders[0].h = 1;
+	mColliders[1].x = 0;
+	mColliders[1].y = 0;
+	mColliders[1].w = 10;
+	mColliders[1].h = 1;
+	mColliders[2].x = 0;
+	mColliders[2].y = 0;
+	mColliders[2].w = 14;
+	mColliders[2].h = 1;
+	mColliders[3].x = 0;
+	mColliders[3].y = 0;
+	mColliders[3].w = 16;
+	mColliders[3].h = 2;
+	mColliders[4].x = 0;
+	mColliders[4].y = 0;
+	mColliders[4].w = 18;
+	mColliders[4].h = 2;
+	mColliders[5].x = 0;
+	mColliders[5].y = 0;
+	mColliders[5].w = 20;
+	mColliders[5].h = 6;
+	mColliders[6].x = 0;
+	mColliders[6].y = 0;
+	mColliders[6].w = 18;
+	mColliders[6].h = 2;
+	mColliders[7].x = 0;
+	mColliders[7].y = 0;
+	mColliders[7].w = 16;
+	mColliders[7].h = 2;
+	mColliders[8].x = 0;
+	mColliders[8].y = 0;
+	mColliders[8].w = 14;
+	mColliders[8].h = 1;
+	mColliders[9].x = 0;
+	mColliders[9].y = 0;
+	mColliders[9].w = 10;
+	mColliders[9].h = 1;
+	mColliders[10].x = 0;
+	mColliders[10].y = 0;
+	mColliders[10].w = 6;
+	mColliders[10].h = 1;
+	shiftColliders();
 }
 
 void Dot::handleEvent(SDL_Event& e)
@@ -490,27 +535,43 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move(SDL_Rect& wall)
+void Dot::move(std::vector<SDL_Rect>& otherColliders)
 {
 	mPosX += mVelX;
-	mCollider.x = mPosX;
-	if ((mPosX < 0) || (mPosX + DOT_WIDTH > SCREEN_WIDTH) || checkCollision(mCollider, wall))
+	shiftColliders();
+	if ((mPosX < 0) || (mPosX + DOT_WIDTH > SCREEN_WIDTH) || checkCollision(mColliders, otherColliders))
 	{
 		mPosX -= mVelX;
-		mCollider.x = mPosX;
+		shiftColliders();
 	}
 	mPosY += mVelY;
-	mCollider.y = mPosY;
-	if ((mPosY < 0) || (mPosY + DOT_HEIGHT > SCREEN_HEIGHT) || checkCollision(mCollider, wall))
+	shiftColliders();
+	if ((mPosY < 0) || (mPosY + DOT_HEIGHT > SCREEN_HEIGHT) || checkCollision(mColliders, otherColliders))
 	{
 		mPosY -= mVelY;
-		mCollider.y = mPosY;
+		shiftColliders();
 	}
 }
 
 void Dot::render()
 {
 	gDotTexture.render(mPosX, mPosY);
+}
+
+void Dot::shiftColliders()
+{
+	int r = 0;
+	for (int set = 0; set < mColliders.size(); ++set)
+	{
+		mColliders[set].x = mPosX + (DOT_WIDTH - mColliders[set].w) / 2;
+		mColliders[set].y = mPosY + r;
+		r += mColliders[set].h;
+	}
+}
+
+std::vector<SDL_Rect>& Dot::getColliders()
+{
+	return mColliders;
 }
 
 LTimer::LTimer()
@@ -1164,41 +1225,34 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
 	return newTexture;
 }
 
-bool checkCollision(SDL_Rect a, SDL_Rect b)
+bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b)
 {
 	int leftA, leftB;
 	int rightA, rightB;
 	int topA, topB;
 	int bottomA, bottomB;
 
-	leftA = a.x;
-	rightA = a.x + a.w;
-	topA = a.y;
-	bottomA = a.y + a.h;
+	for (int Abox = 0; Abox < a.size(); Abox++)
+	{
+		leftA = a[Abox].x;
+		rightA = a[Abox].x + a[Abox].w;
+		topA = a[Abox].y;
+		bottomA = a[Abox].y + a[Abox].h;
 
-	leftB = b.x;
-	rightB = b.x + b.w;
-	topB = b.y;
-	bottomB = b.y + b.h;
-
-	if (bottomA <= topB)
-	{
-		return false;
-	}
-	if (topA >= bottomB)
-	{
-		return false;
-	}
-	if (rightA <= leftB)
-	{
-		return false;
-	}
-	if (leftA >= rightB)
-	{
-		return false;
+		for (int Bbox = 0; Bbox < b.size(); Bbox++)
+		{
+			leftB = b[Bbox].x;
+			rightB = b[Bbox].x + b[Bbox].w;
+			topB = b[Bbox].y;
+			bottomB = b[Bbox].y + b[Bbox].h;
+			if (((bottomA <= topB) || (topA >= bottomB) || (rightA <= leftB) || (leftA >= rightB)) == false)
+			{
+				return true;
+			}
+		}
 	}
 	
-	return true;
+	return false;
 }
 
 int main(int argc, char* argv[])
@@ -1243,7 +1297,8 @@ int main(int argc, char* argv[])
 			LTimer capTimer;
 			int countedFrames = 0;
 			fpsTimer.start();
-			Dot dot;
+			Dot dot(0, 0);
+			Dot otherDot(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4);
 #ifdef _WIN32
 			SDL_FRect fwall;
 #elif __linux__
@@ -1741,18 +1796,19 @@ int main(int argc, char* argv[])
 				//gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
 				gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 
-				dot.move(wall);
+				dot.move(otherDot.getColliders());
 				SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-				fwall.x = (float)wall.x;
-				fwall.y = (float)wall.y;
-				fwall.w = (float)wall.w;
-				fwall.h = (float)wall.h;
-#ifdef _WIN32
-				SDL_RenderRect(gRenderer, &fwall);
-#elif __linux__
-				SDL_RenderFillRect(gRenderer, &fwall);
-#endif
+//				fwall.x = (float)wall.x;
+//				fwall.y = (float)wall.y;
+//				fwall.w = (float)wall.w;
+//				fwall.h = (float)wall.h;
+//#ifdef _WIN32
+//				SDL_RenderRect(gRenderer, &fwall);
+//#elif __linux__
+//				SDL_RenderFillRect(gRenderer, &fwall);
+//#endif
 				dot.render();
+				otherDot.render();
 
 				SDL_RenderPresent(gRenderer);
 
