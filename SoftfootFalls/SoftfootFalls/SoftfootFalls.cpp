@@ -5,6 +5,7 @@
 #include <chrono>
 #include <functional>
 #include <string>
+#include <sstream>
 #include <cmath>
 
 #include "Print.h"
@@ -164,6 +165,8 @@ static SDL_AudioStream* stream = NULL;
 //static SDL_AudioFormat stream;
 //#endif
 static int current_sine_sample = 0;
+LTexture gTimeTextTexture;
+LTexture gPromptTextTexture;
 
 
 
@@ -713,7 +716,7 @@ bool loadMedia()
 	else
 	{
 		SDL_Color textColor = { 0, 0, 0, 0 };
-		if (!gTextTexture.loadFromRenderedText("The quick brown fox jumps over the lazy dog", textColor))
+		if (!gTextTexture.loadFromRenderedText("Press Enter to reset timer", textColor))
 		{
 			SDL_Log("Failed to render text texture!\n");
 			success = false;
@@ -879,6 +882,8 @@ void close()
 	//gLow = NULL;
 	//MIX_DestroyMixer(gMusic);
 	//gMusic = NULL;
+	gTimeTextTexture.free();
+	gPromptTextTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -985,6 +990,9 @@ int main(int argc, char* argv[])
 			LTexture* currentTexture;
 			int xDir = 0;
 			int yDir = 0;
+			SDL_Color textColor = { 0, 0, 0, 255 };
+			Uint64 startTime = 0;
+			std::stringstream timeText;
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1140,6 +1148,13 @@ int main(int argc, char* argv[])
 						switch (e.key.keysym.sym)
 #endif
 						{
+#ifdef _WIN32
+						case SDLK_P:
+#elif __linux__
+						case SDLK_p:
+#endif
+							startTime = SDL_GetTicks();
+							break;
 #ifdef _WIN32
 						case SDLK_Q:
 #elif __linux__
@@ -1423,6 +1438,16 @@ int main(int argc, char* argv[])
 				gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, joystickAngle);
 
 				//gSplashTexture.render(0, 0);
+
+				timeText.str("");
+				timeText << "TIME: " << SDL_GetTicks() - startTime;
+				if (!gTimeTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
+				{
+					SDL_Log("Unable to render time texture!\n");
+				}
+				gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
+				gTimeTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gPromptTextTexture.getHeight()) / 2);
+
 
 				SDL_RenderPresent(gRenderer);
 
