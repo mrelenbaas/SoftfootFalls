@@ -122,6 +122,21 @@ private:
 	bool mStarted;
 };
 
+class Dot
+{
+public:
+	static const int DOT_WIDTH = 20;
+	static const int DOT_HEIGHT = 20;
+	static const int DOT_VEL = 10;
+	Dot();
+	void handleEvent(SDL_Event& e);
+	void move();
+	void render();
+private:
+	int mPosX, mPosY;
+	int mVelX, mVelY;
+};
+
 bool init();
 bool loadMedia();
 void close();
@@ -191,6 +206,7 @@ LTexture gPromptTextTexture;
 LTexture gPausePromptTexture;
 LTexture gStartPromptTexture;
 LTexture gFPSTextTexture;
+LTexture gDotTexture;
 
 
 LTexture::LTexture()
@@ -418,6 +434,57 @@ void LButton::handleEvent(SDL_Event* e)
 void LButton::render()
 {
 	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
+}
+
+Dot::Dot()
+{
+	mPosX = 0;
+	mPosY = 0;
+	mVelX = 0;
+	mVelY = 0;
+}
+
+void Dot::handleEvent(SDL_Event& e)
+{
+	if (e.type == SDL_EVENT_KEY_DOWN && e.key.repeat == 0)
+	{
+		switch (e.key.key)
+		{
+		case SDLK_UP: mVelY -= DOT_VEL; break;
+		case SDLK_DOWN: mVelY += DOT_VEL; break;
+		case SDLK_LEFT: mVelX -= DOT_VEL; break;
+		case SDLK_RIGHT: mVelX += DOT_VEL; break;
+		}
+	}
+	else if (e.type == SDL_EVENT_KEY_UP && e.key.repeat == 0)
+	{
+		switch (e.key.key)
+		{
+		case SDLK_UP: mVelY += DOT_VEL; break;
+		case SDLK_DOWN: mVelY -= DOT_VEL; break;
+		case SDLK_LEFT: mVelX += DOT_VEL; break;
+		case SDLK_RIGHT: mVelX -= DOT_VEL; break;
+		}
+	}
+}
+
+void Dot::move()
+{
+	mPosX += mVelX;
+	if ((mPosX < 0) || (mPosX + DOT_WIDTH > SCREEN_WIDTH))
+	{
+		mPosX -= mVelX;
+	}
+	mPosY += mVelY;
+	if ((mPosY < 0) || (mPosY + DOT_HEIGHT > SCREEN_HEIGHT))
+	{
+		mPosY -= mVelY;
+	}
+}
+
+void Dot::render()
+{
+	gDotTexture.render(mPosX, mPosY);
 }
 
 LTimer::LTimer()
@@ -913,6 +980,11 @@ bool loadMedia()
 		SDL_Log("Unable to render pause/unpause prompt texture!\n");
 		success = false;
 	}
+	if (!gDotTexture.loadFromFile(load->Path("dot.bmp")))
+	{
+		SDL_Log("Failed to load dot texture!\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -993,6 +1065,7 @@ void close()
 	gStartPromptTexture.free();
 	gPausePromptTexture.free();
 	gFPSTextTexture.free();
+	gDotTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -1107,6 +1180,7 @@ int main(int argc, char* argv[])
 			LTimer capTimer;
 			int countedFrames = 0;
 			fpsTimer.start();
+			Dot dot;
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1383,6 +1457,7 @@ int main(int argc, char* argv[])
 					{
 						gButtons[i].handleEvent(&e);
 					}
+					dot.handleEvent(e);
 				}
 				SDL_RenderClear(gRenderer);
 				SDL_Rect stretchRect;
@@ -1592,6 +1667,9 @@ int main(int argc, char* argv[])
 				//gPausePromptTexture.render((SCREEN_WIDTH - gPausePromptTexture.getWidth()) / 2, gStartPromptTexture.getHeight());
 				//gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
 				gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
+
+				dot.move();
+				dot.render();
 
 				SDL_RenderPresent(gRenderer);
 
