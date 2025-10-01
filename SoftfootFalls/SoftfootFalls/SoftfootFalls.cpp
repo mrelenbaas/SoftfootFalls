@@ -39,6 +39,9 @@ const int BUTTON_WIDTH = 300;
 const int BUTTON_HEIGHT = 200;
 const int TOTAL_BUTTONS = 4;
 
+const int SCREEN_FPS = 60;
+const int SCREEN_TICK_PER_FRAME = 1000 / SCREEN_FPS;
+
 const int JOYSTICK_DEAD_ZONE = 8000;
 #ifdef _WIN32
 const double M_PI = 3.14159265359;
@@ -1101,6 +1104,7 @@ int main(int argc, char* argv[])
 			std::stringstream timeText;
 			LTimer timer;
 			LTimer fpsTimer;
+			LTimer capTimer;
 			int countedFrames = 0;
 			fpsTimer.start();
 			while (!quit)
@@ -1168,6 +1172,7 @@ int main(int argc, char* argv[])
 				//printf("Got %d bytes of converted audio from the stream.\n", get_result);
 #endif
 				myTimer->Update();
+				capTimer.start();
 				while (SDL_PollEvent(&e) != 0)
 				{
 #ifdef _WIN32
@@ -1597,6 +1602,12 @@ int main(int argc, char* argv[])
 				}
 
 				++countedFrames;
+
+				int frameTicks = capTimer.getTicks();
+				if (frameTicks < SCREEN_TICK_PER_FRAME)
+				{
+					SDL_Delay(SCREEN_TICK_PER_FRAME - frameTicks);
+				}
 			}
 		}
 	}
