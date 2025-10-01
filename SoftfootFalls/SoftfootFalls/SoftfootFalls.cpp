@@ -442,6 +442,8 @@ Dot::Dot()
 {
 	mPosX = 0;
 	mPosY = 0;
+	mCollider.x = 0;
+	mCollider.y = 0;
 	mCollider.w = DOT_WIDTH;
 	mCollider.h = DOT_HEIGHT;
 	mVelX = 0;
@@ -450,9 +452,17 @@ Dot::Dot()
 
 void Dot::handleEvent(SDL_Event& e)
 {
+#ifdef _WIN32
 	if (e.type == SDL_EVENT_KEY_DOWN && e.key.repeat == 0)
+#elif __linux__
+	if (e.type == SDL_KEYDOWN && e.key.repeat == 0)
+#endif
 	{
+#ifdef _WIN32
 		switch (e.key.key)
+#elif __linux__
+		switch (e.key.keysym.sym)
+#endif
 		{
 		case SDLK_UP: mVelY -= DOT_VEL; break;
 		case SDLK_DOWN: mVelY += DOT_VEL; break;
@@ -460,9 +470,17 @@ void Dot::handleEvent(SDL_Event& e)
 		case SDLK_RIGHT: mVelX += DOT_VEL; break;
 		}
 	}
+#ifdef _WIN32
 	else if (e.type == SDL_EVENT_KEY_UP && e.key.repeat == 0)
+#elif __linux__
+	else if (e.type == SDL_KEYUP && e.key.repeat == 0)
+#endif
 	{
+#ifdef _WIN32
 		switch (e.key.key)
+#elif __linux__
+		switch (e.key.keysym.sym)
+#endif
 		{
 		case SDLK_UP: mVelY += DOT_VEL; break;
 		case SDLK_DOWN: mVelY -= DOT_VEL; break;
@@ -1226,7 +1244,11 @@ int main(int argc, char* argv[])
 			int countedFrames = 0;
 			fpsTimer.start();
 			Dot dot;
+#ifdef _WIN32
 			SDL_FRect fwall;
+#elif __linux__
+			SDL_Rect fwall;
+#endif
 			SDL_Rect wall;
 			wall.x = 300;
 			wall.y = 40;
@@ -1725,7 +1747,11 @@ int main(int argc, char* argv[])
 				fwall.y = (float)wall.y;
 				fwall.w = (float)wall.w;
 				fwall.h = (float)wall.h;
+#ifdef _WIN32
 				SDL_RenderRect(gRenderer, &fwall);
+#elif __linux__
+				SDL_RenderFillRect(gRenderer, &fwall);
+#endif
 				dot.render();
 
 				SDL_RenderPresent(gRenderer);
