@@ -187,7 +187,7 @@ LTexture gTimeTextTexture;
 LTexture gPromptTextTexture;
 LTexture gPausePromptTexture;
 LTexture gStartPromptTexture;
-
+LTexture gFPSTextTexture;
 
 
 LTexture::LTexture()
@@ -989,6 +989,7 @@ void close()
 	gPromptTextTexture.free();
 	gStartPromptTexture.free();
 	gPausePromptTexture.free();
+	gFPSTextTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -1099,6 +1100,9 @@ int main(int argc, char* argv[])
 			Uint64 startTime = 0;
 			std::stringstream timeText;
 			LTimer timer;
+			LTimer fpsTimer;
+			int countedFrames = 0;
+			fpsTimer.start();
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1561,18 +1565,28 @@ int main(int argc, char* argv[])
 
 				//gSplashTexture.render(0, 0);
 
+				float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
+				if (avgFPS > 2000000)
+				{
+					avgFPS = 0;
+				}
 				timeText.str("");
 				//timeText << "TIME: " << SDL_GetTicks() - startTime;
-				timeText << "TIME: " << (timer.getTicks() / 1000.f);
+				//timeText << "TIME: " << (timer.getTicks() / 1000.f);
+				timeText << "TIME: " << avgFPS;
 				if (!gTimeTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
 				{
 					SDL_Log("Unable to render time texture!\n");
 				}
+				if (!gFPSTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
+				{
+					SDL_Log("Unable to render FPS texture!\n");
+				}
 				//gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
-				gStartPromptTexture.render((SCREEN_WIDTH - gStartPromptTexture.getWidth()) / 2, 0);
-				gPausePromptTexture.render((SCREEN_WIDTH - gPausePromptTexture.getWidth()) / 2, gStartPromptTexture.getHeight());
-				gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
-
+				//gStartPromptTexture.render((SCREEN_WIDTH - gStartPromptTexture.getWidth()) / 2, 0);
+				//gPausePromptTexture.render((SCREEN_WIDTH - gPausePromptTexture.getWidth()) / 2, gStartPromptTexture.getHeight());
+				//gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
+				gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 
 				SDL_RenderPresent(gRenderer);
 
@@ -1581,6 +1595,8 @@ int main(int argc, char* argv[])
 				{
 					frame = 0;
 				}
+
+				++countedFrames;
 			}
 		}
 	}
