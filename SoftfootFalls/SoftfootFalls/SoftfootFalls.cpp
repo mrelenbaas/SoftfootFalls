@@ -1321,7 +1321,11 @@ int main(int argc, char* argv[])
 			fpsTimer.start();
 			Dot dot;
 			//Dot otherDot();
+#ifdef _WIN32
 			SDL_FRect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+#elif __linux__
+			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+#endif
 #ifdef _WIN32
 			SDL_FRect fwall;
 #elif __linux__
