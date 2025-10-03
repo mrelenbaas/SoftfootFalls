@@ -33,6 +33,9 @@
 #endif
 
 
+const int LEVEL_WIDTH = 1280;
+const int LEVEL_HEIGHT = 960;
+
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
@@ -128,17 +131,19 @@ class Dot
 public:
 	static const int DOT_WIDTH = 20;
 	static const int DOT_HEIGHT = 20;
-	static const int DOT_VEL = 1;
-	Dot(int x, int y);
+	static const int DOT_VEL = 10;
+	Dot();
 	void handleEvent(SDL_Event& e);
-	void move(std::vector<SDL_Rect>& otherColliders);
-	void render();
-	std::vector<SDL_Rect>& getColliders();
+	void move(/*std::vector<SDL_Rect>& otherColliders*/);
+	void render(int camX, int camY);
+	//std::vector<SDL_Rect>& getColliders();
+	int getPosX();
+	int getPosY();
 private:
 	int mPosX, mPosY;
 	int mVelX, mVelY;
-	std::vector<SDL_Rect> mColliders;
-	void shiftColliders();
+	//std::vector<SDL_Rect> mColliders;
+	//void shiftColliders();
 };
 
 bool init();
@@ -212,6 +217,7 @@ LTexture gPausePromptTexture;
 LTexture gStartPromptTexture;
 LTexture gFPSTextTexture;
 LTexture gDotTexture;
+LTexture gBGTexture;
 
 
 LTexture::LTexture()
@@ -441,58 +447,58 @@ void LButton::render()
 	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
 }
 
-Dot::Dot(int x, int y)
+Dot::Dot()
 {
-	mPosX = x;
-	mPosY = y;
-	mColliders.resize(11);
+	mPosX = 0;
+	mPosY = 0;
+	//mColliders.resize(11);
 	mVelX = 0;
 	mVelY = 0;
-	mColliders[0].x = 0;
-	mColliders[0].y = 0;
-	mColliders[0].w = 6;
-	mColliders[0].h = 1;
-	mColliders[1].x = 0;
-	mColliders[1].y = 0;
-	mColliders[1].w = 10;
-	mColliders[1].h = 1;
-	mColliders[2].x = 0;
-	mColliders[2].y = 0;
-	mColliders[2].w = 14;
-	mColliders[2].h = 1;
-	mColliders[3].x = 0;
-	mColliders[3].y = 0;
-	mColliders[3].w = 16;
-	mColliders[3].h = 2;
-	mColliders[4].x = 0;
-	mColliders[4].y = 0;
-	mColliders[4].w = 18;
-	mColliders[4].h = 2;
-	mColliders[5].x = 0;
-	mColliders[5].y = 0;
-	mColliders[5].w = 20;
-	mColliders[5].h = 6;
-	mColliders[6].x = 0;
-	mColliders[6].y = 0;
-	mColliders[6].w = 18;
-	mColliders[6].h = 2;
-	mColliders[7].x = 0;
-	mColliders[7].y = 0;
-	mColliders[7].w = 16;
-	mColliders[7].h = 2;
-	mColliders[8].x = 0;
-	mColliders[8].y = 0;
-	mColliders[8].w = 14;
-	mColliders[8].h = 1;
-	mColliders[9].x = 0;
-	mColliders[9].y = 0;
-	mColliders[9].w = 10;
-	mColliders[9].h = 1;
-	mColliders[10].x = 0;
-	mColliders[10].y = 0;
-	mColliders[10].w = 6;
-	mColliders[10].h = 1;
-	shiftColliders();
+	//mColliders[0].x = 0;
+	//mColliders[0].y = 0;
+	//mColliders[0].w = 6;
+	//mColliders[0].h = 1;
+	//mColliders[1].x = 0;
+	//mColliders[1].y = 0;
+	//mColliders[1].w = 10;
+	//mColliders[1].h = 1;
+	//mColliders[2].x = 0;
+	//mColliders[2].y = 0;
+	//mColliders[2].w = 14;
+	//mColliders[2].h = 1;
+	//mColliders[3].x = 0;
+	//mColliders[3].y = 0;
+	//mColliders[3].w = 16;
+	//mColliders[3].h = 2;
+	//mColliders[4].x = 0;
+	//mColliders[4].y = 0;
+	//mColliders[4].w = 18;
+	//mColliders[4].h = 2;
+	//mColliders[5].x = 0;
+	//mColliders[5].y = 0;
+	//mColliders[5].w = 20;
+	//mColliders[5].h = 6;
+	//mColliders[6].x = 0;
+	//mColliders[6].y = 0;
+	//mColliders[6].w = 18;
+	//mColliders[6].h = 2;
+	//mColliders[7].x = 0;
+	//mColliders[7].y = 0;
+	//mColliders[7].w = 16;
+	//mColliders[7].h = 2;
+	//mColliders[8].x = 0;
+	//mColliders[8].y = 0;
+	//mColliders[8].w = 14;
+	//mColliders[8].h = 1;
+	//mColliders[9].x = 0;
+	//mColliders[9].y = 0;
+	//mColliders[9].w = 10;
+	//mColliders[9].h = 1;
+	//mColliders[10].x = 0;
+	//mColliders[10].y = 0;
+	//mColliders[10].w = 6;
+	//mColliders[10].h = 1;
+	//shiftColliders();
 }
 
 void Dot::handleEvent(SDL_Event& e)
@@ -535,44 +541,54 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move(std::vector<SDL_Rect>& otherColliders)
+void Dot::move(/*std::vector<SDL_Rect>& otherColliders*/)
 {
 	mPosX += mVelX;
-	shiftColliders();
-	if ((mPosX < 0) || (mPosX + DOT_WIDTH > SCREEN_WIDTH) || checkCollision(mColliders, otherColliders))
+	//shiftColliders();
+	if ((mPosX < 0) || (mPosX + DOT_WIDTH > LEVEL_WIDTH)/* || checkCollision(mColliders, otherColliders)*/)
 	{
 		mPosX -= mVelX;
-		shiftColliders();
+		//shiftColliders();
 	}
 	mPosY += mVelY;
-	shiftColliders();
-	if ((mPosY < 0) || (mPosY + DOT_HEIGHT > SCREEN_HEIGHT) || checkCollision(mColliders, otherColliders))
+	//shiftColliders();
+	if ((mPosY < 0) || (mPosY + DOT_HEIGHT > LEVEL_HEIGHT)/* || checkCollision(mColliders, otherColliders) */ )
 	{
 		mPosY -= mVelY;
-		shiftColliders();
+		//shiftColliders();
 	}
 }
 
-void Dot::render()
+void Dot::render(int camX, int camY)
 {
-	gDotTexture.render(mPosX, mPosY);
+	gDotTexture.render(mPosX - camX, mPosY - camY);
 }
 
-void Dot::shiftColliders()
+int Dot::getPosX()
 {
-	int r = 0;
-	for (int set = 0; set < mColliders.size(); ++set)
-	{
-		mColliders[set].x = mPosX + (DOT_WIDTH - mColliders[set].w) / 2;
-		mColliders[set].y = mPosY + r;
-		r += mColliders[set].h;
-	}
+	return mPosX;
 }
 
-std::vector<SDL_Rect>& Dot::getColliders()
+int Dot::getPosY()
 {
-	return mColliders;
+	return mPosY;
 }
+
+//void Dot::shiftColliders()
+//{
+//	int r = 0;
+//	for (int set = 0; set < mColliders.size(); ++set)
+//	{
+//		mColliders[set].x = mPosX + (DOT_WIDTH - mColliders[set].w) / 2;
+//		mColliders[set].y = mPosY + r;
+//		r += mColliders[set].h;
+//	}
+//}
+
+//std::vector<SDL_Rect>& Dot::getColliders()
+//{
+//	return mColliders;
+//}
 
 LTimer::LTimer()
 {
@@ -1072,6 +1088,11 @@ bool loadMedia()
 		SDL_Log("Failed to load dot texture!\n");
 		success = false;
 	}
+	if (!gBGTexture.loadFromFile(load->Path("bg.png")))
+	{
+		SDL_Log("Failed to load background texture~\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -1153,6 +1174,7 @@ void close()
 	gPausePromptTexture.free();
 	gFPSTextTexture.free();
 	gDotTexture.free();
+	gBGTexture.free();
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -1297,8 +1319,9 @@ int main(int argc, char* argv[])
 			LTimer capTimer;
 			int countedFrames = 0;
 			fpsTimer.start();
-			Dot dot(0, 0);
-			Dot otherDot(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4);
+			Dot dot;
+			//Dot otherDot();
+			SDL_FRect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 #ifdef _WIN32
 			SDL_FRect fwall;
 #elif __linux__
@@ -1796,7 +1819,9 @@ int main(int argc, char* argv[])
 				//gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
 				gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 
-				dot.move(otherDot.getColliders());
+				dot.move();
+				camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
+				camera.y = (dot.getPosY() + Dot::DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
 				SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
 //				fwall.x = (float)wall.x;
 //				fwall.y = (float)wall.y;
@@ -1807,8 +1832,25 @@ int main(int argc, char* argv[])
 //#elif __linux__
 //				SDL_RenderFillRect(gRenderer, &fwall);
 //#endif
-				dot.render();
-				otherDot.render();
+				if (camera.x < 0)
+				{
+					camera.x = 0;
+				}
+				if (camera.y < 0)
+				{
+					camera.y = 0;
+				}
+				if (camera.x > LEVEL_WIDTH - camera.w)
+				{
+					camera.x = LEVEL_WIDTH - camera.w;
+				}
+				if (camera.y > LEVEL_HEIGHT - camera.h)
+				{
+					camera.y = LEVEL_HEIGHT - camera.h;
+				}
+				gBGTexture.render(0, 0, &camera);
+				dot.render(camera.x, camera.y);
+				//otherDot.render();
 
 				SDL_RenderPresent(gRenderer);
 
