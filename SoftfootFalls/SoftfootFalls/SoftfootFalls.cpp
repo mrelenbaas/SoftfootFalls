@@ -1336,6 +1336,7 @@ int main(int argc, char* argv[])
 			wall.y = 40;
 			wall.w = 40;
 			wall.h = 400;
+			int scrollingOffset = 0;
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1824,18 +1825,18 @@ int main(int argc, char* argv[])
 				gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 
 				dot.move();
-				camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
+				/*				fwall.x = (float)wall.x;
+								fwall.y = (float)wall.y;
+								fwall.w = (float)wall.w;
+								fwall.h = (float)wall.h;
+				#ifdef _WIN32
+								SDL_RenderRect(gRenderer, &fwall);
+				#elif __linux__
+								SDL_RenderFillRect(gRenderer, &fwall);
+				#endif*/
+				/*camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
 				camera.y = (dot.getPosY() + Dot::DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
 				SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-//				fwall.x = (float)wall.x;
-//				fwall.y = (float)wall.y;
-//				fwall.w = (float)wall.w;
-//				fwall.h = (float)wall.h;
-//#ifdef _WIN32
-//				SDL_RenderRect(gRenderer, &fwall);
-//#elif __linux__
-//				SDL_RenderFillRect(gRenderer, &fwall);
-//#endif
 				if (camera.x < 0)
 				{
 					camera.x = 0;
@@ -1851,8 +1852,15 @@ int main(int argc, char* argv[])
 				if (camera.y > LEVEL_HEIGHT - camera.h)
 				{
 					camera.y = LEVEL_HEIGHT - camera.h;
+				}*/
+				--scrollingOffset;
+				if (scrollingOffset < -gBGTexture.getWidth())
+				{
+					scrollingOffset = 0;
 				}
-				gBGTexture.render(0, 0, &camera);
+				//gBGTexture.render(0, 0, &camera);
+				gBGTexture.render(scrollingOffset, 0);
+				gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
 				dot.render(camera.x, camera.y);
 				//otherDot.render();
 
