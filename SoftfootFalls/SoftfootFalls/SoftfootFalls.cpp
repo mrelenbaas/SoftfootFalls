@@ -303,7 +303,11 @@ LTexture gGreenTexture;
 LTexture gBlueTexture;
 LTexture gShimmerTexture;
 LTexture gTileTexture;
+#ifdef _WIN32
 SDL_FRect gTileClips[TOTAL_TILE_SPRITES];
+#elif __linux__
+SDL_Rect gTileClips[TOTAL_TILE_SPRITES];
+#endif
 
 
 LTexture::LTexture()
@@ -2616,14 +2620,14 @@ int main(int argc, char* argv[])
 					gSceneTexture.render((gWindow.getWidth() - gSceneTexture.getWidth()) / 2, (gWindow.getHeight() - gSceneTexture.getHeight()) / 2);
 
 					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-					//SDL_RenderClear(gRenderer);
+					SDL_RenderClear(gRenderer);
 					for (int i = 0; i < TOTAL_TILES; ++i)
 					{
 						tileSet[i]->render(camera);
 					}
 					dot.render(camera);
 
-					SDL_RenderPresent(gWindow.getRenderer());
+					SDL_RenderPresent(gRenderer);
 				}
 
 				++frame;
