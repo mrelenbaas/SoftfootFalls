@@ -1404,9 +1404,13 @@ int main(int argc, char* argv[])
 			int scrollingOffset = 0;
 			std::string inputText = "Some Text";
 			gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
-			SDL_StartTextInput(gWindow);
-			SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 			int currentData = 0;
+			SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+#ifdef _WIN32
+			SDL_StartTextInput(gWindow);
+#elif __linux__
+			SDL_StartTextInput();
+#endif
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1698,18 +1702,35 @@ int main(int argc, char* argv[])
 							break;
 						}
 					}
+					
+#ifdef _WIN32
 					if (e.type == SDL_EVENT_KEY_DOWN)
+#elif __linux__
+					if (e.type == SDL_KEYDOWN)
+#endif
 					{
+#ifdef _WIN32
 						if (e.key.key == SDLK_BACKSPACE && inputText.length() > 0)
+#elif __linux__
+						if (e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0)
+#endif
 						{
 							inputText.pop_back();
 							renderText = true;
 						}
+#ifdef _WIN32
 						else if (e.key.key == SDLK_C && SDL_GetModState() & SDL_KMOD_CTRL)
+#elif __linux__
+						else if (e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL)
+#endif
 						{
 							SDL_SetClipboardText(inputText.c_str());
 						}
+#ifdef _WIN32
 						else if (e.key.key == SDLK_V && SDL_GetModState() & SDL_KMOD_CTRL)
+#elif __linux__
+						else if (e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL)
+#endif
 						{
 							char* tempText = SDL_GetClipboardText();
 							inputText = tempText;
@@ -1717,9 +1738,17 @@ int main(int argc, char* argv[])
 							renderText = true;
 						}
 					}
+#ifdef _WIN32
 					else if (e.type == SDL_EVENT_TEXT_INPUT)
+#elif __linux__
+					else if (e.type == SDL_TEXTINPUT)
+#endif
 					{
+#ifdef _WIN32
 						if (!(SDL_GetModState() & SDL_KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
+#elif __linux__
+						if (!(SDL_GetModState() & KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
+#endif
 						{
 							inputText += e.text.text;
 							renderText = true;
@@ -2014,7 +2043,11 @@ int main(int argc, char* argv[])
 					SDL_Delay(SCREEN_TICK_PER_FRAME - frameTicks);
 				}
 			}
+#ifdef _WIN32
 			SDL_StopTextInput(gWindow);
+#elif __linux__
+			SDL_StopTextInput();
+#endif
 		}
 	}
 	
