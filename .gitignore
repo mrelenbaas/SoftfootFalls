@@ -2,6 +2,9 @@
 *.out
 softfoot-falls
 
+# Data
+*.bin
+
 # Nano
 *.save
 

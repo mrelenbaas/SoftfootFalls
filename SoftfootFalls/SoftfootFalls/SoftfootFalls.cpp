@@ -51,6 +51,8 @@ const int JOYSTICK_DEAD_ZONE = 8000;
 const double M_PI = 3.14159265359;
 #endif
 
+const int TOTAL_DATA = 10;
+
 enum LButtonSprite
 {
 	BUTTON_SPRITE_MOUSE_OUT = 0,
@@ -219,6 +221,8 @@ LTexture gFPSTextTexture;
 LTexture gDotTexture;
 LTexture gBGTexture;
 LTexture gInputTextTexture;
+LTexture gDataTextures[TOTAL_DATA];
+Sint32 gData[TOTAL_DATA];
 
 
 LTexture::LTexture()
@@ -889,6 +893,9 @@ bool loadMedia()
 	Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
 
+	SDL_Color textColor = { 0, 0, 0, 0xFF };
+	SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = loadSurface(load->Path("press.png"), load, &success);
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = loadSurface(load->Path("up.png"), load, &success);
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = loadSurface(load->Path("down.png"), load, &success);
@@ -986,6 +993,46 @@ bool loadMedia()
 			SDL_Log("Failed to render text texture!\n");
 			success = false;
 		}
+		if (!gPromptTextTexture.loadFromRenderedText("Enter Data:", textColor))
+		{
+			SDL_Log("Failed to render prompt text!\n");
+			success = false;
+		}
+	}
+	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "r+b");
+	if (file == NULL)
+	{
+		SDL_Log("Warning: Unable to open file! SDL Error: %s\n", SDL_GetError());
+		file = SDL_IOFromFile("nums.bin", "w+b");
+		if (file != NULL)
+		{
+			SDL_Log("New file created!\n");
+			for (int i = 0; i < TOTAL_DATA; ++i)
+			{
+				gData[i] = 0;
+				SDL_WriteIO(file, &gData[i], sizeof(Sint32));
+			}
+			SDL_CloseIO(file);
+		}
+		else
+		{
+			SDL_Log("Error: Unable to create file! SDL Error: %s\n", SDL_GetError());
+			success = false;
+		}
+	}
+	else
+	{
+		SDL_Log("Reading file...!\n");
+		for (int i = 0; i < TOTAL_DATA; ++i)
+		{
+			SDL_ReadIO(file, &gData[i], sizeof(Sint32));
+		}
+		SDL_CloseIO(file);
+	}
+	gDataTextures[0].loadFromRenderedText(std::to_string(gData[0]).c_str(), highlightColor);
+	for (int i = 1; i < TOTAL_DATA; ++i)
+	{
+		gDataTextures[i].loadFromRenderedText(std::to_string(gData[i]).c_str(), textColor);
 	}
 	if (!gButtonSpriteSheetTexture.loadFromFile(load->Path("button.png")))
 	{
@@ -1073,7 +1120,7 @@ bool loadMedia()
 		success = false;
 	}*/
 
-	SDL_Color textColor = { 0, 0, 0, 255 };
+	//SDL_Color textColor = { 0, 0, 0, 255 };
 	if (!gStartPromptTexture.loadFromRenderedText("Press S to Start or Stop the Timer", textColor))
 	{
 		SDL_Log("Unable to render start/stop prompt texture!\n");
@@ -1176,6 +1223,23 @@ void close()
 	gFPSTextTexture.free();
 	gDotTexture.free();
 	gBGTexture.free();
+	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "w+b");
+	if (file != NULL)
+	{
+		for (int i = 0; i < TOTAL_DATA; ++i)
+		{
+			SDL_WriteIO(file, &gData[i], sizeof(Sint32));
+		}
+		SDL_CloseIO(file);
+	}
+	else
+	{
+		SDL_Log("Error: Unable to save file!\n", SDL_GetError());
+	}
+	for (int i = 0; i < TOTAL_DATA; ++i)
+	{
+		gDataTextures[i].free();
+	}
 
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
@@ -1341,6 +1405,8 @@ int main(int argc, char* argv[])
 			std::string inputText = "Some Text";
 			gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
 			SDL_StartTextInput(gWindow);
+			SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+			int currentData = 0;
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1598,15 +1664,33 @@ int main(int argc, char* argv[])
 							break;
 						case SDLK_UP:
 							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
+							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), textColor);
+							--currentData;
+							if (currentData < 0)
+							{
+								currentData = TOTAL_DATA - 1;
+							}
+							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
 						case SDLK_DOWN:
 							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN];
+							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), textColor);
+							++currentData;
+							if (currentData < 0)
+							{
+								currentData = TOTAL_DATA - 1;
+							}
+							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
 						case SDLK_LEFT:
 							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT];
+							--gData[currentData];
+							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
 						case SDLK_RIGHT:
 							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT];
+							++gData[currentData];
+							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
 						default:
 							//gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
@@ -1909,6 +1993,10 @@ int main(int argc, char* argv[])
 				}
 				gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
 				gInputTextTexture.render((SCREEN_WIDTH - gInputTextTexture.getWidth()) / 2, gPromptTextTexture.getHeight());
+				for (int i = 0; i < TOTAL_DATA; ++i)
+				{
+					gDataTextures[i].render((SCREEN_WIDTH - gDataTextures[i].getWidth()) / 2, gPromptTextTexture.getHeight() + gDataTextures[0].getHeight() * i);
+				}
 
 				SDL_RenderPresent(gRenderer);
 
