@@ -218,6 +218,7 @@ LTexture gStartPromptTexture;
 LTexture gFPSTextTexture;
 LTexture gDotTexture;
 LTexture gBGTexture;
+LTexture gInputTextTexture;
 
 
 LTexture::LTexture()
@@ -1337,6 +1338,9 @@ int main(int argc, char* argv[])
 			wall.w = 40;
 			wall.h = 400;
 			int scrollingOffset = 0;
+			std::string inputText = "Some Text";
+			gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
+			SDL_StartTextInput(gWindow);
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1403,6 +1407,7 @@ int main(int argc, char* argv[])
 #endif
 				myTimer->Update();
 				capTimer.start();
+				bool renderText = false;
 				while (SDL_PollEvent(&e) != 0)
 				{
 #ifdef _WIN32
@@ -1607,6 +1612,33 @@ int main(int argc, char* argv[])
 							//gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
 							gCurrentSurface = NULL;
 							break;
+						}
+					}
+					if (e.type == SDL_EVENT_KEY_DOWN)
+					{
+						if (e.key.key == SDLK_BACKSPACE && inputText.length() > 0)
+						{
+							inputText.pop_back();
+							renderText = true;
+						}
+						else if (e.key.key == SDLK_C && SDL_GetModState() & SDL_KMOD_CTRL)
+						{
+							SDL_SetClipboardText(inputText.c_str());
+						}
+						else if (e.key.key == SDLK_V && SDL_GetModState() & SDL_KMOD_CTRL)
+						{
+							char* tempText = SDL_GetClipboardText();
+							inputText = tempText;
+							SDL_free(tempText);
+							renderText = true;
+						}
+					}
+					else if (e.type == SDL_EVENT_TEXT_INPUT)
+					{
+						if (!(SDL_GetModState() & SDL_KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
+						{
+							inputText += e.text.text;
+							renderText = true;
 						}
 					}
 					for (int i = 0; i < TOTAL_BUTTONS; ++i)
@@ -1864,6 +1896,20 @@ int main(int argc, char* argv[])
 				dot.render(camera.x, camera.y);
 				//otherDot.render();
 
+				if (renderText)
+				{
+					if (inputText != "")
+					{
+						gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
+					}
+					else
+					{
+						gInputTextTexture.loadFromRenderedText("", textColor);
+					}
+				}
+				gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
+				gInputTextTexture.render((SCREEN_WIDTH - gInputTextTexture.getWidth()) / 2, gPromptTextTexture.getHeight());
+
 				SDL_RenderPresent(gRenderer);
 
 				++frame;
@@ -1880,6 +1926,7 @@ int main(int argc, char* argv[])
 					SDL_Delay(SCREEN_TICK_PER_FRAME - frameTicks);
 				}
 			}
+			SDL_StopTextInput(gWindow);
 		}
 	}
 	
