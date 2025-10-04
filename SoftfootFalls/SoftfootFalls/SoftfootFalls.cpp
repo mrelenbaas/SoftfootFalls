@@ -148,6 +148,31 @@ private:
 	//void shiftColliders();
 };
 
+class LWindow
+{
+public:
+	LWindow();
+	bool init(bool bCreateRenderer = true);
+	SDL_Renderer* getRenderer();
+	void handleEvent(SDL_Event& e);
+	void free();
+	int getWidth();
+	int getHeight();
+	SDL_Window* getWindow();
+	bool hasMouseFocus();
+	bool hasKeyboardFocus();
+	bool isMinimized();
+private:
+	SDL_Window* mWindow;
+	SDL_Renderer* mRenderer;
+	int mWidth;
+	int mHeight;
+	bool mMouseFocus;
+	bool mKeyboardFocus;
+	bool mFullScreen;
+	bool mMinimized;
+};
+
 bool init();
 bool loadMedia();
 void close();
@@ -155,7 +180,7 @@ SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b);
 
-SDL_Window* gWindow = NULL;
+LWindow gWindow;
 SDL_Renderer* gRenderer = NULL;
 SDL_Surface* gScreenSurface = NULL;
 SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
@@ -223,6 +248,7 @@ LTexture gBGTexture;
 LTexture gInputTextTexture;
 LTexture gDataTextures[TOTAL_DATA];
 Sint32 gData[TOTAL_DATA];
+LTexture gSceneTexture;
 
 
 LTexture::LTexture()
@@ -666,6 +692,156 @@ bool LTimer::isPaused()
 	return mPaused && mStarted;
 }
 
+LWindow::LWindow()
+{
+	mWindow = NULL;
+	mRenderer = NULL;
+	mMouseFocus = false;
+	mKeyboardFocus = false;
+	mFullScreen = false;
+	mMinimized = false;
+	mWidth = 0;
+	mHeight = 0;
+}
+
+bool LWindow::init(bool bCreateRenderer)
+{
+	if (bCreateRenderer)
+	{
+		if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE, &mWindow, &mRenderer))
+		{
+			return false;
+		}
+		SDL_SetRenderVSync(mRenderer, 1);
+	}
+	else
+	{
+		mWindow = SDL_CreateWindow("SDL_Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
+		if (mWindow == NULL)
+		{
+			return false;
+		}
+	}
+
+	mMouseFocus = true;
+	mKeyboardFocus = true;
+	mWidth = SCREEN_WIDTH;
+	mHeight = SCREEN_HEIGHT;
+
+	return true;
+}
+
+SDL_Renderer* LWindow::getRenderer()
+{
+	return mRenderer;
+}
+
+void LWindow::handleEvent(SDL_Event& e)
+{
+	bool updateCaption = false;
+
+	switch (e.type)
+	{
+	case SDL_EVENT_WINDOW_RESIZED:
+		mWidth = e.window.data1;
+		mHeight = e.window.data2;
+		SDL_RenderPresent(gRenderer);
+		break;
+	case SDL_EVENT_WINDOW_EXPOSED:
+		SDL_RenderPresent(gRenderer);
+		break;
+	case SDL_EVENT_WINDOW_MOUSE_ENTER:
+		mMouseFocus = true;
+		updateCaption = true;
+		break;
+	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+		mMouseFocus = false;
+		updateCaption = true;
+		break;
+	case SDL_EVENT_WINDOW_FOCUS_GAINED:
+		mKeyboardFocus = true;
+		updateCaption = true;
+		break;
+	case SDL_EVENT_WINDOW_FOCUS_LOST:
+		mKeyboardFocus = false;
+		updateCaption = true;
+		break;
+	case SDL_EVENT_WINDOW_MINIMIZED:
+		mMinimized = true;
+		break;
+	case SDL_EVENT_WINDOW_MAXIMIZED:
+		mMinimized = false;
+		break;
+	case SDL_EVENT_WINDOW_RESTORED:
+		mMinimized = false;
+		break;
+	case SDL_EVENT_KEY_DOWN:
+		if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_RETURN)
+		{
+			if (mFullScreen)
+			{
+				SDL_SetWindowFullscreen(mWindow, false);
+				mFullScreen = false;
+			}
+			else
+			{
+				SDL_SetWindowFullscreen(mWindow, true);
+				mFullScreen = true;
+				mMinimized = false;
+			}
+		}
+		break;
+	}
+	if (updateCaption)
+	{
+		std::stringstream caption;
+		caption << "SDL Tutorial - MouseFocus:" << ((mMouseFocus) ? "On" : "Off") << " KeyboardFocus:" << ((mKeyboardFocus) ? "On" : "Off");
+		SDL_SetWindowTitle(mWindow, caption.str().c_str());
+	}
+}
+
+void LWindow::free()
+{
+	if (mWindow != NULL)
+	{
+		SDL_DestroyWindow(mWindow);
+	}
+	mMouseFocus = false;
+	mKeyboardFocus = false;
+	mWidth = 0;
+	mHeight = 0;
+}
+
+int LWindow::getWidth()
+{
+	return mWidth;
+}
+
+int LWindow::getHeight()
+{
+	return mHeight;
+}
+
+SDL_Window* LWindow::getWindow()
+{
+	return mWindow;
+}
+
+bool LWindow::hasMouseFocus()
+{
+	return mMouseFocus;
+}
+
+bool LWindow::hasKeyboardFocus()
+{
+	return mKeyboardFocus;
+}
+
+bool LWindow::isMinimized()
+{
+	return mMinimized;
+}
+
 bool init()
 {
 	bool success = true;
@@ -798,23 +974,31 @@ bool init()
 		}
 #endif
 #ifdef _WIN32
-		if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, 0, &gWindow, &gRenderer))
+		//if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, 0, &gWindow, &gRenderer))
+		if (!gWindow.init(true))
 #elif __linux__
 		gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 		if (gWindow == NULL)
 #endif
 		{
-			SDL_Log("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 			success = false;
 		}
 		else
 		{
 #ifdef _WIN32
+			gRenderer = gWindow.getRenderer();
+			if (gRenderer == NULL)
+			{
+				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
+				success = false;
+			}
 			//SDL_AudioSpec audio_spec;
 			SDL_SetRenderVSync(gRenderer, 1);
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #elif __linux__
-			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+			//gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+			gRenderer = gWindow.getRenderer();
 			if (gRenderer == NULL)
 			{
 				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
@@ -879,10 +1063,11 @@ bool init()
 				success = false;
 			}
 #endif
-			gScreenSurface = SDL_GetWindowSurface(gWindow);
+			//gScreenSurface = SDL_GetWindowSurface(gWindow);
+			gScreenSurface = SDL_GetWindowSurface(gWindow.getWindow());
 		}
 	}
-
+	
 	return success;
 }
 
@@ -1165,6 +1350,11 @@ bool loadMedia()
 		SDL_Log("Failed to load background texture~\n");
 		success = false;
 	}
+	if (!gSceneTexture.loadFromFile(load->Path("window.png")))
+	{
+		SDL_Log("Failed to load window texture!\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -1279,12 +1469,11 @@ void close()
 	{
 		gDataTextures[i].free();
 	}
+	gSceneTexture.free();
 
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
-	SDL_DestroyWindow(gWindow);
-	gWindow = NULL;
-	gRenderer = NULL;
+	gWindow.free();
 	TTF_Quit();
 #ifdef _WIN32
 	MIX_Quit();
@@ -1446,11 +1635,11 @@ int main(int argc, char* argv[])
 			gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
 			int currentData = 0;
 			SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
-#ifdef _WIN32
-			SDL_StartTextInput(gWindow);
-#elif __linux__
-			SDL_StartTextInput();
-#endif
+//#ifdef _WIN32
+//			SDL_StartTextInput(gWindow.getWindow());
+//#elif __linux__
+//			SDL_StartTextInput();
+//#endif
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -1799,275 +1988,280 @@ int main(int argc, char* argv[])
 						gButtons[i].handleEvent(&e);
 					}
 					dot.handleEvent(e);
+					gWindow.handleEvent(e);
 				}
-				SDL_RenderClear(gRenderer);
-				SDL_Rect stretchRect;
-				stretchRect.x = 0;
-				stretchRect.y = 0;
-				stretchRect.w = SCREEN_WIDTH;
-				stretchRect.h = SCREEN_HEIGHT;
-#ifdef _WIN32
-				SDL_BlitSurfaceScaled(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT], NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
-#elif __linux__
-				SDL_BlitSurface(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT], NULL, gScreenSurface, NULL);
-#endif
-#ifdef _WIN32
-				SDL_BlitSurfaceScaled(gCurrentSurface, NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
-#elif __linux__
-				SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
-#endif
-
-				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-				SDL_RenderClear(gRenderer);
-
-#ifdef _WIN32
-				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
-#elif __linux__
-				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-#endif
-
-#ifdef _WIN32
-#elif __linux__
-#endif
-
-#ifdef _WIN32
-				SDL_FRect fillRect = {SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
-#elif __linux__
-				SDL_Rect fillRect = {SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2};
-#endif
-				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
-				SDL_RenderFillRect(gRenderer, &fillRect);
-
-#ifdef _WIN32
-				SDL_FRect outlineRect = {SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3};
-#elif __linux__
-				SDL_Rect outlineRect = {SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3};
-#endif
-				SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
-#ifdef _WIN32
-				SDL_RenderRect(gRenderer, &outlineRect);
-#elif __linux__
-				SDL_RenderDrawRect(gRenderer, &outlineRect);
-#endif
-
-				SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
-#ifdef _WIN32
-				SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
-#elif __linux__
-				SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
-#endif
-
-				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
-				for (int i = 0; i < SCREEN_HEIGHT; i += 4)
+				if (!gWindow.isMinimized())
 				{
+					SDL_RenderClear(gRenderer);
+					SDL_Rect stretchRect;
+					stretchRect.x = 0;
+					stretchRect.y = 0;
+					stretchRect.w = SCREEN_WIDTH;
+					stretchRect.h = SCREEN_HEIGHT;
 #ifdef _WIN32
-					SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
+					SDL_BlitSurfaceScaled(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT], NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
 #elif __linux__
-					SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
-#endif
-				}
-
-				SDL_Rect topLeftViewport;
-				topLeftViewport.x = 0;
-				topLeftViewport.y = 0;
-				topLeftViewport.w = SCREEN_WIDTH / 2;
-				topLeftViewport.h = SCREEN_HEIGHT / 2;
-#ifdef _WIN32
-				SDL_SetRenderViewport(gRenderer, &topLeftViewport);
-#elif __linux__
-				SDL_RenderSetViewport(gRenderer, &topLeftViewport);
+					SDL_BlitSurface(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT], NULL, gScreenSurface, NULL);
 #endif
 #ifdef _WIN32
-				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+					SDL_BlitSurfaceScaled(gCurrentSurface, NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
 #elif __linux__
-				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+					SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
 #endif
 
-				SDL_Rect topRightViewport;
-				topRightViewport.x = SCREEN_WIDTH / 2;
-				topRightViewport.y = 0;
-				topRightViewport.w = SCREEN_WIDTH / 2;
-				topRightViewport.h = SCREEN_HEIGHT / 2;
-#ifdef _WIN32
-				SDL_SetRenderViewport(gRenderer, &topRightViewport);
-#elif __linux__
-				SDL_RenderSetViewport(gRenderer, &topRightViewport);
-#endif
-#ifdef _WIN32
-				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
-#elif __linux__
-				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-#endif
+					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+					SDL_RenderClear(gRenderer);
 
-				SDL_Rect bottomViewport;
-				bottomViewport.x = 0;
-				bottomViewport.y = SCREEN_HEIGHT / 2;
-				bottomViewport.w = SCREEN_WIDTH;
-				bottomViewport.h = SCREEN_HEIGHT / 2;
 #ifdef _WIN32
-				SDL_SetRenderViewport(gRenderer, &bottomViewport);
+					SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
 #elif __linux__
-				SDL_RenderSetViewport(gRenderer, &bottomViewport);
-#endif
-#ifdef _WIN32
-				SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
-#elif __linux__
-				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+					SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 #endif
 
 #ifdef _WIN32
-				SDL_SetRenderViewport(gRenderer, NULL);
 #elif __linux__
-				SDL_RenderSetViewport(gRenderer, NULL);
 #endif
-				gBackgroundTexture.render(0, 0);
-				gFooTexture.render(240, 190);
-
-				gDotSpriteSheetTexture.render(0, 0, &gDotSpriteClips[0]);
-				gDotSpriteSheetTexture.render(SCREEN_WIDTH - gDotSpriteClips[1].w, 0, &gDotSpriteClips[1]);
-				gDotSpriteSheetTexture.render(0, SCREEN_HEIGHT - gDotSpriteClips[2].h, &gDotSpriteClips[2]);
-				gDotSpriteSheetTexture.render(SCREEN_WIDTH - gDotSpriteClips[3].w, SCREEN_HEIGHT - gDotSpriteClips[3].h, &gDotSpriteClips[3]);
-
-				gBackgroundTexture.render(0, 0);
-				gModulatedTexture.setColor(r, g, b);
-				gModulatedTexture.setAlpha(a);
-				gModulatedTexture.render(0, 0);
 
 #ifdef _WIN32
-				SDL_FRect* currentClip = &gWalkingSpriteClips[frame / 4];
+					SDL_FRect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 #elif __linux__
-				SDL_Rect* currentClip = &gWalkingSpriteClips[frame / 4];
+					SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 #endif
-				gWalkingSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
-
-				gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
-
-				gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
-
-				for (int i = 0; i < TOTAL_BUTTONS; ++i)
-				{
-					gButtons[i].render();
-				}
+					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+					SDL_RenderFillRect(gRenderer, &fillRect);
 
 #ifdef _WIN32
-				const bool* currentKeyStates = SDL_GetKeyboardState(NULL);
+					SDL_FRect outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
 #elif __linux__
-				const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+					SDL_Rect outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
 #endif
-				if (currentKeyStates[SDL_SCANCODE_UP])
-				{
-					currentTexture = &gUpTexture;
-				}
-				else if (currentKeyStates[SDL_SCANCODE_DOWN])
-				{
-					currentTexture = &gDownTexture;
-				}
-				else if (currentKeyStates[SDL_SCANCODE_LEFT])
-				{
-					currentTexture = &gLeftTexture;
-				}
-				else if (currentKeyStates[SDL_SCANCODE_RIGHT])
-				{
-					currentTexture = &gRightTexture;
-				}
-				else
-				{
-					currentTexture = &gPressTexture;
-				}
-				currentTexture->render(0, 0);
+					SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+#ifdef _WIN32
+					SDL_RenderRect(gRenderer, &outlineRect);
+#elif __linux__
+					SDL_RenderDrawRect(gRenderer, &outlineRect);
+#endif
 
-				double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
-				//printf("%lf\n", joystickAngle);
-				if (xDir == 0 && yDir == 0)
-				{
-					joystickAngle = 0;
-				}
-				gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, joystickAngle);
+					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+#ifdef _WIN32
+					SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+#elif __linux__
+					SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+#endif
 
-				//gSplashTexture.render(0, 0);
-
-				float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
-				if (avgFPS > 2000000)
-				{
-					avgFPS = 0;
-				}
-				timeText.str("");
-				//timeText << "TIME: " << SDL_GetTicks() - startTime;
-				//timeText << "TIME: " << (timer.getTicks() / 1000.f);
-				timeText << "TIME: " << avgFPS;
-				if (!gTimeTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
-				{
-					SDL_Log("Unable to render time texture!\n");
-				}
-				if (!gFPSTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
-				{
-					SDL_Log("Unable to render FPS texture!\n");
-				}
-				//gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
-				//gStartPromptTexture.render((SCREEN_WIDTH - gStartPromptTexture.getWidth()) / 2, 0);
-				//gPausePromptTexture.render((SCREEN_WIDTH - gPausePromptTexture.getWidth()) / 2, gStartPromptTexture.getHeight());
-				//gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
-				gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
-
-				dot.move();
-				/*				fwall.x = (float)wall.x;
-								fwall.y = (float)wall.y;
-								fwall.w = (float)wall.w;
-								fwall.h = (float)wall.h;
-				#ifdef _WIN32
-								SDL_RenderRect(gRenderer, &fwall);
-				#elif __linux__
-								SDL_RenderFillRect(gRenderer, &fwall);
-				#endif*/
-				/*camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
-				camera.y = (dot.getPosY() + Dot::DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
-				SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-				if (camera.x < 0)
-				{
-					camera.x = 0;
-				}
-				if (camera.y < 0)
-				{
-					camera.y = 0;
-				}
-				if (camera.x > LEVEL_WIDTH - camera.w)
-				{
-					camera.x = LEVEL_WIDTH - camera.w;
-				}
-				if (camera.y > LEVEL_HEIGHT - camera.h)
-				{
-					camera.y = LEVEL_HEIGHT - camera.h;
-				}*/
-				--scrollingOffset;
-				if (scrollingOffset < -gBGTexture.getWidth())
-				{
-					scrollingOffset = 0;
-				}
-				//gBGTexture.render(0, 0, &camera);
-				gBGTexture.render(scrollingOffset, 0);
-				gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
-				dot.render(camera.x, camera.y);
-				//otherDot.render();
-
-				if (renderText)
-				{
-					if (inputText != "")
+					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
+					for (int i = 0; i < SCREEN_HEIGHT; i += 4)
 					{
-						gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
+#ifdef _WIN32
+						SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
+#elif __linux__
+						SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
+#endif
+					}
+
+					SDL_Rect topLeftViewport;
+					topLeftViewport.x = 0;
+					topLeftViewport.y = 0;
+					topLeftViewport.w = SCREEN_WIDTH / 2;
+					topLeftViewport.h = SCREEN_HEIGHT / 2;
+#ifdef _WIN32
+					SDL_SetRenderViewport(gRenderer, &topLeftViewport);
+#elif __linux__
+					SDL_RenderSetViewport(gRenderer, &topLeftViewport);
+#endif
+#ifdef _WIN32
+					SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+#elif __linux__
+					SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+#endif
+
+					SDL_Rect topRightViewport;
+					topRightViewport.x = SCREEN_WIDTH / 2;
+					topRightViewport.y = 0;
+					topRightViewport.w = SCREEN_WIDTH / 2;
+					topRightViewport.h = SCREEN_HEIGHT / 2;
+#ifdef _WIN32
+					SDL_SetRenderViewport(gRenderer, &topRightViewport);
+#elif __linux__
+					SDL_RenderSetViewport(gRenderer, &topRightViewport);
+#endif
+#ifdef _WIN32
+					SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+#elif __linux__
+					SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+#endif
+
+					SDL_Rect bottomViewport;
+					bottomViewport.x = 0;
+					bottomViewport.y = SCREEN_HEIGHT / 2;
+					bottomViewport.w = SCREEN_WIDTH;
+					bottomViewport.h = SCREEN_HEIGHT / 2;
+#ifdef _WIN32
+					SDL_SetRenderViewport(gRenderer, &bottomViewport);
+#elif __linux__
+					SDL_RenderSetViewport(gRenderer, &bottomViewport);
+#endif
+#ifdef _WIN32
+					SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
+#elif __linux__
+					SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+#endif
+
+#ifdef _WIN32
+					SDL_SetRenderViewport(gRenderer, NULL);
+#elif __linux__
+					SDL_RenderSetViewport(gRenderer, NULL);
+#endif
+					gBackgroundTexture.render(0, 0);
+					gFooTexture.render(240, 190);
+
+					gDotSpriteSheetTexture.render(0, 0, &gDotSpriteClips[0]);
+					gDotSpriteSheetTexture.render(SCREEN_WIDTH - gDotSpriteClips[1].w, 0, &gDotSpriteClips[1]);
+					gDotSpriteSheetTexture.render(0, SCREEN_HEIGHT - gDotSpriteClips[2].h, &gDotSpriteClips[2]);
+					gDotSpriteSheetTexture.render(SCREEN_WIDTH - gDotSpriteClips[3].w, SCREEN_HEIGHT - gDotSpriteClips[3].h, &gDotSpriteClips[3]);
+
+					gBackgroundTexture.render(0, 0);
+					gModulatedTexture.setColor(r, g, b);
+					gModulatedTexture.setAlpha(a);
+					gModulatedTexture.render(0, 0);
+
+#ifdef _WIN32
+					SDL_FRect* currentClip = &gWalkingSpriteClips[frame / 4];
+#elif __linux__
+					SDL_Rect* currentClip = &gWalkingSpriteClips[frame / 4];
+#endif
+					gWalkingSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
+
+					gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
+
+					gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
+
+					for (int i = 0; i < TOTAL_BUTTONS; ++i)
+					{
+						gButtons[i].render();
+					}
+
+#ifdef _WIN32
+					const bool* currentKeyStates = SDL_GetKeyboardState(NULL);
+#elif __linux__
+					const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+#endif
+					if (currentKeyStates[SDL_SCANCODE_UP])
+					{
+						currentTexture = &gUpTexture;
+					}
+					else if (currentKeyStates[SDL_SCANCODE_DOWN])
+					{
+						currentTexture = &gDownTexture;
+					}
+					else if (currentKeyStates[SDL_SCANCODE_LEFT])
+					{
+						currentTexture = &gLeftTexture;
+					}
+					else if (currentKeyStates[SDL_SCANCODE_RIGHT])
+					{
+						currentTexture = &gRightTexture;
 					}
 					else
 					{
-						gInputTextTexture.loadFromRenderedText("", textColor);
+						currentTexture = &gPressTexture;
 					}
-				}
-				gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
-				gInputTextTexture.render((SCREEN_WIDTH - gInputTextTexture.getWidth()) / 2, gPromptTextTexture.getHeight());
-				for (int i = 0; i < TOTAL_DATA; ++i)
-				{
-					gDataTextures[i].render((SCREEN_WIDTH - gDataTextures[i].getWidth()) / 2, gPromptTextTexture.getHeight() + gDataTextures[0].getHeight() * i);
-				}
+					currentTexture->render(0, 0);
 
-				SDL_RenderPresent(gRenderer);
+					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
+					//printf("%lf\n", joystickAngle);
+					if (xDir == 0 && yDir == 0)
+					{
+						joystickAngle = 0;
+					}
+					gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, joystickAngle);
+
+					//gSplashTexture.render(0, 0);
+
+					float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
+					if (avgFPS > 2000000)
+					{
+						avgFPS = 0;
+					}
+					timeText.str("");
+					//timeText << "TIME: " << SDL_GetTicks() - startTime;
+					//timeText << "TIME: " << (timer.getTicks() / 1000.f);
+					timeText << "TIME: " << avgFPS;
+					if (!gTimeTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
+					{
+						SDL_Log("Unable to render time texture!\n");
+					}
+					if (!gFPSTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
+					{
+						SDL_Log("Unable to render FPS texture!\n");
+					}
+					//gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
+					//gStartPromptTexture.render((SCREEN_WIDTH - gStartPromptTexture.getWidth()) / 2, 0);
+					//gPausePromptTexture.render((SCREEN_WIDTH - gPausePromptTexture.getWidth()) / 2, gStartPromptTexture.getHeight());
+					//gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
+					gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
+
+					dot.move();
+					/*				fwall.x = (float)wall.x;
+									fwall.y = (float)wall.y;
+									fwall.w = (float)wall.w;
+									fwall.h = (float)wall.h;
+					#ifdef _WIN32
+									SDL_RenderRect(gRenderer, &fwall);
+					#elif __linux__
+									SDL_RenderFillRect(gRenderer, &fwall);
+					#endif*/
+					/*camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
+					camera.y = (dot.getPosY() + Dot::DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
+					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
+					if (camera.x < 0)
+					{
+						camera.x = 0;
+					}
+					if (camera.y < 0)
+					{
+						camera.y = 0;
+					}
+					if (camera.x > LEVEL_WIDTH - camera.w)
+					{
+						camera.x = LEVEL_WIDTH - camera.w;
+					}
+					if (camera.y > LEVEL_HEIGHT - camera.h)
+					{
+						camera.y = LEVEL_HEIGHT - camera.h;
+					}*/
+					--scrollingOffset;
+					if (scrollingOffset < -gBGTexture.getWidth())
+					{
+						scrollingOffset = 0;
+					}
+					//gBGTexture.render(0, 0, &camera);
+					gBGTexture.render(scrollingOffset, 0);
+					gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
+					dot.render(camera.x, camera.y);
+					//otherDot.render();
+
+					if (renderText)
+					{
+						if (inputText != "")
+						{
+							gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
+						}
+						else
+						{
+							gInputTextTexture.loadFromRenderedText("", textColor);
+						}
+					}
+					gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
+					gInputTextTexture.render((SCREEN_WIDTH - gInputTextTexture.getWidth()) / 2, gPromptTextTexture.getHeight());
+					for (int i = 0; i < TOTAL_DATA; ++i)
+					{
+						gDataTextures[i].render((SCREEN_WIDTH - gDataTextures[i].getWidth()) / 2, gPromptTextTexture.getHeight() + gDataTextures[0].getHeight() * i);
+					}
+
+					gSceneTexture.render((gWindow.getWidth() - gSceneTexture.getWidth()) / 2, (gWindow.getHeight() - gSceneTexture.getHeight()) / 2);
+					SDL_RenderPresent(gRenderer);
+				}
 
 				++frame;
 				if (frame / 4 >= WALKING_ANIMATION_FRAMES)
@@ -2083,11 +2277,11 @@ int main(int argc, char* argv[])
 					SDL_Delay(SCREEN_TICK_PER_FRAME - frameTicks);
 				}
 			}
-#ifdef _WIN32
-			SDL_StopTextInput(gWindow);
-#elif __linux__
-			SDL_StopTextInput();
-#endif
+//#ifdef _WIN32
+//			SDL_StopTextInput(gWindow.getWindow());
+//#elif __linux__
+//			SDL_StopTextInput();
+//#endif
 		}
 	}
 	
