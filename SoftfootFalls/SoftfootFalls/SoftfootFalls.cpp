@@ -53,6 +53,8 @@ const double M_PI = 3.14159265359;
 
 const int TOTAL_DATA = 10;
 
+const int TOTAL_PARTICLES = 20;
+
 enum LButtonSprite
 {
 	BUTTON_SPRITE_MOUSE_OUT = 0,
@@ -128,6 +130,18 @@ private:
 	bool mStarted;
 };
 
+class Particle
+{
+public:
+	Particle(int x, int y);
+	void render();
+	bool isDead();
+private:
+	int mPosX, mPosY;
+	int mFrame;
+	LTexture* mTexture;
+};
+
 class Dot
 {
 public:
@@ -135,17 +149,15 @@ public:
 	static const int DOT_HEIGHT = 20;
 	static const int DOT_VEL = 10;
 	Dot();
+	~Dot();
 	void handleEvent(SDL_Event& e);
-	void move(/*std::vector<SDL_Rect>& otherColliders*/);
-	void render(int camX, int camY);
-	//std::vector<SDL_Rect>& getColliders();
-	int getPosX();
-	int getPosY();
+	void move();
+	void render();
 private:
+	Particle* particles[TOTAL_PARTICLES];
+	void renderParticles();
 	int mPosX, mPosY;
 	int mVelX, mVelY;
-	//std::vector<SDL_Rect> mColliders;
-	//void shiftColliders();
 };
 
 class LWindow
@@ -252,6 +264,10 @@ LTexture gInputTextTexture;
 LTexture gDataTextures[TOTAL_DATA];
 Sint32 gData[TOTAL_DATA];
 LTexture gSceneTexture;
+LTexture gRedTexture;
+LTexture gGreenTexture;
+LTexture gBlueTexture;
+LTexture gShimmerTexture;
 
 
 LTexture::LTexture()
@@ -481,6 +497,34 @@ void LButton::render()
 	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
 }
 
+Particle::Particle(int x, int y)
+{
+	mPosX = x - 5 + (rand() % 25);
+	mPosY = y - 5 + (rand() % 25);
+	mFrame = rand() % 5;
+	switch (rand() % 3)
+	{
+	case 0: mTexture = &gRedTexture; break;
+	case 1: mTexture = &gGreenTexture; break;
+	case 2: mTexture = &gBlueTexture; break;
+	}
+}
+
+void Particle::render()
+{
+	mTexture->render(mPosX, mPosY);
+	if (mFrame % 2 == 0)
+	{
+		gShimmerTexture.render(mPosX, mPosY);
+	}
+	mFrame++;
+}
+
+bool Particle::isDead()
+{
+	return mFrame > 10;
+}
+
 Dot::Dot()
 {
 	mPosX = 0;
@@ -533,6 +577,18 @@ Dot::Dot()
 	//mColliders[10].w = 6;
 	//mColliders[10].h = 1;
 	//shiftColliders();
+	for (int i = 0; i < TOTAL_PARTICLES; ++i)
+	{
+		particles[i] = new Particle(mPosX, mPosY);
+	}
+}
+
+Dot::~Dot()
+{
+	for (int i = 0; i < TOTAL_PARTICLES; ++i)
+	{
+		delete particles[i];
+	}
 }
 
 void Dot::handleEvent(SDL_Event& e)
@@ -593,19 +649,26 @@ void Dot::move(/*std::vector<SDL_Rect>& otherColliders*/)
 	}
 }
 
-void Dot::render(int camX, int camY)
+void Dot::render()
 {
-	gDotTexture.render(mPosX - camX, mPosY - camY);
+	gDotTexture.render(mPosX, mPosY);
+	renderParticles();
 }
 
-int Dot::getPosX()
+void Dot::renderParticles()
 {
-	return mPosX;
-}
-
-int Dot::getPosY()
-{
-	return mPosY;
+	for (int i = 0; i < TOTAL_PARTICLES; ++i)
+	{
+		if (particles[i]->isDead())
+		{
+			delete particles[i];
+			particles[i] = new Particle(mPosX, mPosY);
+		}
+	}
+	for (int i = 0; i < TOTAL_PARTICLES; ++i)
+	{
+		particles[i]->render();
+	}
 }
 
 //void Dot::shiftColliders()
@@ -1428,6 +1491,30 @@ bool loadMedia()
 		SDL_Log("Failed to load window texture!\n");
 		success = false;
 	}
+	if (!gRedTexture.loadFromFile(load->Path("red.bmp")))
+	{
+		SDL_Log("Failed to load red texture!\n");
+		success = false;
+	}
+	if (!gGreenTexture.loadFromFile(load->Path("green.bmp")))
+	{
+		SDL_Log("Failed to load green texture!\n");
+		success = false;
+	}
+	if (!gBlueTexture.loadFromFile(load->Path("blue.bmp")))
+	{
+		SDL_Log("Failed to load blue texture!\n");
+		success = false;
+	}
+	if (!gShimmerTexture.loadFromFile(load->Path("shimmer.bmp")))
+	{
+		SDL_Log("Failed to load shimmer texture!\n");
+		success = false;
+	}
+	gRedTexture.setAlpha(192);
+	gGreenTexture.setAlpha(192);
+	gBlueTexture.setAlpha(192);
+	gShimmerTexture.setAlpha(192);
 
 	delete load;
 	return success;
@@ -1543,6 +1630,10 @@ void close()
 		gDataTextures[i].free();
 	}
 	gSceneTexture.free();
+	gRedTexture.free();
+	gGreenTexture.free();
+	gBlueTexture.free();
+	gShimmerTexture.free();
 
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
@@ -2311,7 +2402,7 @@ int main(int argc, char* argv[])
 					//gBGTexture.render(0, 0, &camera);
 					gBGTexture.render(scrollingOffset, 0);
 					gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
-					dot.render(camera.x, camera.y);
+					dot.render();
 					//otherDot.render();
 
 					if (renderText)
