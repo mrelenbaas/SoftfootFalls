@@ -999,20 +999,36 @@ bool loadMedia()
 			success = false;
 		}
 	}
+#ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "r+b");
+#elif __linux__
+	SDL_RWops* file = SDL_RWFromFile(load->Path("nums.bin"), "r+b");
+#endif
 	if (file == NULL)
 	{
 		SDL_Log("Warning: Unable to open file! SDL Error: %s\n", SDL_GetError());
+#ifdef _WIN32
 		file = SDL_IOFromFile("nums.bin", "w+b");
+#elif __linux__
+		file = SDL_RWFromFile(load->Path("nums.bin"), "w+b");
+#endif
 		if (file != NULL)
 		{
 			SDL_Log("New file created!\n");
 			for (int i = 0; i < TOTAL_DATA; ++i)
 			{
 				gData[i] = 0;
+#ifdef _WIN32
 				SDL_WriteIO(file, &gData[i], sizeof(Sint32));
+#elif __linux__
+				SDL_RWwrite(file, &gData[i], sizeof(Sint32), 1);
+#endif
 			}
+#ifdef _WIN32
 			SDL_CloseIO(file);
+#elif __linux__
+			SDL_RWclose(file);
+#endif
 		}
 		else
 		{
@@ -1025,9 +1041,17 @@ bool loadMedia()
 		SDL_Log("Reading file...!\n");
 		for (int i = 0; i < TOTAL_DATA; ++i)
 		{
+#ifdef _WIN32
 			SDL_ReadIO(file, &gData[i], sizeof(Sint32));
+#elif __linux__
+			SDL_RWread(file, &gData[i], sizeof(Sint32), 1);
+#endif
 		}
+#ifdef _WIN32
 		SDL_CloseIO(file);
+#elif __linux__
+		SDL_RWclose(file);
+#endif
 	}
 	gDataTextures[0].loadFromRenderedText(std::to_string(gData[0]).c_str(), highlightColor);
 	for (int i = 1; i < TOTAL_DATA; ++i)
@@ -1148,6 +1172,8 @@ bool loadMedia()
 
 void close()
 {
+	Load* load = new Load(SDL_GetBasePath());
+	
 	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i)
 	{
 #ifdef _WIN32
@@ -1223,14 +1249,27 @@ void close()
 	gFPSTextTexture.free();
 	gDotTexture.free();
 	gBGTexture.free();
+	gInputTextTexture.free();
+#ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "w+b");
+#elif __linux__
+	SDL_RWops* file = SDL_RWFromFile(load->Path("nums.bin"), "w+b");
+#endif
 	if (file != NULL)
 	{
 		for (int i = 0; i < TOTAL_DATA; ++i)
 		{
+#ifdef _WIN32
 			SDL_WriteIO(file, &gData[i], sizeof(Sint32));
+#elif __linux__
+			SDL_RWwrite(file, &gData[i], sizeof(Sint32), 1);
+#endif
 		}
+#ifdef _WIN32
 		SDL_CloseIO(file);
+#elif __linux__
+		SDL_RWclose(file);
+#endif
 	}
 	else
 	{
@@ -1241,6 +1280,7 @@ void close()
 		gDataTextures[i].free();
 	}
 
+	delete load;
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
 	gWindow = NULL;
@@ -1680,9 +1720,9 @@ int main(int argc, char* argv[])
 							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN];
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), textColor);
 							++currentData;
-							if (currentData < 0)
+							if (currentData == TOTAL_DATA)
 							{
-								currentData = TOTAL_DATA - 1;
+								currentData = 0;
 							}
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;

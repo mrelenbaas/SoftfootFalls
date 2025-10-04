@@ -109,4 +109,34 @@
    obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
    fun:main
 }
+{
+   <Reading Writing 1>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   fun:main
+}
+{
+   <Reading Writing 2>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:realloc
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   fun:main
+}
+{
+   <Reading Writing 3>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   obj:/usr/lib/x86_64-linux-gnu/libSDL2-2.0.so.0.3000.0
+   fun:_Z5closev
+   fun:main
+}
+
+
 
