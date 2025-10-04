@@ -153,6 +153,9 @@ class LWindow
 public:
 	LWindow();
 	bool init(bool bCreateRenderer = true);
+#ifdef __linux__
+	SDL_Renderer* createRenderer();
+#endif
 	SDL_Renderer* getRenderer();
 	void handleEvent(SDL_Event& e);
 	void free();
@@ -706,6 +709,7 @@ LWindow::LWindow()
 
 bool LWindow::init(bool bCreateRenderer)
 {
+#ifdef _WIN32
 	if (bCreateRenderer)
 	{
 		if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE, &mWindow, &mRenderer))
@@ -727,9 +731,26 @@ bool LWindow::init(bool bCreateRenderer)
 	mKeyboardFocus = true;
 	mWidth = SCREEN_WIDTH;
 	mHeight = SCREEN_HEIGHT;
-
 	return true;
+#elif __linux__
+	mWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	if (mWindow != NULL)
+	{
+		mMouseFocus = true;
+		mKeyboardFocus = true;
+		mWidth = SCREEN_WIDTH;
+		mHeight = SCREEN_HEIGHT;
+	}
+	return mWindow != NULL;
+#endif
 }
+
+#ifdef __linux__
+SDL_Renderer* LWindow::createRenderer()
+{
+	return SDL_CreateRenderer(mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+}
+#endif
 
 SDL_Renderer* LWindow::getRenderer()
 {
@@ -742,50 +763,102 @@ void LWindow::handleEvent(SDL_Event& e)
 
 	switch (e.type)
 	{
+#ifdef _WIN32
 	case SDL_EVENT_WINDOW_RESIZED:
+#elif __linux__
+	case SDL_WINDOWEVENT_SIZE_CHANGED:
+#endif
 		mWidth = e.window.data1;
 		mHeight = e.window.data2;
 		SDL_RenderPresent(gRenderer);
 		break;
+#ifdef _WIN32
 	case SDL_EVENT_WINDOW_EXPOSED:
+#elif __linux__
+	case SDL_WINDOWEVENT_EXPOSED:
+#endif
 		SDL_RenderPresent(gRenderer);
 		break;
+#ifdef _WIN32
 	case SDL_EVENT_WINDOW_MOUSE_ENTER:
+#elif __linux__
+	case SDL_WINDOWEVENT_ENTER:
+#endif
 		mMouseFocus = true;
 		updateCaption = true;
 		break;
+#ifdef _WIN32
 	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+#elif __linux__
+	case SDL_WINDOWEVENT_LEAVE:
+#endif
 		mMouseFocus = false;
 		updateCaption = true;
 		break;
+#ifdef _WIN32
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
+#elif __linux__
+	case SDL_WINDOWEVENT_FOCUS_GAINED:
+#endif
 		mKeyboardFocus = true;
 		updateCaption = true;
 		break;
+#ifdef _WIN32
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
+#elif __linux__
+	case SDL_WINDOWEVENT_FOCUS_LOST:
+#endif
 		mKeyboardFocus = false;
 		updateCaption = true;
 		break;
+#ifdef _WIN32
 	case SDL_EVENT_WINDOW_MINIMIZED:
+#elif __linux__
+	case SDL_WINDOWEVENT_MINIMIZED:
+#endif
 		mMinimized = true;
 		break;
+#ifdef _WIN32
 	case SDL_EVENT_WINDOW_MAXIMIZED:
+#elif __linux__
+	case SDL_WINDOWEVENT_MAXIMIZED:
+#endif
 		mMinimized = false;
 		break;
+#ifdef _WIN32
 	case SDL_EVENT_WINDOW_RESTORED:
+#elif __linux__
+	case SDL_WINDOWEVENT_RESTORED:
+#endif
 		mMinimized = false;
 		break;
+#ifdef _WIN32
 	case SDL_EVENT_KEY_DOWN:
+#elif __linux__
+	case SDL_KEYDOWN:
+#endif
+#ifdef _WIN32
 		if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_RETURN)
+#elif __linux__
+		if (e.key.keysym.sym == SDLK_RETURN)
+#endif
 		{
 			if (mFullScreen)
 			{
+#ifdef _WIN32
 				SDL_SetWindowFullscreen(mWindow, false);
+#elif __linux__
+				SDL_SetWindowFullscreen(mWindow, 0);
+#endif
 				mFullScreen = false;
 			}
 			else
 			{
+#ifdef _WIN32
 				SDL_SetWindowFullscreen(mWindow, true);
+#elif __linux__
+				SDL_SetWindowFullscreen(mWindow, SDL_WINDOW_FULLSCREEN_DESKTOP);
+#endif
 				mFullScreen = true;
 				mMinimized = false;
 			}
@@ -977,8 +1050,8 @@ bool init()
 		//if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, 0, &gWindow, &gRenderer))
 		if (!gWindow.init(true))
 #elif __linux__
-		gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-		if (gWindow == NULL)
+		//gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+		if (!gWindow.init(true))
 #endif
 		{
 			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -988,17 +1061,17 @@ bool init()
 		{
 #ifdef _WIN32
 			gRenderer = gWindow.getRenderer();
-			if (gRenderer == NULL)
+			/*if (gRenderer == NULL)
 			{
 				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
 				success = false;
-			}
+			}*/
 			//SDL_AudioSpec audio_spec;
 			SDL_SetRenderVSync(gRenderer, 1);
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #elif __linux__
 			//gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-			gRenderer = gWindow.getRenderer();
+			gRenderer = gWindow.createRenderer();
 			if (gRenderer == NULL)
 			{
 				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
