@@ -74,6 +74,8 @@ const int TILE_BOTTOMLEFT = 9;
 const int TILE_LEFT = 10;
 const int TILE_TOPLEFT = 11;
 
+const SDL_PixelFormat SCREEN_FORMAT = SDL_PIXELFORMAT_ARGB8888;
+
 enum LButtonSprite
 {
 	BUTTON_SPRITE_MOUSE_OUT = 0,
@@ -116,6 +118,7 @@ public:
 	int getWidth();
 	int getHeight();
 	Uint32* getPixels32();
+	Uint32 getPixel32(Uint32 x, Uint32 y);
 	Uint32 getPitch32();
 	Uint32 mapRGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 private:
@@ -226,6 +229,19 @@ private:
 	bool mMinimized;
 };
 
+class LBitmapFont
+{
+public:
+	LBitmapFont();
+	bool buildFont(std::string path);
+	void free();
+	void renderText(int x, int y, std::string text);
+private:
+	LTexture mFontTexture;
+	SDL_FRect mChars[256];
+	int mNewLine, mSpace;
+};
+
 bool init();
 bool loadMedia(Tile* tiles[]);
 void close(Tile* tiles[]);
@@ -315,6 +331,7 @@ SDL_FRect gTileClips[TOTAL_TILE_SPRITES];
 SDL_Rect gTileClips[TOTAL_TILE_SPRITES];
 #endif
 LTexture gFooTexture;
+LBitmapFont gBitmapFont;
 
 
 LTexture::LTexture()
@@ -528,6 +545,12 @@ Uint32* LTexture::getPixels32()
 		pixels = static_cast<Uint32*>(mSurfacePixels->pixels);
 	}
 	return pixels;
+}
+
+Uint32 LTexture::getPixel32(Uint32 x, Uint32 y)
+{
+	Uint32* pixels = static_cast<Uint32*>(mSurfacePixels->pixels);
+	return pixels[(y * getPitch32()) + x];
 }
 
 Uint32 LTexture::getPitch32()
@@ -1116,6 +1139,150 @@ bool LWindow::isMinimized()
 	return mMinimized;
 }
 
+LBitmapFont::LBitmapFont()
+{
+    mNewLine = 0;
+    mSpace = 0;
+}
+
+bool LBitmapFont::buildFont( std::string path )
+{
+	free();
+	bool success = true;
+	if( !mFontTexture.loadPixelsFromFile( path.c_str() ) )
+	{
+		SDL_Log( "Unable to load bitmap font surface!\n" );
+		success = false;
+	}
+	else
+	{
+		Uint32 bgColor = mFontTexture.getPixel32( 0, 0 );
+		int cellW = mFontTexture.getWidth() / 16;
+		int cellH = mFontTexture.getHeight() / 16;
+		int top = cellH;
+		int baseA = cellH;
+		int currentChar = 0;
+		for( int rows = 0; rows < 16; ++rows )
+		{
+			for( int cols = 0; cols < 16; ++cols )
+			{
+				mChars[ currentChar ].x = cellW * cols;
+				mChars[ currentChar ].y = cellH * rows;
+				mChars[ currentChar ].w = cellW;
+				mChars[ currentChar ].h = cellH;
+				for( int pCol = 0; pCol < cellW; ++pCol )
+				{
+					for( int pRow = 0; pRow < cellH; ++pRow )
+					{
+						int pX = ( cellW * cols ) + pCol;
+						int pY = ( cellH * rows ) + pRow;
+						if( mFontTexture.getPixel32( pX, pY ) != bgColor )
+						{
+							mChars[ currentChar ].x = pX;
+							pCol = cellW;
+							pRow = cellH;
+						}
+					}
+				}
+				for( int pColW = cellW - 1; pColW >= 0; --pColW )
+				{
+					for( int pRowW = 0; pRowW < cellH; ++pRowW )
+					{
+						int pX = ( cellW * cols ) + pColW;
+						int pY = ( cellH * rows ) + pRowW;
+						if( mFontTexture.getPixel32( pX, pY ) != bgColor )
+						{
+							mChars[ currentChar ].w = ( pX - mChars[ currentChar ].x ) + 1;
+							pColW = -1;
+							pRowW = cellH;
+						}
+					}
+				}
+				for( int pRow = 0; pRow < cellH; ++pRow )
+				{
+					for( int pCol = 0; pCol < cellW; ++pCol )
+					{
+						int pX = ( cellW * cols ) + pCol;
+						int pY = ( cellH * rows ) + pRow;
+						if( mFontTexture.getPixel32( pX, pY ) != bgColor )
+						{
+							if( pRow < top )
+							{
+								top = pRow;
+							}
+							pCol = cellW;
+							pRow = cellH;
+						}
+					}
+				}
+				if( currentChar == 'A' )
+				{
+					for( int pRow = cellH - 1; pRow >= 0; --pRow )
+					{
+						for( int pCol = 0; pCol < cellW; ++pCol )
+						{
+							int pX = ( cellW * cols ) + pCol;
+							int pY = ( cellH * rows ) + pRow;
+							if( mFontTexture.getPixel32( pX, pY ) != bgColor )
+							{
+								baseA = pRow;
+								pCol = cellW;
+								pRow = -1;
+							}
+						}
+					}
+				}
+				++currentChar;
+			}
+		}
+		mSpace = cellW / 2;
+		mNewLine = baseA - top;
+		for( int i = 0; i < 256; ++i )
+		{
+			mChars[ i ].y += top;
+			mChars[ i ].h -= top;
+		}
+		if( !mFontTexture.loadFromPixels() )
+		{
+			SDL_Log( "Unable to create font texture!\n" );
+			success = false;
+		}
+	}
+
+	return success;
+}
+
+void LBitmapFont::free()
+{
+	mFontTexture.free();
+}
+
+void LBitmapFont::renderText( int x, int y, std::string text )
+{
+    if( mFontTexture.getWidth() > 0 )
+    {
+		int curX = x, curY = y;
+        for( int i = 0; i < text.length(); ++i )
+        {
+            if( text[ i ] == ' ' )
+            {
+                curX += mSpace;
+            }
+            else if( text[ i ] == '\n' )
+            {
+                curY += mNewLine;
+                curX = x;
+            }
+            else
+            {
+                int ascii = (unsigned char)text[ i ];
+				mFontTexture.render( curX, curY, &mChars[ ascii ] );
+                curX += mChars[ ascii ].w + 1;
+            }
+        }
+    }
+}
+
 bool init()
 {
 	bool success = true;
@@ -1247,6 +1414,7 @@ bool init()
 			}
 		}
 #endif
+		srand(SDL_GetTicks());
 #ifdef _WIN32
 		//if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, 0, &gWindow, &gRenderer))
 		if (!gWindow.init(true))
@@ -1686,6 +1854,11 @@ bool loadMedia(Tile* tiles[])
 			SDL_Log("Unable to load Foo' texture from surface!\n");
 		}
 	}
+	if (!gBitmapFont.buildFont(load->Path("lazyfont.png")))
+	{
+		SDL_Log("Failed to load bitmap font!\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -1815,6 +1988,7 @@ void close(Tile* tiles[])
 	}
 	gTileTexture.free();
 	gFooTexture.free();
+	gBitmapFont.free();
 
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
@@ -2748,6 +2922,10 @@ int main(int argc, char* argv[])
 					dot.render(camera);
 
 					gFooTexture.render((SCREEN_WIDTH - gFooTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFooTexture.getHeight()) / 2);
+
+					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+					//SDL_RenderClear(gRenderer);
+					gBitmapFont.renderText(0, 0, "Bitmap Font:\nABDCEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789");
 
 					SDL_RenderPresent(gRenderer);
 				}
