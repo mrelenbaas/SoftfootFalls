@@ -272,7 +272,11 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 bool checkCollision(SDL_Rect a, SDL_Rect b);
 bool touchesWall(SDL_Rect box, Tile* tiles[]);
 bool setTiles(Tile* tiles[]);
+#ifdef _WIN32
 Uint32 callback(void* param, SDL_TimerID timerID, Uint32 interval);
+#elif __linux__
+Uint32 callback(Uint32 interval, void* param);
+#endif
 
 LWindow gWindow;
 SDL_Renderer* gRenderer = NULL;
@@ -2422,7 +2426,11 @@ bool touchesWall(SDL_Rect box, Tile* tiles[])
 	return false;
 }
 
+#ifdef _WIN32
 Uint32 callback(void* param, SDL_TimerID timerID, Uint32 interval)
+#elif __linux__
+Uint32 callback(Uint32 interval, void* param)
+#endif
 {
 	SDL_Log("Callback called with message: %s\n", reinterpret_cast<char*>(param));
 	return 0;
@@ -2505,7 +2513,15 @@ int main(int argc, char* argv[])
 			SDL_Point screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 #endif
 			LTimer stepTimer;
+#ifdef _WIN32
 			SDL_TimerID timerID = SDL_AddTimer(3 * 1000, callback, (void*)"3 seconds waited!");
+#elif __linux__
+			//SDL_TimerID timerID = SDL_AddTimer(3 * 1000, callback, reinterpret_cast<void*>("3 seconds waited!"));
+			//const char* original_const_ptr = "";
+			//void* non_const_ptr = const_cast<char*>("3 seconds waited!"); // Correct way to remove constness
+			char* temp = {"3 seconds waited!\0"};
+			SDL_TimerID timerID = SDL_AddTimer(3 * 1000, callback, reinterpret_cast<void*>(temp));
+#endif
 			while (!quit)
 			{
 #ifdef _WIN32
