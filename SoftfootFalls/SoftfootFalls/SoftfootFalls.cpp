@@ -2492,7 +2492,11 @@ int main(int argc, char* argv[])
 			SDL_StartTextInput();
 #endif
 			double angle = 0;
+#ifdef _WIN32
 			SDL_FPoint screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+#elif __linux__
+			SDL_Point screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+#endif
 			LTimer stepTimer;
 			while (!quit)
 			{
@@ -3149,15 +3153,30 @@ int main(int argc, char* argv[])
 					//Render green outlined quad
 					outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
 					SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+#ifdef _WIN32
 					SDL_RenderRect(gRenderer, &outlineRect);
+#elif __linux__
+					SDL_RenderDrawRect(gRenderer, &outlineRect);
+#endif
+#ifdef _WIN32
+#elif __linux__
+#endif
 					//Draw blue horizontal line
 					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+#ifdef _WIN32
 					SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+#elif __linux__
+					SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+#endif
 					//Draw vertical line of yellow dots
 					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
 					for (int i = 0; i < SCREEN_HEIGHT; i += 4)
 					{
+#ifdef _WIN32
 						SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
+#elif __linux__
+						SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
+#endif
 					}
 					SDL_SetRenderTarget(gRenderer, NULL);
 					gTargetTexture.render(0, 0, NULL, angle, &screenCenter);
