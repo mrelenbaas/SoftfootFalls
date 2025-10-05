@@ -272,6 +272,7 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 bool checkCollision(SDL_Rect a, SDL_Rect b);
 bool touchesWall(SDL_Rect box, Tile* tiles[]);
 bool setTiles(Tile* tiles[]);
+Uint32 callback(void* param, SDL_TimerID timerID, Uint32 interval);
 
 LWindow gWindow;
 SDL_Renderer* gRenderer = NULL;
@@ -2421,6 +2422,12 @@ bool touchesWall(SDL_Rect box, Tile* tiles[])
 	return false;
 }
 
+Uint32 callback(void* param, SDL_TimerID timerID, Uint32 interval)
+{
+	SDL_Log("Callback called with message: %s\n", reinterpret_cast<char*>(param));
+	return 0;
+}
+
 int main(int argc, char* argv[])
 {
     Clock* clock = new Clock();
@@ -2498,6 +2505,7 @@ int main(int argc, char* argv[])
 			SDL_Point screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 #endif
 			LTimer stepTimer;
+			SDL_TimerID timerID = SDL_AddTimer(3 * 1000, callback, (void*)"3 seconds waited!");
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -3203,6 +3211,7 @@ int main(int argc, char* argv[])
 #elif __linux__
 			SDL_StopTextInput();
 #endif
+			SDL_RemoveTimer(timerID);
 		}
 		close(tileSet);
 	}
