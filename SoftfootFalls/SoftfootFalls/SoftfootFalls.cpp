@@ -104,6 +104,7 @@ public:
 #if defined(SDL_TTF_MAJOR_VERSION)
 	bool loadFromRenderedText(const char* textureText, SDL_Color textColor);
 #endif
+	bool createBlank(int width, int height);
 	void free();
 	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 	void setBlendMode(SDL_BlendMode blending);
@@ -119,9 +120,14 @@ public:
 	Uint32 getPixel32(Uint32 x, Uint32 y);
 	Uint32 getPitch32();
 	Uint32 mapRGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+	void copyRawPixels32(void* pixels);
+	bool lockTexture();
+	bool unlockTexture();
 private:
 	SDL_Texture* mTexture;
 	SDL_Surface* mSurfacePixels;
+	void* mRawPixels;
+	int mRawPitch;
 	int mWidth;
 	int mHeight;
 };
@@ -244,6 +250,19 @@ private:
 	int mNewLine, mSpace;
 };
 
+class DataStream
+{
+public:
+	DataStream();
+	bool loadMedia();
+	void free();
+	void* getBuffer();
+private:
+	SDL_Surface* mImages[4];
+	int mCurrentImage;
+	int mDelayFrames;
+};
+
 bool init();
 bool loadMedia(Tile* tiles[]);
 void close(Tile* tiles[]);
@@ -334,6 +353,8 @@ SDL_Rect gTileClips[TOTAL_TILE_SPRITES];
 #endif
 LTexture gFooTexture;
 LBitmapFont gBitmapFont;
+LTexture gStreamingTexture;
+DataStream gDataStream;
 
 
 LTexture::LTexture()
@@ -481,6 +502,22 @@ bool LTexture::loadFromRenderedText(const char* textureText, SDL_Color textColor
 }
 #endif
 
+bool LTexture::createBlank(int width, int height)
+{
+	free();
+	mTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+	if (mTexture == NULL)
+	{
+		SDL_Log("Unable to create streamable blank texture! SDL Error: %s\n", SDL_GetError());
+	}
+	else
+	{
+		mWidth = width;
+		mHeight = height;
+	}
+	return mTexture != NULL;
+}
+
 void LTexture::free()
 {
 	if (mTexture != NULL)
@@ -589,6 +626,50 @@ Uint32 LTexture::mapRGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 #endif
 	}
 	return pixel;
+}
+
+bool LTexture::lockTexture()
+{
+	bool success = true;
+	if (mRawPixels != NULL)
+	{
+		SDL_Log("Texture is already locked!\n");
+		success = false;
+	}
+	else
+	{
+		if (!SDL_LockTexture(mTexture, NULL, &mRawPixels, &mRawPitch))
+		{
+			SDL_Log("Unable to lock texture! %s\n", SDL_GetError());
+			success = false;
+		}
+	}
+	return success;
+}
+
+bool LTexture::unlockTexture()
+{
+	bool success = true;
+	if (mRawPixels == NULL)
+	{
+		SDL_Log("Texture is not locked!\n");
+		success = false;
+	}
+	else
+	{
+		SDL_UnlockTexture(mTexture);
+		mRawPixels = NULL;
+		mRawPitch = 0;
+	}
+	return success;
+}
+
+void LTexture::copyRawPixels32(void* pixels)
+{
+	if (mRawPixels != NULL)
+	{
+		memcpy(mRawPixels, pixels, mRawPitch * mHeight);
+	}
 }
 
 LButton::LButton()
@@ -1301,6 +1382,65 @@ void LBitmapFont::renderText( int x, int y, std::string text )
     }
 }
 
+DataStream::DataStream()
+{
+	mImages[0] = NULL;
+	mImages[1] = NULL;
+	mImages[2] = NULL;
+	mImages[3] = NULL;
+	mCurrentImage = 0;
+	mDelayFrames = 4;
+}
+
+bool DataStream::loadMedia()
+{
+	Load* load = new Load(SDL_GetBasePath());
+	bool success = true;
+	for (int i = 0; i < 4; ++i)
+	{
+		std::stringstream path;
+		path << "foo_walk_" << i << ".png";
+		//SDL_Surface* loadedSurface = IMG_Load(path.str().c_str());
+		SDL_Surface* loadedSurface = IMG_Load(load->Path(path.str().c_str()));
+		if (loadedSurface == NULL)
+		{
+			SDL_Log("Unable to load %s! SDL_image error: %s\n", path.str().c_str(), SDL_GetError());
+			success = false;
+		}
+		else
+		{
+			mImages[i] = SDL_ConvertSurface(loadedSurface, SDL_PIXELFORMAT_RGBA8888);
+		}
+		SDL_DestroySurface(loadedSurface);
+	}
+	delete load;
+	return success;
+}
+
+void DataStream::free()
+{
+	for (int i = 0; i < 4; ++i)
+	{
+		SDL_DestroySurface(mImages[i]);
+		mImages[i] = NULL;
+	}
+}
+
+void* DataStream::getBuffer()
+{
+	--mDelayFrames;
+	if (mDelayFrames == 0)
+	{
+		++mCurrentImage;
+		mDelayFrames = 4;
+	}
+	if (mCurrentImage == 4)
+	{
+		mCurrentImage = 0;
+	}
+	return mImages[mCurrentImage]->pixels;
+}
+
 bool init()
 {
 	bool success = true;
@@ -1877,6 +2017,16 @@ bool loadMedia(Tile* tiles[])
 		SDL_Log("Failed to load bitmap font!\n");
 		success = false;
 	}
+	if (!gStreamingTexture.createBlank(64, 205))
+	{
+		SDL_Log("Failed to create streaming texture!\n");
+		success = false;
+	}
+	if (!gDataStream.loadMedia())
+	{
+		SDL_Log("Unable to load data stream!\n");
+		success = false;
+	}
 
 	delete load;
 	return success;
@@ -2007,6 +2157,8 @@ void close(Tile* tiles[])
 	gTileTexture.free();
 	gFooTexture.free();
 	gBitmapFont.free();
+	gStreamingTexture.free();
+	gDataStream.free();
 
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
@@ -2944,6 +3096,11 @@ int main(int argc, char* argv[])
 					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 					//SDL_RenderClear(gRenderer);
 					gBitmapFont.renderText(0, 0, "Bitmap Font:\nABDCEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789");
+
+					gStreamingTexture.lockTexture();
+					gStreamingTexture.copyRawPixels32(gDataStream.getBuffer());
+					gStreamingTexture.unlockTexture();
+					gStreamingTexture.render((SCREEN_WIDTH - gStreamingTexture.getWidth()) / 2, (SCREEN_HEIGHT - gStreamingTexture.getHeight()) / 2);
 
 					SDL_RenderPresent(gRenderer);
 				}
