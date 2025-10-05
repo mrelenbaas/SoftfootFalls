@@ -192,11 +192,11 @@ class Dot
 public:
 	static const int DOT_WIDTH = 20;
 	static const int DOT_HEIGHT = 20;
-	static const int DOT_VEL = 10;
+	static const int DOT_VEL = 640;
 	Dot();
 	~Dot();
 	void handleEvent(SDL_Event& e);
-	void move(Tile* tiles[]);
+	void move(Tile* tiles[], float timestep);
 	void setCamera(SDL_Rect& camera);
 	void render(SDL_Rect& camera);
 private:
@@ -883,14 +883,14 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move(Tile* tiles[])
+void Dot::move(Tile* tiles[], float timeStep)
 {
-	mBox.x += mVelX;
+	mBox.x += mVelX * timeStep;
 	if ((mBox.x < 0) || (mBox.x + DOT_WIDTH > LEVEL_WIDTH) || touchesWall(mBox, tiles))
 	{
 		mBox.x -= mVelX;
 	}
-	mBox.y += mVelY;
+	mBox.y += mVelY * timeStep;
 	if ((mBox.y < 0) || (mBox.y + DOT_HEIGHT > LEVEL_HEIGHT) || touchesWall(mBox, tiles))
 	{
 		mBox.y -= mVelY;
@@ -2493,6 +2493,7 @@ int main(int argc, char* argv[])
 #endif
 			double angle = 0;
 			SDL_FPoint screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+			LTimer stepTimer;
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -3054,7 +3055,9 @@ int main(int argc, char* argv[])
 					//gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
 					gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 
-					dot.move(tileSet);
+					float timeStep = stepTimer.getTicks() / 1000.f;
+					dot.move(tileSet, timeStep);
+					stepTimer.start();
 					dot.setCamera(camera);
 					/*				fwall.x = (float)wall.x;
 									fwall.y = (float)wall.y;
