@@ -104,7 +104,7 @@ public:
 #if defined(SDL_TTF_MAJOR_VERSION)
 	bool loadFromRenderedText(const char* textureText, SDL_Color textColor);
 #endif
-	bool createBlank(int width, int height);
+	bool createBlank(int width, int height, SDL_TextureAccess access);
 	void free();
 	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 	void setBlendMode(SDL_BlendMode blending);
@@ -114,6 +114,7 @@ public:
 #elif __linux__
 	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
 #endif
+	void setAsRenderTarget();
 	int getWidth();
 	int getHeight();
 	Uint32* getPixels32();
@@ -355,6 +356,7 @@ LTexture gFooTexture;
 LBitmapFont gBitmapFont;
 LTexture gStreamingTexture;
 DataStream gDataStream;
+LTexture gTargetTexture;
 
 
 LTexture::LTexture()
@@ -502,10 +504,10 @@ bool LTexture::loadFromRenderedText(const char* textureText, SDL_Color textColor
 }
 #endif
 
-bool LTexture::createBlank(int width, int height)
+bool LTexture::createBlank(int width, int height, SDL_TextureAccess access)
 {
 	free();
-	mTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+	mTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_RGBA8888, access, width, height);
 	if (mTexture == NULL)
 	{
 		SDL_Log("Unable to create streamable blank texture! SDL Error: %s\n", SDL_GetError());
@@ -576,6 +578,11 @@ void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* cen
 	//SDL_RenderCopy(gRenderer, mTexture, clip, &renderQuad);
 	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 #endif
+}
+
+void LTexture::setAsRenderTarget()
+{
+	SDL_SetRenderTarget(gRenderer, mTexture);
 }
 
 int LTexture::getWidth()
@@ -2033,7 +2040,7 @@ bool loadMedia(Tile* tiles[])
 		SDL_Log("Failed to load bitmap font!\n");
 		success = false;
 	}
-	if (!gStreamingTexture.createBlank(64, 205))
+	if (!gStreamingTexture.createBlank(64, 205, SDL_TEXTUREACCESS_STREAMING))
 	{
 		SDL_Log("Failed to create streaming texture!\n");
 		success = false;
@@ -2041,6 +2048,11 @@ bool loadMedia(Tile* tiles[])
 	if (!gDataStream.loadMedia())
 	{
 		SDL_Log("Unable to load data stream!\n");
+		success = false;
+	}
+	if (!gTargetTexture.createBlank(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_TEXTUREACCESS_TARGET))
+	{
+		SDL_Log("Failed to create target texture!\n");
 		success = false;
 	}
 
@@ -2175,6 +2187,7 @@ void close(Tile* tiles[])
 	gBitmapFont.free();
 	gStreamingTexture.free();
 	gDataStream.free();
+	gTargetTexture.free();
 
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
@@ -2478,6 +2491,8 @@ int main(int argc, char* argv[])
 #elif __linux__
 			SDL_StartTextInput();
 #endif
+			double angle = 0;
+			SDL_FPoint screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -3117,6 +3132,32 @@ int main(int argc, char* argv[])
 					gStreamingTexture.copyRawPixels32(gDataStream.getBuffer());
 					gStreamingTexture.unlockTexture();
 					gStreamingTexture.render((SCREEN_WIDTH - gStreamingTexture.getWidth()) / 2, (SCREEN_HEIGHT - gStreamingTexture.getHeight()) / 2);
+
+					angle += 2;
+					if (angle > 360)
+					{
+						angle -= 360;
+					}
+					gTargetTexture.setAsRenderTarget();
+					//Render red filled quad
+					fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+					SDL_RenderFillRect(gRenderer, &fillRect);
+					//Render green outlined quad
+					outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
+					SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+					SDL_RenderRect(gRenderer, &outlineRect);
+					//Draw blue horizontal line
+					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+					SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+					//Draw vertical line of yellow dots
+					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
+					for (int i = 0; i < SCREEN_HEIGHT; i += 4)
+					{
+						SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
+					}
+					SDL_SetRenderTarget(gRenderer, NULL);
+					gTargetTexture.render(0, 0, NULL, angle, &screenCenter);
 
 					SDL_RenderPresent(gRenderer);
 				}
