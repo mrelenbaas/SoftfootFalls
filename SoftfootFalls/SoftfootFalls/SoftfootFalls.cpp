@@ -419,7 +419,11 @@ bool LTexture::loadFromPixels()
 	}
 	else
 	{
+#ifdef _WIN32
 		SDL_SetSurfaceColorKey(mSurfacePixels, true, SDL_MapSurfaceRGB(mSurfacePixels, 0, 0xFF, 0xFF));
+#elif __linux__
+		SDL_SetColorKey(mSurfacePixels, SDL_TRUE, SDL_MapRGB(mSurfacePixels->format, 0, 0xFF, 0xFF));
+#endif
 		mTexture = SDL_CreateTextureFromSurface(gRenderer, mSurfacePixels);
 		if (mTexture == NULL)
 		{
@@ -430,7 +434,11 @@ bool LTexture::loadFromPixels()
 			mWidth = mSurfacePixels->w;
 			mHeight = mSurfacePixels->h;
 		}
+#ifdef _WIN32
 		SDL_DestroySurface(mSurfacePixels);
+#elif __linux__
+		SDL_FreeSurface(mSurfacePixels);
+#endif
 		mSurfacePixels = NULL;
 	}
 	return mTexture != NULL;
@@ -482,7 +490,11 @@ void LTexture::free()
 	}
 	if (mSurfacePixels != NULL)
 	{
+#ifdef _WIN32
 		SDL_DestroySurface(mSurfacePixels);
+#elif __linux__
+		SDL_FreeSurface(mSurfacePixels);
+#endif
 		mSurfacePixels = NULL;
 	}
 }
@@ -568,7 +580,11 @@ Uint32 LTexture::mapRGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 	Uint32 pixel = 0;
 	if (mSurfacePixels != NULL)
 	{
+#ifdef _WIN32
 		pixel = SDL_MapSurfaceRGBA(mSurfacePixels, r, g, b, a);
+#elif __linux__
+		pixel = SDL_MapRGBA(mSurfacePixels->format, r, g, b, a);
+#endif
 	}
 	return pixel;
 }
