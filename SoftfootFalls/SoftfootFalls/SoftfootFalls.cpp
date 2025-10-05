@@ -272,11 +272,27 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 bool checkCollision(SDL_Rect a, SDL_Rect b);
 bool touchesWall(SDL_Rect box, Tile* tiles[]);
 bool setTiles(Tile* tiles[]);
+
 #ifdef _WIN32
 Uint32 callback(void* param, SDL_TimerID timerID, Uint32 interval);
 #elif __linux__
 Uint32 callback(Uint32 interval, void* param);
 #endif
+int threadFunction(void* data);
+int worker(void* data);
+int worker2(void* data);
+SDL_Semaphore* gDataLock = NULL;
+int gData2 = -1;
+SDL_SpinLock gDataLock3 = NULL;
+int gData3 = -1;
+int producer(void* data);
+int consumer(void* data);
+void produce();
+void consume();
+SDL_Mutex* gBufferLock = NULL;
+SDL_Condition* gCanProduce = NULL;
+SDL_Condition* gCanConsume = NULL;
+int gData4 = -1;
 
 LWindow gWindow;
 SDL_Renderer* gRenderer = NULL;
@@ -1706,6 +1722,10 @@ bool loadMedia(Tile* tiles[])
 	Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
 
+	gBufferLock = SDL_CreateMutex();
+	gCanProduce = SDL_CreateCondition();
+	gCanConsume = SDL_CreateCondition();
+
 	SDL_Color textColor = { 0, 0, 0, 0xFF };
 	SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 
@@ -2194,6 +2214,15 @@ void close(Tile* tiles[])
 	gDataStream.free();
 	gTargetTexture.free();
 
+	SDL_DestroySemaphore(gDataLock);
+	gDataLock = NULL;
+	SDL_DestroyMutex(gBufferLock);
+	gBufferLock = NULL;
+	SDL_DestroyCondition(gCanProduce);
+	SDL_DestroyCondition(gCanConsume);
+	gCanProduce = NULL;
+	gCanConsume = NULL;
+
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
 	gWindow.free();
@@ -2204,6 +2233,83 @@ void close(Tile* tiles[])
 	Mix_Quit();
 #endif
 	SDL_Quit();
+}
+
+int worker(void* data)
+{
+	const char* thread_name = (const char*)data;
+
+	SDL_Log("%s starting...\n", thread_name);
+
+	//Pre thread random seeding
+	srand(SDL_GetTicks());
+
+	//Work 5 times
+	for (int i = 0; i < 5; ++i)
+	{
+		//Wait randomly
+		SDL_Delay(16 + rand() % 32);
+
+		//Lock
+		SDL_WaitSemaphore(gDataLock);
+
+		//Print pre work data
+		SDL_Log("%s gets %d\n", thread_name, gData2);
+
+		//"Work"
+		gData2 = rand() % 256;
+
+		//Print post work data
+		SDL_Log("%s sets %d\n\n", thread_name, gData2);
+
+		//Unlock
+		SDL_SignalSemaphore(gDataLock);
+
+		//Wait randomly
+		SDL_Delay(16 + rand() % 640);
+	}
+
+	SDL_Log("%s finished!\n\n", thread_name);
+
+	return 0;
+}
+int worker2(void* data)
+{
+	const char* thread_name = (const char*)data;
+
+	SDL_Log("%s starting...\n", thread_name);
+
+	//Pre thread random seeding
+	srand(SDL_GetTicks());
+
+	//Work 5 times
+	for (int i = 0; i < 5; ++i)
+	{
+		//Wait randomly
+		SDL_Delay(16 + rand() % 32);
+
+		//Lock
+		SDL_LockSpinlock(&gDataLock3);
+
+		//Print pre work data
+		SDL_Log("%s gets %d\n", thread_name, gData3);
+
+		//"Work"
+		gData3 = rand() % 256;
+
+		//Print post work data
+		SDL_Log("%s sets %d\n\n", thread_name, gData3);
+
+		//Unlock
+		SDL_UnlockSpinlock(&gDataLock3);
+
+		//Wait randomly
+		SDL_Delay(16 + rand() % 640);
+	}
+
+	SDL_Log("%s finished!\n\n", thread_name);
+
+	return 0;
 }
 
 SDL_Surface* loadSurface(const char* path, Load* load, bool* success)
@@ -2436,6 +2542,106 @@ Uint32 callback(Uint32 interval, void* param)
 	return 0;
 }
 
+int threadFunction(void* data)
+{
+	//Print incoming data
+	SDL_Log("Running thread with value = %d\n", (int)(uintptr_t)data);
+
+	return 0;
+}
+
+int producer(void* data)
+{
+	SDL_Log("\nProducer started...\n");
+
+	//Seed thread random
+	srand(SDL_GetTicks());
+
+	//Produce
+	for (int i = 0; i < 5; ++i)
+	{
+		//Wait
+		SDL_Delay(rand() % 1000);
+
+		//Produce
+		produce();
+	}
+
+	SDL_Log("\nProducer finished!\n");
+
+	return 0;
+
+}
+
+int consumer(void* data)
+{
+	SDL_Log("\nConsumer started...\n");
+
+	//Seed thread random
+	srand(SDL_GetTicks());
+
+	for (int i = 0; i < 5; ++i)
+	{
+		//Wait
+		SDL_Delay(rand() % 1000);
+
+		//Consume
+		consume();
+	}
+
+	SDL_Log("\nConsumer finished!\n");
+
+	return 0;
+}
+
+void produce()
+{
+	//Lock
+	SDL_LockMutex(gBufferLock);
+
+	//If the buffer is full
+	if (gData4 != -1)
+	{
+		//Wait for buffer to be cleared
+		SDL_Log("\nProducer encountered full buffer, waiting for consumer to empty buffer...\n");
+		SDL_WaitCondition(gCanProduce, gBufferLock);
+	}
+
+	//Fill and show buffer
+	gData4 = rand() % 255;
+	SDL_Log("\nProduced %d\n", gData4);
+
+	//Unlock
+	SDL_UnlockMutex(gBufferLock);
+
+	//Signal consumer
+	SDL_SignalCondition(gCanConsume);
+}
+
+void consume()
+{
+	//Lock
+	SDL_LockMutex(gBufferLock);
+
+	//If the buffer is empty
+	if (gData4 == -1)
+	{
+		//Wait for buffer to be filled
+		SDL_Log("\nConsumer encountered empty buffer, waiting for producer to fill buffer...\n");
+		SDL_WaitCondition(gCanConsume, gBufferLock);
+	}
+
+	//Show and empty buffer
+	SDL_Log("\nConsumed %d\n", gData4);
+	gData4 = -1;
+
+	//Unlock
+	SDL_UnlockMutex(gBufferLock);
+
+	//Signal producer
+	SDL_SignalCondition(gCanProduce);
+}
+
 int main(int argc, char* argv[])
 {
     Clock* clock = new Clock();
@@ -2522,6 +2728,17 @@ int main(int argc, char* argv[])
 			char* temp = {"3 seconds waited!\0"};
 			SDL_TimerID timerID = SDL_AddTimer(3 * 1000, callback, reinterpret_cast<void*>(temp));
 #endif
+			int data = 101;
+			SDL_Thread* threadID = SDL_CreateThread(threadFunction, "LazyThread", (void*)(uintptr_t)data);
+			srand(SDL_GetTicks());
+			SDL_Thread* threadA = SDL_CreateThread(worker, "Thread A", (void*)"Thread A");
+			SDL_Delay(16 + rand() % 32);
+			SDL_Thread* threadB = SDL_CreateThread(worker, "Thread B", (void*)"Thread B");
+			SDL_Thread* threadC = SDL_CreateThread(worker2, "Thread A", (void*)"Thread C");
+			SDL_Delay(16 + rand() % 32);
+			SDL_Thread* threadD = SDL_CreateThread(worker2, "Thread BB", (void*)"Thread D");
+			SDL_Thread* producerThread = SDL_CreateThread(producer, "Producer", NULL);
+			SDL_Thread* consumerThread = SDL_CreateThread(consumer, "Consumer", NULL);
 			while (!quit)
 			{
 #ifdef _WIN32
@@ -3228,6 +3445,13 @@ int main(int argc, char* argv[])
 			SDL_StopTextInput();
 #endif
 			SDL_RemoveTimer(timerID);
+			SDL_WaitThread(threadID, NULL);
+			SDL_WaitThread(threadA, NULL);
+			SDL_WaitThread(threadB, NULL);
+			SDL_WaitThread(threadC, NULL);
+			SDL_WaitThread(threadD, NULL);
+			SDL_WaitThread(consumerThread, NULL);
+			SDL_WaitThread(producerThread, NULL);
 		}
 		close(tileSet);
 	}
