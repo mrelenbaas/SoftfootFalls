@@ -74,8 +74,6 @@ const int TILE_BOTTOMLEFT = 9;
 const int TILE_LEFT = 10;
 const int TILE_TOPLEFT = 11;
 
-const SDL_PixelFormat SCREEN_FORMAT = SDL_PIXELFORMAT_ARGB8888;
-
 enum LButtonSprite
 {
 	BUTTON_SPRITE_MOUSE_OUT = 0,
@@ -238,7 +236,11 @@ public:
 	void renderText(int x, int y, std::string text);
 private:
 	LTexture mFontTexture;
+#ifdef _WIN32
 	SDL_FRect mChars[256];
+#elif __linux__
+	SDL_Rect mChars[256];
+#endif
 	int mNewLine, mSpace;
 };
 
