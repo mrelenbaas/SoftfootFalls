@@ -638,7 +638,11 @@ bool LTexture::lockTexture()
 	}
 	else
 	{
+#ifdef _WIN32
 		if (!SDL_LockTexture(mTexture, NULL, &mRawPixels, &mRawPitch))
+#elif __linux__
+		if (SDL_LockTexture(mTexture, NULL, &mRawPixels, &mRawPitch) != 0)
+#endif
 		{
 			SDL_Log("Unable to lock texture! %s\n", SDL_GetError());
 			success = false;
@@ -1409,9 +1413,17 @@ bool DataStream::loadMedia()
 		}
 		else
 		{
+#ifdef _WIN32
 			mImages[i] = SDL_ConvertSurface(loadedSurface, SDL_PIXELFORMAT_RGBA8888);
+#elif __linux__
+			mImages[i] = SDL_ConvertSurface(loadedSurface, gScreenSurface->format, 0);
+#endif
 		}
+#ifdef _WIN32
 		SDL_DestroySurface(loadedSurface);
+#elif __linux__
+		SDL_FreeSurface(loadedSurface);
+#endif
 	}
 	delete load;
 	return success;
@@ -1421,7 +1433,11 @@ void DataStream::free()
 {
 	for (int i = 0; i < 4; ++i)
 	{
+#ifdef _WIN32
 		SDL_DestroySurface(mImages[i]);
+#elif __linux__
+		SDL_FreeSurface(mImages[i]);
+#endif
 		mImages[i] = NULL;
 	}
 }
