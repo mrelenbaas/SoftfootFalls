@@ -281,7 +281,11 @@ Uint32 callback(Uint32 interval, void* param);
 int threadFunction(void* data);
 int worker(void* data);
 int worker2(void* data);
+#ifdef _WIN32
 SDL_Semaphore* gDataLock = NULL;
+#elif __linux__
+SDL_sem* gDataLock = NULL;
+#endif
 int gData2 = -1;
 SDL_SpinLock gDataLock3 = NULL;
 int gData3 = -1;
@@ -289,9 +293,18 @@ int producer(void* data);
 int consumer(void* data);
 void produce();
 void consume();
+#ifdef _WIN32
 SDL_Mutex* gBufferLock = NULL;
+#elif __linux__
+SDL_mutex* gBufferLock = NULL;
+#endif
+#ifdef _WIN32
 SDL_Condition* gCanProduce = NULL;
 SDL_Condition* gCanConsume = NULL;
+#elif __linux__
+SDL_cond* gCanProduce = NULL;
+SDL_cond* gCanConsume = NULL;
+#endif
 int gData4 = -1;
 
 LWindow gWindow;
@@ -1723,8 +1736,13 @@ bool loadMedia(Tile* tiles[])
 	bool success = true;
 
 	gBufferLock = SDL_CreateMutex();
+#ifdef _WIN32
 	gCanProduce = SDL_CreateCondition();
 	gCanConsume = SDL_CreateCondition();
+#elif __linux__
+	gCanProduce = SDL_CreateCond();
+	gCanConsume = SDL_CreateCond();
+#endif
 
 	SDL_Color textColor = { 0, 0, 0, 0xFF };
 	SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
@@ -2218,8 +2236,13 @@ void close(Tile* tiles[])
 	gDataLock = NULL;
 	SDL_DestroyMutex(gBufferLock);
 	gBufferLock = NULL;
+#ifdef _WIN32
 	SDL_DestroyCondition(gCanProduce);
 	SDL_DestroyCondition(gCanConsume);
+#elif __linux__
+	SDL_DestroyCond(gCanProduce);
+	SDL_DestroyCond(gCanConsume);
+#endif
 	gCanProduce = NULL;
 	gCanConsume = NULL;
 
@@ -2251,7 +2274,11 @@ int worker(void* data)
 		SDL_Delay(16 + rand() % 32);
 
 		//Lock
+#ifdef _WIN32
 		SDL_WaitSemaphore(gDataLock);
+#elif __linux__
+		SDL_SemWait(gDataLock);
+#endif
 
 		//Print pre work data
 		SDL_Log("%s gets %d\n", thread_name, gData2);
@@ -2263,7 +2290,11 @@ int worker(void* data)
 		SDL_Log("%s sets %d\n\n", thread_name, gData2);
 
 		//Unlock
+#ifdef _WIN32
 		SDL_SignalSemaphore(gDataLock);
+#elif __linux__
+		SDL_SemPost(gDataLock);
+#endif
 
 		//Wait randomly
 		SDL_Delay(16 + rand() % 640);
@@ -2289,7 +2320,11 @@ int worker2(void* data)
 		SDL_Delay(16 + rand() % 32);
 
 		//Lock
+#ifdef _WIN32
 		SDL_LockSpinlock(&gDataLock3);
+#elif __linux__
+		SDL_AtomicLock(&gDataLock3);
+#endif
 
 		//Print pre work data
 		SDL_Log("%s gets %d\n", thread_name, gData3);
@@ -2301,7 +2336,11 @@ int worker2(void* data)
 		SDL_Log("%s sets %d\n\n", thread_name, gData3);
 
 		//Unlock
+#ifdef _WIN32
 		SDL_UnlockSpinlock(&gDataLock3);
+#elif __linux__
+		SDL_AtomicUnlock(&gDataLock3);
+#endif
 
 		//Wait randomly
 		SDL_Delay(16 + rand() % 640);
@@ -2604,7 +2643,11 @@ void produce()
 	{
 		//Wait for buffer to be cleared
 		SDL_Log("\nProducer encountered full buffer, waiting for consumer to empty buffer...\n");
+#ifdef _WIN32
 		SDL_WaitCondition(gCanProduce, gBufferLock);
+#elif __linux__
+		SDL_CondWait(gCanProduce, gBufferLock);
+#endif
 	}
 
 	//Fill and show buffer
@@ -2615,7 +2658,11 @@ void produce()
 	SDL_UnlockMutex(gBufferLock);
 
 	//Signal consumer
+#ifdef _WIN32
 	SDL_SignalCondition(gCanConsume);
+#elif __linux__
+	SDL_CondSignal(gCanConsume);
+#endif
 }
 
 void consume()
@@ -2628,7 +2675,11 @@ void consume()
 	{
 		//Wait for buffer to be filled
 		SDL_Log("\nConsumer encountered empty buffer, waiting for producer to fill buffer...\n");
+#ifdef _WIN32
 		SDL_WaitCondition(gCanConsume, gBufferLock);
+#elif __linux__
+		SDL_CondWait(gCanConsume, gBufferLock);
+#endif
 	}
 
 	//Show and empty buffer
@@ -2639,7 +2690,11 @@ void consume()
 	SDL_UnlockMutex(gBufferLock);
 
 	//Signal producer
+#ifdef _WIN32
 	SDL_SignalCondition(gCanProduce);
+#elif __linux__
+	SDL_CondSignal(gCanProduce);
+#endif
 }
 
 int main(int argc, char* argv[])
