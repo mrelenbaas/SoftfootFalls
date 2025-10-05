@@ -99,6 +99,8 @@ public:
 	LTexture();
 	~LTexture();
 	bool loadFromFile(const char* path);
+	bool loadPixelsFromFile(const char* path);
+	bool loadFromPixels();
 #if defined(SDL_TTF_MAJOR_VERSION)
 	bool loadFromRenderedText(const char* textureText, SDL_Color textColor);
 #endif
@@ -113,8 +115,12 @@ public:
 #endif
 	int getWidth();
 	int getHeight();
+	Uint32* getPixels32();
+	Uint32 getPitch32();
+	Uint32 mapRGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 private:
 	SDL_Texture* mTexture;
+	SDL_Surface* mSurfacePixels;
 	int mWidth;
 	int mHeight;
 };
@@ -235,7 +241,7 @@ SDL_Surface* gScreenSurface = NULL;
 SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
 SDL_Surface* gCurrentSurface = NULL;
 SDL_Texture* gTexture = NULL;
-LTexture gFooTexture;
+LTexture gFooTexture2;
 #ifdef _WIN32
 SDL_FRect gDotSpriteClips[4];
 #elif __linux__
@@ -308,6 +314,7 @@ SDL_FRect gTileClips[TOTAL_TILE_SPRITES];
 #elif __linux__
 SDL_Rect gTileClips[TOTAL_TILE_SPRITES];
 #endif
+LTexture gFooTexture;
 
 
 LTexture::LTexture()
@@ -315,6 +322,7 @@ LTexture::LTexture()
 	mTexture = NULL;
 	mWidth = 0;
 	mHeight = 0;
+	mSurfacePixels = NULL;
 }
 
 LTexture::~LTexture()
@@ -324,7 +332,7 @@ LTexture::~LTexture()
 
 bool LTexture::loadFromFile(const char* path)
 {
-	free();
+	/*free();
 	SDL_Texture* newTexture = NULL;
 	SDL_Surface* loadedSurface = IMG_Load(path);
 	if (loadedSurface == NULL)
@@ -355,6 +363,59 @@ bool LTexture::loadFromFile(const char* path)
 #endif
 	}
 	mTexture = newTexture;
+	return mTexture != NULL;*/
+	if (!loadPixelsFromFile(path))
+	{
+		SDL_Log("Failed to load pixels for %s!\n", path);
+	}
+	else
+	{
+		if (!loadFromPixels())
+		{
+			SDL_Log("Failed to texture from pixels from %s!\n", path);
+		}
+	}
+	return mTexture != NULL;
+}
+
+bool LTexture::loadPixelsFromFile(const char* path)
+{
+	free();
+	mSurfacePixels = IMG_Load(path);
+	if (mSurfacePixels == NULL)
+	{
+		SDL_Log("Unable to load image %s! SDL_image Error: %s\n", path, SDL_GetError());
+	}
+	else
+	{
+		mWidth = mSurfacePixels->w;
+		mHeight = mSurfacePixels->h;
+	}
+	return mSurfacePixels != NULL;
+}
+
+bool LTexture::loadFromPixels()
+{
+	if (mSurfacePixels == NULL)
+	{
+		SDL_Log("No pixels loaded!");
+	}
+	else
+	{
+		SDL_SetSurfaceColorKey(mSurfacePixels, true, SDL_MapSurfaceRGB(mSurfacePixels, 0, 0xFF, 0xFF));
+		mTexture = SDL_CreateTextureFromSurface(gRenderer, mSurfacePixels);
+		if (mTexture == NULL)
+		{
+			SDL_Log("Unable to create texture from loaded pixels! SDL Error: %s\n", SDL_GetError());
+		}
+		else
+		{
+			mWidth = mSurfacePixels->w;
+			mHeight = mSurfacePixels->h;
+		}
+		SDL_DestroySurface(mSurfacePixels);
+		mSurfacePixels = NULL;
+	}
 	return mTexture != NULL;
 }
 
@@ -401,6 +462,11 @@ void LTexture::free()
 		mTexture = NULL;
 		mWidth = 0;
 		mHeight = 0;
+	}
+	if (mSurfacePixels != NULL)
+	{
+		SDL_DestroySurface(mSurfacePixels);
+		mSurfacePixels = NULL;
 	}
 }
 
@@ -452,6 +518,36 @@ int LTexture::getWidth()
 int LTexture::getHeight()
 {
 	return mHeight;
+}
+
+Uint32* LTexture::getPixels32()
+{
+	Uint32* pixels = NULL;
+	if (mSurfacePixels != NULL)
+	{
+		pixels = static_cast<Uint32*>(mSurfacePixels->pixels);
+	}
+	return pixels;
+}
+
+Uint32 LTexture::getPitch32()
+{
+	Uint32 pitch = 0;
+	if (mSurfacePixels != NULL)
+	{
+		pitch = mSurfacePixels->pitch / 4;
+	}
+	return pitch;
+}
+
+Uint32 LTexture::mapRGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+{
+	Uint32 pixel = 0;
+	if (mSurfacePixels != NULL)
+	{
+		pixel = SDL_MapSurfaceRGBA(mSurfacePixels, r, g, b, a);
+	}
+	return pixel;
 }
 
 LButton::LButton()
@@ -1265,7 +1361,7 @@ bool loadMedia(Tile* tiles[])
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = loadSurface(load->Path("left.png"), load, &success);
 	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = loadSurface(load->Path("right.png"), load, &success);
 	gTexture = loadTexture(load->Path("texture.png"), load, &success);
-	if (!gFooTexture.loadFromFile(load->Path("foo2.png")))
+	if (!gFooTexture2.loadFromFile(load->Path("foo2.png")))
 	{
 		SDL_Log("Failed to load foo' texture image!\n");
 		success = false;
@@ -1567,6 +1663,29 @@ bool loadMedia(Tile* tiles[])
 		printf("Failed to load tile set!\n");
 		success = false;
 	}
+	if (!gFooTexture.loadPixelsFromFile(load->Path("foo3.png")))
+	{
+		SDL_Log("Unable to load Foo' texture\n");
+		success = false;
+	}
+	else
+	{
+		Uint32* pixels = gFooTexture.getPixels32();
+		int pixelCount = gFooTexture.getPitch32() * gFooTexture.getHeight();
+		Uint32 colorKey = gFooTexture.mapRGBA(0xFF, 0x00, 0xFF, 0xFF);
+		Uint32 transparent = gFooTexture.mapRGBA(0xFF, 0xFF, 0xFF, 0x00);
+		for (int i = 0; i < pixelCount; ++i)
+		{
+			if (pixels[i] == colorKey)
+			{
+				pixels[i] = transparent;
+			}
+		}
+		if (!gFooTexture.loadFromPixels())
+		{
+			SDL_Log("Unable to load Foo' texture from surface!\n");
+		}
+	}
 
 	delete load;
 	return success;
@@ -1587,7 +1706,7 @@ void close(Tile* tiles[])
 	}
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
-	gFooTexture.free();
+	gFooTexture2.free();
 	gBackgroundTexture.free();
 	gDotSpriteSheetTexture.free();
 	gModulatedTexture.free();
@@ -1695,6 +1814,7 @@ void close(Tile* tiles[])
 		}
 	}
 	gTileTexture.free();
+	gFooTexture.free();
 
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
@@ -2471,7 +2591,7 @@ int main(int argc, char* argv[])
 					SDL_RenderSetViewport(gRenderer, NULL);
 #endif
 					gBackgroundTexture.render(0, 0);
-					gFooTexture.render(240, 190);
+					gFooTexture2.render(240, 190);
 
 					gDotSpriteSheetTexture.render(0, 0, &gDotSpriteClips[0]);
 					gDotSpriteSheetTexture.render(SCREEN_WIDTH - gDotSpriteClips[1].w, 0, &gDotSpriteClips[1]);
@@ -2626,6 +2746,8 @@ int main(int argc, char* argv[])
 						tileSet[i]->render(camera);
 					}
 					dot.render(camera);
+
+					gFooTexture.render((SCREEN_WIDTH - gFooTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFooTexture.getHeight()) / 2);
 
 					SDL_RenderPresent(gRenderer);
 				}
