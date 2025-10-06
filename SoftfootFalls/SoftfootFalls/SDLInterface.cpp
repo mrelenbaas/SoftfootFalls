@@ -24,5 +24,9 @@ void RenderRect(SDL_Renderer* renderer, SDL_FRect* rect)
 void RenderRect(SDL_Renderer* renderer, SDL_Rect* rect)
 #endif
 {
+#if _WIN32
 	SDL_RenderRect(renderer, rect);
+#elif __linux__
+	SDL_RenderDrawRect(renderer, rect);
+#endif
 }
