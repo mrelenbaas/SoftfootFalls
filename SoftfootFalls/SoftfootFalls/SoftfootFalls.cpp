@@ -1086,7 +1086,8 @@ bool LWindow::init(bool bCreateRenderer)
 		{
 			return false;
 		}
-		SDL_SetRenderVSync(mRenderer, 1);
+		//SDL_SetRenderVSync(mRenderer, 1);
+		SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
 	}
 	else
 	{
@@ -1118,7 +1119,7 @@ bool LWindow::init(bool bCreateRenderer)
 #ifdef __linux__
 SDL_Renderer* LWindow::createRenderer()
 {
-	return SDL_CreateRenderer(mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	return SDL_CreateRenderer(mWindow, -1, SDL_RENDERER_ACCELERATED /*| SDL_RENDERER_PRESENTVSYNC*/);
 }
 #endif
 
@@ -1648,6 +1649,7 @@ bool init()
 #ifdef _WIN32
 			gRenderer = gWindow.getRenderer();
 			//SDL_SetRenderVSync(gRenderer, 1);
+			SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #elif __linux__
 			//gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
@@ -3528,11 +3530,11 @@ int main(int argc, char* argv[])
 
 				++countedFrames;
 
-				int frameTicks = capTimer.getTicks();
-				if (frameTicks < SCREEN_TICK_PER_FRAME)
-				{
-					SDL_Delay(SCREEN_TICK_PER_FRAME - frameTicks);
-				}
+				//int frameTicks = capTimer.getTicks();
+				//if (frameTicks < SCREEN_TICK_PER_FRAME)
+				//{
+				//	SDL_Delay(SCREEN_TICK_PER_FRAME - frameTicks);
+				//}
 			}
 #ifdef _WIN32
 			SDL_StopTextInput(gWindow.getWindow());
