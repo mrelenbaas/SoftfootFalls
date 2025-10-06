@@ -27,11 +27,8 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
 #endif
+#include "SDLInterface.h"
 #include "Load.h"
-
-#ifdef _WIN32
-#elif __linux__
-#endif
 
 
 const int SCREEN_WIDTH = 640;
@@ -2794,8 +2791,12 @@ int main(int argc, char* argv[])
 			SDL_Thread* threadD = SDL_CreateThread(worker2, "Thread BB", (void*)"Thread D");
 			SDL_Thread* producerThread = SDL_CreateThread(producer, "Producer", NULL);
 			SDL_Thread* consumerThread = SDL_CreateThread(consumer, "Consumer", NULL);
+			bool isDebug = false;
+			bool isDebugReleased = false;
+			float mouseX, mouseY;
 			while (!quit)
 			{
+				SDL_GetMouseState(&mouseX, &mouseY);
 #ifdef _WIN32
 				const int minimum_audio = (8000 * sizeof(float)) / 2;  /* 8000 float samples per second. Half of that. */
 				if (SDL_GetAudioStreamQueued(stream) < minimum_audio) {
@@ -2940,7 +2941,25 @@ int main(int argc, char* argv[])
 						//printf("%i, %i\n", xDir, yDir);
 					}
 #ifdef _WIN32
-					else if (e.key.key)
+					else if (e.type == SDL_EVENT_KEY_UP)
+#elif __linux__
+					else if (e.type == SDL_KEYUP)
+#endif
+					{
+#ifdef _WIN32
+						switch (e.key.key)
+#elif __linux__
+						switch (e.key.keysym.sym)
+#endif
+						{
+						case KeyHome():
+							//printf("HERE\n");
+							//isDebug = !isDebug;
+							break;
+						}
+					}
+#ifdef _WIN32
+					else if (e.type == SDL_EVENT_KEY_DOWN)
 #elif __linux__
 					else if (e.type == SDL_KEYDOWN)
 #endif
@@ -2951,11 +2970,11 @@ int main(int argc, char* argv[])
 						switch (e.key.keysym.sym)
 #endif
 						{
-#ifdef _WIN32
-						case SDLK_P:
-#elif __linux__
-						case SDLK_p:
-#endif
+						case KeyHome():
+							//printf("HERE\n");
+							isDebug = !isDebug;
+							break;
+						case KeyP():
 							startTime = SDL_GetTicks();
 							if (timer.isPaused())
 							{
@@ -3436,46 +3455,50 @@ int main(int argc, char* argv[])
 					gStreamingTexture.unlockTexture();
 					gStreamingTexture.render((SCREEN_WIDTH - gStreamingTexture.getWidth()) / 2, (SCREEN_HEIGHT - gStreamingTexture.getHeight()) / 2);
 
-					angle += 2;
-					if (angle > 360)
+					if (isDebug)
 					{
-						angle -= 360;
+						angle += 2;
+						if (angle > 360)
+						{
+							angle -= 360;
+						}
+						gTargetTexture.setAsRenderTarget();
+						fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+						SDL_RenderFillRect(gRenderer, &fillRect);
+						outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
+						SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+#ifdef _WIN32
+						SDL_RenderRect(gRenderer, &outlineRect);
+#elif __linux__
+						SDL_RenderDrawRect(gRenderer, &outlineRect);
+#endif
+#ifdef _WIN32
+#elif __linux__
+#endif
+						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+#ifdef _WIN32
+						SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+						SDL_RenderLine(gRenderer, 0, 0, mouseX, mouseY);
+#elif __linux__
+						SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+#endif
+						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
+						for (int i = 0; i < SCREEN_HEIGHT; i += 4)
+						{
+#ifdef _WIN32
+							SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
+#elif __linux__
+							SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
+#endif
+						}
+						SDL_SetRenderTarget(gRenderer, NULL);
+						SDL_RenderLine(gRenderer, 0, 0, mouseX, mouseY);
+						SDL_RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
+						SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
+						SDL_RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
+						gTargetTexture.render(0, 0, NULL, angle, &screenCenter);
 					}
-					gTargetTexture.setAsRenderTarget();
-					//Render red filled quad
-					fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
-					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
-					SDL_RenderFillRect(gRenderer, &fillRect);
-					//Render green outlined quad
-					outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
-					SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
-#ifdef _WIN32
-					SDL_RenderRect(gRenderer, &outlineRect);
-#elif __linux__
-					SDL_RenderDrawRect(gRenderer, &outlineRect);
-#endif
-#ifdef _WIN32
-#elif __linux__
-#endif
-					//Draw blue horizontal line
-					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
-#ifdef _WIN32
-					SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
-#elif __linux__
-					SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
-#endif
-					//Draw vertical line of yellow dots
-					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
-					for (int i = 0; i < SCREEN_HEIGHT; i += 4)
-					{
-#ifdef _WIN32
-						SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
-#elif __linux__
-						SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
-#endif
-					}
-					SDL_SetRenderTarget(gRenderer, NULL);
-					gTargetTexture.render(0, 0, NULL, angle, &screenCenter);
 
 					SDL_RenderPresent(gRenderer);
 				}

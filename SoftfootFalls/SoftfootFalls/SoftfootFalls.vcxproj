@@ -132,6 +132,7 @@
     <ClCompile Include="Load.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Print.cpp" />
+    <ClCompile Include="SDLInterface.cpp" />
     <ClCompile Include="SoftfootFalls.cpp" />
     <ClCompile Include="Time.cpp" />
     <ClCompile Include="Timer.cpp" />
@@ -141,6 +142,7 @@
     <ClInclude Include="Load.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="Print.h" />
+    <ClInclude Include="SDLInterface.h" />
     <ClInclude Include="SoftfootFalls.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Timer.h" />
