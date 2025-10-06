@@ -547,6 +547,11 @@ bool LTexture::createBlank(int width, int height, SDL_TextureAccess access)
 	{
 		mWidth = width;
 		mHeight = height;
+		SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND);
+		SDL_SetRenderTarget(gRenderer, mTexture);
+		SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
+		SDL_RenderClear(gRenderer);
+		SDL_SetRenderTarget(gRenderer, NULL);
 	}
 	return mTexture != NULL;
 }
