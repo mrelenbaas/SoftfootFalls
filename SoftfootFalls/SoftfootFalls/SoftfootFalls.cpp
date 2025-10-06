@@ -547,11 +547,13 @@ bool LTexture::createBlank(int width, int height, SDL_TextureAccess access)
 	{
 		mWidth = width;
 		mHeight = height;
+#ifdef __linux__
 		SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND);
 		SDL_SetRenderTarget(gRenderer, mTexture);
 		SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
 		SDL_RenderClear(gRenderer);
 		SDL_SetRenderTarget(gRenderer, NULL);
+#endif
 	}
 	return mTexture != NULL;
 }
@@ -2794,6 +2796,7 @@ int main(int argc, char* argv[])
 			SDL_Thread* consumerThread = SDL_CreateThread(consumer, "Consumer", NULL);
 			bool isDebug = false;
 			bool isDebugReleased = false;
+			bool isRotating = true;
 #ifdef _WIN32
 			float mouseX, mouseY;
 #elif __linux__
@@ -2978,6 +2981,9 @@ int main(int argc, char* argv[])
 						case KeyHome():
 							//printf("HERE\n");
 							isDebug = !isDebug;
+							break;
+						case KeyEnd():
+							isRotating = !isRotating;
 							break;
 						case KeyP():
 							startTime = SDL_GetTicks();
@@ -3214,28 +3220,11 @@ int main(int argc, char* argv[])
 					SDL_Rect outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
 #endif
 					SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
-#ifdef _WIN32
-					SDL_RenderRect(gRenderer, &outlineRect);
-#elif __linux__
-					SDL_RenderDrawRect(gRenderer, &outlineRect);
-#endif
 
 					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
-#ifdef _WIN32
-					SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
-#elif __linux__
-					SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
-#endif
+					RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
 
 					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
-					for (int i = 0; i < SCREEN_HEIGHT; i += 4)
-					{
-#ifdef _WIN32
-						SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
-#elif __linux__
-						SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
-#endif
-					}
 
 					SDL_Rect topLeftViewport;
 					topLeftViewport.x = 0;
@@ -3387,11 +3376,7 @@ int main(int argc, char* argv[])
 									fwall.y = (float)wall.y;
 									fwall.w = (float)wall.w;
 									fwall.h = (float)wall.h;
-					#ifdef _WIN32
-									SDL_RenderRect(gRenderer, &fwall);
-					#elif __linux__
-									SDL_RenderFillRect(gRenderer, &fwall);
-					#endif*/
+					*/
 					/*camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
 					camera.y = (dot.getPosY() + Dot::DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
 					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
@@ -3462,60 +3447,39 @@ int main(int argc, char* argv[])
 
 					if (isDebug)
 					{
-						angle += 2;
-						if (angle > 360)
+						if (isRotating)
 						{
-							angle -= 360;
+							angle += 0.02;
+							if (angle > 360)
+							{
+								angle -= 360;
+							}
 						}
 						gTargetTexture.setAsRenderTarget();
-						//gTargetTexture.createBlank(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_TEXTUREACCESS_TARGET);
-						//SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND);
-						//SDL_SetRenderTarget(gRenderer, mTexture);
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
 						SDL_RenderClear(gRenderer);
-						//SDL_SetRenderTarget(gRenderer, NULL);
-
 						fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
 						SDL_RenderFillRect(gRenderer, &fillRect);
 						outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
-#ifdef _WIN32
-						SDL_RenderRect(gRenderer, &outlineRect);
-#elif __linux__
-						SDL_RenderDrawRect(gRenderer, &outlineRect);
-#endif
-#ifdef _WIN32
-#elif __linux__
-#endif
+						RenderRect(gRenderer, &outlineRect);
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
-#ifdef _WIN32
-						SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
-						SDL_RenderLine(gRenderer, 0, 0, mouseX, mouseY);
-#elif __linux__
-						SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
-#endif
+						RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+						RenderLine(gRenderer, outlineRect.x, outlineRect.y, mouseX, mouseY);
+						RenderLine(gRenderer, outlineRect.x + outlineRect.w, outlineRect.y, mouseX, mouseY);
+						RenderLine(gRenderer, outlineRect.x, outlineRect.y + outlineRect.h, mouseX, mouseY);
+						RenderLine(gRenderer, outlineRect.x + outlineRect.w, outlineRect.y + outlineRect.h, mouseX, mouseY);
 						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
 						for (int i = 0; i < SCREEN_HEIGHT; i += 4)
 						{
-#ifdef _WIN32
-							SDL_RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
-#elif __linux__
-							SDL_RenderDrawPoint(gRenderer, SCREEN_WIDTH / 2, i);
-#endif
+							RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
 						}
 						SDL_SetRenderTarget(gRenderer, NULL);
-#ifdef _WIN32
-						SDL_RenderLine(gRenderer, 0, 0, mouseX, mouseY);
-						SDL_RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
-						SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
-						SDL_RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
-#elif __linux__
-						SDL_RenderDrawLine(gRenderer, 0, 0, mouseX, mouseY);
-						SDL_RenderDrawLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
-						SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
-						SDL_RenderDrawLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
-#endif
+						RenderLine(gRenderer, 0, 0, mouseX, mouseY);
+						RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
+						RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
+						RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
 						gTargetTexture.render(0, 0, NULL, angle, &screenCenter);
 					}
 

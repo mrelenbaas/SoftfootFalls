@@ -23,6 +23,11 @@ constexpr SDL_Keycode KeyHome()
 	return SDLK_HOME;
 }
 
+constexpr SDL_Keycode KeyEnd()
+{
+	return SDLK_END;
+}
+
 constexpr SDL_Keycode KeyP()
 {
 #if WINDOWS
@@ -31,3 +36,13 @@ constexpr SDL_Keycode KeyP()
 	return SDLK_p;
 #endif
 }
+
+void RenderLine(SDL_Renderer*, float, float, float, float);
+
+void RenderPoint(SDL_Renderer*, float, float);
+
+#if _WIN32
+void RenderRect(SDL_Renderer*, SDL_FRect* rect);
+#elif __linux__
+void RenderRect(SDL_Renderer*, SDL_Rect* rect);
+#endif
