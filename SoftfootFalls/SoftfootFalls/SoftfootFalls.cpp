@@ -2793,7 +2793,11 @@ int main(int argc, char* argv[])
 			SDL_Thread* consumerThread = SDL_CreateThread(consumer, "Consumer", NULL);
 			bool isDebug = false;
 			bool isDebugReleased = false;
+#ifdef _WIN32
 			float mouseX, mouseY;
+#elif __linux__
+			int mouseX, mouseY;
+#endif
 			while (!quit)
 			{
 				SDL_GetMouseState(&mouseX, &mouseY);
@@ -3493,10 +3497,17 @@ int main(int argc, char* argv[])
 #endif
 						}
 						SDL_SetRenderTarget(gRenderer, NULL);
+#ifdef _WIN32
 						SDL_RenderLine(gRenderer, 0, 0, mouseX, mouseY);
 						SDL_RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
 						SDL_RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
 						SDL_RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
+#elif __linux__
+						SDL_RenderDrawLine(gRenderer, 0, 0, mouseX, mouseY);
+						SDL_RenderDrawLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
+						SDL_RenderDrawLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
+						SDL_RenderDrawLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
+#endif
 						gTargetTexture.render(0, 0, NULL, angle, &screenCenter);
 					}
 
