@@ -1,5 +1,15 @@
 #include "SDLInterface.h"
 
+
+bool IsWindowQuit(SDL_Event e)
+{
+#ifdef _WIN32
+	return e.type == SDL_EVENT_QUIT;
+#elif __linux__
+	return e.type == SDL_QUIT;
+#endif
+}
+
 void RenderLine(SDL_Renderer* renderer, float x, float y, float w, float h)
 {
 #if _WIN32

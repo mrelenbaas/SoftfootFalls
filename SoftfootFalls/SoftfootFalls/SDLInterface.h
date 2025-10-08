@@ -18,24 +18,13 @@
 #elif __linux__
 #endif
 
-constexpr SDL_Keycode KeyHome()
-{
-	return SDLK_HOME;
-}
-
-constexpr SDL_Keycode KeyEnd()
-{
-	return SDLK_END;
-}
-
-constexpr SDL_Keycode KeyP()
-{
 #if WINDOWS
-	return SDLK_P;
+	const SDL_Keycode KEY_P = SDLK_P;
 #elif LINUX
-	return SDLK_p;
+	const SDL_Keycode KEY_P = SDLK_p;
 #endif
-}
+
+bool IsWindowQuit(SDL_Event);
 
 void RenderLine(SDL_Renderer*, float, float, float, float);
 

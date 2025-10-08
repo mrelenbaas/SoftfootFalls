@@ -109,7 +109,7 @@ public:
 #ifdef _WIN32
 	void render(int x, int y, SDL_FRect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE);
 #elif __linux__
-	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
+	void render(int x, int y, SDL_Rect* clip = NULL, double secondAngle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
 #endif
 	void setAsRenderTarget();
 	int getWidth();
@@ -326,7 +326,7 @@ SDL_FRect gWalkingSpriteClips[WALKING_ANIMATION_FRAMES];
 SDL_Rect gWalkingSpriteClips[WALKING_ANIMATION_FRAMES];
 #endif
 LTexture gWalkingSpriteSheetTexture;
-LTexture gArrowTexture;
+LTexture gIconArrow;
 TTF_Font* gFont = NULL;
 LTexture gTextTexture;
 #ifdef _WIN32
@@ -405,38 +405,6 @@ LTexture::~LTexture()
 
 bool LTexture::loadFromFile(const char* path)
 {
-	/*free();
-	SDL_Texture* newTexture = NULL;
-	SDL_Surface* loadedSurface = IMG_Load(path);
-	if (loadedSurface == NULL)
-	{
-		SDL_Log("Unable to load image %s! SDL_image Error: %s\n", path, SDL_GetError());
-	}
-	else
-	{
-#ifdef _WIN32
-		SDL_SetSurfaceColorKey(loadedSurface, true, SDL_MapSurfaceRGB(loadedSurface, 0, 0xFF, 0xFF));
-#elif __linux__
-		SDL_SetColorKey(loadedSurface, SDL_TRUE, SDL_MapRGB(loadedSurface->format, 0, 0xFF, 0xFF));
-#endif
-		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
-		if (newTexture == NULL)
-		{
-			SDL_Log("Unable to create texture from %s! SDL Error %s\n", path, SDL_GetError());
-		}
-		else
-		{
-			mWidth = loadedSurface->w;
-			mHeight = loadedSurface->h;
-		}
-#ifdef _WIN32
-		SDL_DestroySurface(loadedSurface);
-#elif __linux__
-		SDL_FreeSurface(loadedSurface);
-#endif
-	}
-	mTexture = newTexture;
-	return mTexture != NULL;*/
 	if (!loadPixelsFromFile(path))
 	{
 		SDL_Log("Failed to load pixels for %s!\n", path);
@@ -596,7 +564,7 @@ void LTexture::setAlpha(Uint8 alpha)
 #ifdef _WIN32
 void LTexture::render(int x, int y, SDL_FRect* clip, double angle, SDL_FPoint* center, SDL_FlipMode flip)
 #elif __linux__
-void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip)
+void LTexture::render(int x, int y, SDL_Rect* clip, double secondAngle, SDL_Point* center, SDL_RendererFlip flip)
 #endif
 {
 #ifdef _WIN32
@@ -614,7 +582,7 @@ void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* cen
 	SDL_RenderTextureRotated(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 #elif __linux__
 	//SDL_RenderCopy(gRenderer, mTexture, clip, &renderQuad);
-	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
+	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, secondAngle, center, flip);
 #endif
 }
 
@@ -1825,7 +1793,7 @@ bool loadMedia(Tile* tiles[])
 		gWalkingSpriteClips[3].w = 64;
 		gWalkingSpriteClips[3].h = 205;
 	}
-	if (!gArrowTexture.loadFromFile(load->Path("arrow.png")))
+	if (!gIconArrow.loadFromFile(load->Path("IconCursor.png")))
 	{
 		SDL_Log("Failed to load arrow texture!\n");
 		success = false;
@@ -2124,7 +2092,7 @@ void close(Tile* tiles[])
 	gModulatedTexture.free();
 	gBackgroundTexture.free();
 	gWalkingSpriteSheetTexture.free();
-	gArrowTexture.free();
+	gIconArrow.free();
 	gTextTexture.free();
 	TTF_CloseFont(gFont);
 	gFont = NULL;
@@ -2767,7 +2735,8 @@ int main(int argc, char* argv[])
 #elif __linux__
 			SDL_StartTextInput();
 #endif
-			double angle = 0;
+			double secondAngle = 0;
+			double minuteAngle = 0;
 #ifdef _WIN32
 			SDL_FPoint screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 #elif __linux__
@@ -2796,7 +2765,6 @@ int main(int argc, char* argv[])
 			SDL_Thread* consumerThread = SDL_CreateThread(consumer, "Consumer", NULL);
 			bool isDebug = false;
 			bool isDebugReleased = false;
-			bool isRotating = true;
 #ifdef _WIN32
 			float mouseX, mouseY;
 #elif __linux__
@@ -2805,17 +2773,25 @@ int main(int argc, char* argv[])
 
 			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 			std::cout << previousTime << std::endl;
-			long long deltaTime = 0L;
+			long long secondDelta = 0L;
+			long long minuteDelta = 0L;
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-				deltaTime += currentTime - previousTime;
-				double limit = 10'000'000'000;
-				if (deltaTime > limit)
+				secondDelta += currentTime - previousTime;
+				minuteDelta += currentTime - previousTime;
+				double secondLimit = 1'000'000'000;
+				double minuteLimit = 60'000'000'000;
+				if (secondDelta > secondLimit)
 				{
-					deltaTime -= limit;
+					secondDelta -= secondLimit;
 				}
-				double normal = (double)deltaTime / limit;
+				if (minuteDelta > minuteLimit)
+				{
+					minuteDelta -= minuteLimit;
+				}
+				double secondNormal = (double)secondDelta / secondLimit;
+				double minuteNormal = (double)minuteDelta / minuteLimit;
 				previousTime = currentTime;
 
 				SDL_GetMouseState(&mouseX, &mouseY);
@@ -2886,12 +2862,7 @@ int main(int argc, char* argv[])
 				bool renderText = false;
 				while (SDL_PollEvent(&e) != 0)
 				{
-#ifdef _WIN32
-					if (e.type == SDL_EVENT_QUIT)
-#elif __linux__
-					if (e.type == SDL_QUIT)
-#endif
-						quit = true;
+					if (IsWindowQuit(e)) quit = true;
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)
 #elif __linux__
@@ -2974,7 +2945,7 @@ int main(int argc, char* argv[])
 						switch (e.key.keysym.sym)
 #endif
 						{
-						case KeyHome():
+						case SDLK_HOME:
 							//printf("HERE\n");
 							//isDebug = !isDebug;
 							break;
@@ -2992,14 +2963,12 @@ int main(int argc, char* argv[])
 						switch (e.key.keysym.sym)
 #endif
 						{
-						case KeyHome():
-							//printf("HERE\n");
+						case SDLK_HOME:
 							isDebug = !isDebug;
 							break;
-						case KeyEnd():
-							isRotating = !isRotating;
+						case SDLK_END:
 							break;
-						case KeyP():
+						case KEY_P:
 							startTime = SDL_GetTicks();
 							if (timer.isPaused())
 							{
@@ -3313,7 +3282,7 @@ int main(int argc, char* argv[])
 #endif
 					gWalkingSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
 
-					gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
+					//gIconArrow.render((SCREEN_WIDTH - gIconArrow.getWidth()) / 2, (SCREEN_HEIGHT - gIconArrow.getHeight()) / 2, NULL, degrees, NULL, flipType);
 
 					gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
 
@@ -3355,7 +3324,7 @@ int main(int argc, char* argv[])
 					{
 						joystickAngle = 0;
 					}
-					gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, joystickAngle);
+					//gIconArrow.render((SCREEN_WIDTH - gIconArrow.getWidth()) / 2, (SCREEN_HEIGHT - gIconArrow.getHeight()) / 2, NULL, joystickAngle);
 
 					//gSplashTexture.render(0, 0);
 
@@ -3461,10 +3430,8 @@ int main(int argc, char* argv[])
 
 					if (isDebug)
 					{
-						if (isRotating)
-						{
-							angle = 360 * normal;
-						}
+						secondAngle = 360 * secondNormal;
+						minuteAngle = 360 * minuteNormal;
 						
 						gTargetTexture.setAsRenderTarget();
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
@@ -3491,22 +3458,58 @@ int main(int argc, char* argv[])
 						RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
 						RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
 						RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
-						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, angle, &screenCenter);
-						gTargetTexture.render(SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, angle, &screenCenter);
-						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, angle, &screenCenter);
-						gTargetTexture.render(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, angle, &screenCenter);
+						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, secondAngle, &screenCenter);
+						gTargetTexture.render(SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, minuteAngle, &screenCenter);
+						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, joystickAngle, &screenCenter);
+						gTargetTexture.render(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, joystickAngle, &screenCenter);
 					}
 					else
 					{
+						secondAngle = 0.0f;
+						minuteAngle = 0.0f;
+
 						gTargetTexture.setAsRenderTarget();
-						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0x00);
+						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
 						SDL_RenderClear(gRenderer);
+						fillRect = { SCREEN_WIDTH / 4 / 2, SCREEN_HEIGHT / 4 / 2, SCREEN_WIDTH / 2 / 2, SCREEN_HEIGHT / 2 / 2 };
+						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
+						SDL_RenderFillRect(gRenderer, &fillRect);
+						outlineRect = { SCREEN_WIDTH / 6 / 2, SCREEN_HEIGHT / 6 / 2, SCREEN_WIDTH * 2 / 3 / 2, SCREEN_HEIGHT * 2 / 3 / 2 };
+						SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+						RenderRect(gRenderer, &outlineRect);
+						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+						RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2 / 2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 / 2);
+						RenderLine(gRenderer, outlineRect.x, outlineRect.y, mouseX, mouseY);
+						RenderLine(gRenderer, outlineRect.x + outlineRect.w, outlineRect.y, mouseX, mouseY);
+						RenderLine(gRenderer, outlineRect.x, outlineRect.y + outlineRect.h, mouseX, mouseY);
+						RenderLine(gRenderer, outlineRect.x + outlineRect.w, outlineRect.y + outlineRect.h, mouseX, mouseY);
+						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
+						for (int i = 0; i < SCREEN_HEIGHT; i += 4)
+						{
+							RenderPoint(gRenderer, SCREEN_WIDTH / 2 / 2, i);
+						}
 						SDL_SetRenderTarget(gRenderer, NULL);
-						RenderLine(gRenderer, 0, 0, mouseX, mouseY);
-						RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
-						RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
-						RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
-						gTargetTexture.render(0, 0, NULL, 0.0f, &screenCenter);
+						//RenderLine(gRenderer, 0, 0, mouseX, mouseY);
+						//RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
+						//RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
+						//RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
+						gTargetTexture.render(0, 0, NULL, secondAngle, &screenCenter);
+						gTargetTexture.render(SCREEN_WIDTH * 0.5f, 0, NULL, secondAngle, &screenCenter);
+						//gTargetTexture.render(0, SCREEN_HEIGHT * 0.5f, NULL, secondAngle, &screenCenter);
+						//gTargetTexture.render(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, NULL, secondAngle, &screenCenter);
+
+						gIconArrow.render(
+							0,
+							gWindow.getHeight() - gIconArrow.getHeight(),
+							NULL,
+							joystickAngle);
+						gIconArrow.render(
+							gWindow.getWidth() - gIconArrow.getWidth(),
+							gWindow.getHeight() - gIconArrow.getHeight(),
+							NULL,
+							degrees,
+							NULL,
+							flipType);
 					}
 
 					SDL_RenderPresent(gRenderer);
