@@ -2802,8 +2802,22 @@ int main(int argc, char* argv[])
 #elif __linux__
 			int mouseX, mouseY;
 #endif
+
+			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			std::cout << previousTime << std::endl;
+			long long deltaTime = 0L;
 			while (!quit)
 			{
+				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+				deltaTime += currentTime - previousTime;
+				double limit = 10'000'000'000;
+				if (deltaTime > limit)
+				{
+					deltaTime -= limit;
+				}
+				double normal = (double)deltaTime / limit;
+				previousTime = currentTime;
+
 				SDL_GetMouseState(&mouseX, &mouseY);
 #ifdef _WIN32
 				const int minimum_audio = (8000 * sizeof(float)) / 2;  /* 8000 float samples per second. Half of that. */
@@ -3449,12 +3463,9 @@ int main(int argc, char* argv[])
 					{
 						if (isRotating)
 						{
-							angle += 0.02;
-							if (angle > 360)
-							{
-								angle -= 360;
-							}
+							angle = 360 * normal;
 						}
+						
 						gTargetTexture.setAsRenderTarget();
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
 						SDL_RenderClear(gRenderer);
@@ -3480,7 +3491,22 @@ int main(int argc, char* argv[])
 						RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
 						RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
 						RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
-						gTargetTexture.render(0, 0, NULL, angle, &screenCenter);
+						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, angle, &screenCenter);
+						gTargetTexture.render(SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, angle, &screenCenter);
+						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, angle, &screenCenter);
+						gTargetTexture.render(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, angle, &screenCenter);
+					}
+					else
+					{
+						gTargetTexture.setAsRenderTarget();
+						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0x00);
+						SDL_RenderClear(gRenderer);
+						SDL_SetRenderTarget(gRenderer, NULL);
+						RenderLine(gRenderer, 0, 0, mouseX, mouseY);
+						RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
+						RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
+						RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
+						gTargetTexture.render(0, 0, NULL, 0.0f, &screenCenter);
 					}
 
 					SDL_RenderPresent(gRenderer);
