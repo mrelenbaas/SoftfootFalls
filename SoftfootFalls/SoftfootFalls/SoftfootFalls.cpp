@@ -307,8 +307,6 @@ int gData4 = -1;
 LWindow gWindow;
 SDL_Renderer* gRenderer = NULL;
 SDL_Surface* gScreenSurface = NULL;
-SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
-SDL_Surface* gCurrentSurface = NULL;
 SDL_Texture* gTexture = NULL;
 LTexture gFooTexture2;
 #ifdef _WIN32
@@ -336,11 +334,6 @@ SDL_Rect gSpriteClips[BUTTON_SPRITE_TOTAL];
 #endif
 LTexture gButtonSpriteSheetTexture;
 LButton gButtons[TOTAL_BUTTONS];
-LTexture gPressTexture;
-LTexture gUpTexture;
-LTexture gDownTexture;
-LTexture gLeftTexture;
-LTexture gRightTexture;
 LTexture gSplashTexture;
 #ifdef _WIN32
 SDL_Gamepad* gGameController;
@@ -1715,11 +1708,6 @@ bool loadMedia(Tile* tiles[])
 	SDL_Color textColor = { 0, 0, 0, 0xFF };
 	SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = loadSurface(load->Path("press.png"), load, &success);
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = loadSurface(load->Path("up.png"), load, &success);
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = loadSurface(load->Path("down.png"), load, &success);
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = loadSurface(load->Path("left.png"), load, &success);
-	gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = loadSurface(load->Path("right.png"), load, &success);
 	gTexture = loadTexture(load->Path("texture.png"), load, &success);
 	if (!gFooTexture2.loadFromFile(load->Path("foo2.png")))
 	{
@@ -1896,31 +1884,6 @@ bool loadMedia(Tile* tiles[])
 		gButtons[2].setPosition(0, SCREEN_HEIGHT - BUTTON_HEIGHT);
 		gButtons[3].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT);
 	}
-	if (!gPressTexture.loadFromFile(load->Path("press.png")))
-	{
-		SDL_Log("Failed to load press texture!\n");
-		success = false;
-	}
-	if (!gUpTexture.loadFromFile(load->Path("up.png")))
-	{
-		SDL_Log("Failed to load up texture!\n");
-		success = false;
-	}
-	if (!gDownTexture.loadFromFile(load->Path("down.png")))
-	{
-		SDL_Log("Failed to load down texture!\n");
-		success = false;
-	}
-	if (!gLeftTexture.loadFromFile(load->Path("left.png")))
-	{
-		SDL_Log("Failed to load left texture!\n");
-		success = false;
-	}
-	if (!gRightTexture.loadFromFile(load->Path("right.png")))
-	{
-		SDL_Log("Failed to load right texture!\n");
-		success = false;
-	}
 	if (!gSplashTexture.loadFromFile(load->Path("splash.png")))
 	{
 		SDL_Log("Failed to load splash texture!\n");
@@ -2075,15 +2038,6 @@ void close(Tile* tiles[])
 {
 	Load* load = new Load(SDL_GetBasePath());
 	
-	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i)
-	{
-#ifdef _WIN32
-		SDL_DestroySurface(gKeyPressSurfaces[i]);
-#elif __linux__
-		SDL_FreeSurface(gKeyPressSurfaces[i]);
-#endif
-		gKeyPressSurfaces[i] = NULL;
-	}
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
 	gFooTexture2.free();
@@ -2097,11 +2051,6 @@ void close(Tile* tiles[])
 	TTF_CloseFont(gFont);
 	gFont = NULL;
 	gButtonSpriteSheetTexture.free();
-	gPressTexture.free();
-	gUpTexture.free();
-	gDownTexture.free();
-	gLeftTexture.free();
-	gRightTexture.free();
 	gSplashTexture.free();
 	if (gGameController != NULL)
 	{
@@ -2685,7 +2634,6 @@ int main(int argc, char* argv[])
 		{
 			bool quit = false;
 			SDL_Event e;
-			gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
 			Uint8 r = 255;
 			Uint8 g = 255;
 			Uint8 b = 255;
@@ -2697,7 +2645,6 @@ int main(int argc, char* argv[])
 #elif __linux__
 			SDL_RendererFlip flipType = SDL_FLIP_NONE;
 #endif
-			LTexture* currentTexture;
 			int xDir = 0;
 			int yDir = 0;
 			SDL_Color textColor = { 0, 0, 0, 255 };
@@ -2946,8 +2893,6 @@ int main(int argc, char* argv[])
 #endif
 						{
 						case SDLK_HOME:
-							//printf("HERE\n");
-							//isDebug = !isDebug;
 							break;
 						}
 					}
@@ -3063,7 +3008,6 @@ int main(int argc, char* argv[])
 							}
 							break;
 						case SDLK_UP:
-							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), textColor);
 							--currentData;
 							if (currentData < 0)
@@ -3073,7 +3017,6 @@ int main(int argc, char* argv[])
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
 						case SDLK_DOWN:
-							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN];
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), textColor);
 							++currentData;
 							if (currentData == TOTAL_DATA)
@@ -3083,18 +3026,14 @@ int main(int argc, char* argv[])
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
 						case SDLK_LEFT:
-							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT];
 							--gData[currentData];
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
 						case SDLK_RIGHT:
-							gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT];
 							++gData[currentData];
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
 						default:
-							//gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
-							gCurrentSurface = NULL;
 							break;
 						}
 					}
@@ -3165,16 +3104,6 @@ int main(int argc, char* argv[])
 					stretchRect.y = 0;
 					stretchRect.w = SCREEN_WIDTH;
 					stretchRect.h = SCREEN_HEIGHT;
-#ifdef _WIN32
-					SDL_BlitSurfaceScaled(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT], NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
-#elif __linux__
-					SDL_BlitSurface(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT], NULL, gScreenSurface, NULL);
-#endif
-#ifdef _WIN32
-					SDL_BlitSurfaceScaled(gCurrentSurface, NULL, gScreenSurface, &stretchRect, SDL_SCALEMODE_NEAREST);
-#elif __linux__
-					SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
-#endif
 
 					SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 					SDL_RenderClear(gRenderer);
@@ -3290,33 +3219,6 @@ int main(int argc, char* argv[])
 					{
 						gButtons[i].render();
 					}
-
-#ifdef _WIN32
-					const bool* currentKeyStates = SDL_GetKeyboardState(NULL);
-#elif __linux__
-					const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-#endif
-					if (currentKeyStates[SDL_SCANCODE_UP])
-					{
-						currentTexture = &gUpTexture;
-					}
-					else if (currentKeyStates[SDL_SCANCODE_DOWN])
-					{
-						currentTexture = &gDownTexture;
-					}
-					else if (currentKeyStates[SDL_SCANCODE_LEFT])
-					{
-						currentTexture = &gLeftTexture;
-					}
-					else if (currentKeyStates[SDL_SCANCODE_RIGHT])
-					{
-						currentTexture = &gRightTexture;
-					}
-					else
-					{
-						currentTexture = &gPressTexture;
-					}
-					currentTexture->render(0, 0);
 
 					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
 					//printf("%lf\n", joystickAngle);
@@ -3489,14 +3391,8 @@ int main(int argc, char* argv[])
 							RenderPoint(gRenderer, SCREEN_WIDTH / 2 / 2, i);
 						}
 						SDL_SetRenderTarget(gRenderer, NULL);
-						//RenderLine(gRenderer, 0, 0, mouseX, mouseY);
-						//RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
-						//RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
-						//RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
 						gTargetTexture.render(0, 0, NULL, secondAngle, &screenCenter);
 						gTargetTexture.render(SCREEN_WIDTH * 0.5f, 0, NULL, secondAngle, &screenCenter);
-						//gTargetTexture.render(0, SCREEN_HEIGHT * 0.5f, NULL, secondAngle, &screenCenter);
-						//gTargetTexture.render(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, NULL, secondAngle, &screenCenter);
 
 						gIconArrow.render(
 							0,
@@ -3511,7 +3407,6 @@ int main(int argc, char* argv[])
 							NULL,
 							flipType);
 					}
-
 					SDL_RenderPresent(gRenderer);
 				}
 
