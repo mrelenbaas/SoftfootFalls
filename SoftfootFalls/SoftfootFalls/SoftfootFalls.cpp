@@ -324,7 +324,9 @@ SDL_FRect gWalkingSpriteClips[WALKING_ANIMATION_FRAMES];
 SDL_Rect gWalkingSpriteClips[WALKING_ANIMATION_FRAMES];
 #endif
 LTexture gWalkingSpriteSheetTexture;
-LTexture gIconArrow;
+LTexture gIconCursor;
+LTexture gSun;
+LTexture gMoon;
 TTF_Font* gFont = NULL;
 LTexture gTextTexture;
 #ifdef _WIN32
@@ -1781,9 +1783,19 @@ bool loadMedia(Tile* tiles[])
 		gWalkingSpriteClips[3].w = 64;
 		gWalkingSpriteClips[3].h = 205;
 	}
-	if (!gIconArrow.loadFromFile(load->Path("IconCursor.png")))
+	if (!gIconCursor.loadFromFile(load->Path("IconCursor.png")))
 	{
 		SDL_Log("Failed to load arrow texture!\n");
+		success = false;
+	}
+	if (!gSun.loadFromFile(load->Path("CharacterFairySun_000_256x256.png")))
+	{
+		SDL_Log("Failed to load CharacterFairySun_000_256x256 texture!\n");
+		success = false;
+	}
+	if (!gMoon.loadFromFile(load->Path("CharacterFairyMoon_000_256x256.png")))
+	{
+		SDL_Log("Failed to load CharacterFairyMoon_000_256x256 texture!\n");
 		success = false;
 	}
 	gFont = TTF_OpenFont(load->Path("lazy.ttf"), 28);
@@ -2046,7 +2058,9 @@ void close(Tile* tiles[])
 	gModulatedTexture.free();
 	gBackgroundTexture.free();
 	gWalkingSpriteSheetTexture.free();
-	gIconArrow.free();
+	gIconCursor.free();
+	gSun.free();
+	gMoon.free();
 	gTextTexture.free();
 	TTF_CloseFont(gFont);
 	gFont = NULL;
@@ -3211,8 +3225,6 @@ int main(int argc, char* argv[])
 #endif
 					gWalkingSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
 
-					//gIconArrow.render((SCREEN_WIDTH - gIconArrow.getWidth()) / 2, (SCREEN_HEIGHT - gIconArrow.getHeight()) / 2, NULL, degrees, NULL, flipType);
-
 					gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
 
 					for (int i = 0; i < TOTAL_BUTTONS; ++i)
@@ -3226,7 +3238,6 @@ int main(int argc, char* argv[])
 					{
 						joystickAngle = 0;
 					}
-					//gIconArrow.render((SCREEN_WIDTH - gIconArrow.getWidth()) / 2, (SCREEN_HEIGHT - gIconArrow.getHeight()) / 2, NULL, joystickAngle);
 
 					//gSplashTexture.render(0, 0);
 
@@ -3330,11 +3341,10 @@ int main(int argc, char* argv[])
 					gStreamingTexture.unlockTexture();
 					gStreamingTexture.render((SCREEN_WIDTH - gStreamingTexture.getWidth()) / 2, (SCREEN_HEIGHT - gStreamingTexture.getHeight()) / 2);
 
+					secondAngle = 360 * secondNormal;
+					minuteAngle = 360 * minuteNormal;
 					if (isDebug)
 					{
-						secondAngle = 360 * secondNormal;
-						minuteAngle = 360 * minuteNormal;
-						
 						gTargetTexture.setAsRenderTarget();
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
 						SDL_RenderClear(gRenderer);
@@ -3363,45 +3373,28 @@ int main(int argc, char* argv[])
 						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, secondAngle, &screenCenter);
 						gTargetTexture.render(SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, minuteAngle, &screenCenter);
 						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, joystickAngle, &screenCenter);
-						gTargetTexture.render(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, joystickAngle, &screenCenter);
+						//gTargetTexture.render(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, joystickAngle, &screenCenter);
 					}
 					else
 					{
-						secondAngle = 0.0f;
-						minuteAngle = 0.0f;
-
-						gTargetTexture.setAsRenderTarget();
-						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
-						SDL_RenderClear(gRenderer);
-						fillRect = { SCREEN_WIDTH / 4 / 2, SCREEN_HEIGHT / 4 / 2, SCREEN_WIDTH / 2 / 2, SCREEN_HEIGHT / 2 / 2 };
-						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
-						SDL_RenderFillRect(gRenderer, &fillRect);
-						outlineRect = { SCREEN_WIDTH / 6 / 2, SCREEN_HEIGHT / 6 / 2, SCREEN_WIDTH * 2 / 3 / 2, SCREEN_HEIGHT * 2 / 3 / 2 };
-						SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
-						RenderRect(gRenderer, &outlineRect);
-						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
-						RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2 / 2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 / 2);
-						RenderLine(gRenderer, outlineRect.x, outlineRect.y, mouseX, mouseY);
-						RenderLine(gRenderer, outlineRect.x + outlineRect.w, outlineRect.y, mouseX, mouseY);
-						RenderLine(gRenderer, outlineRect.x, outlineRect.y + outlineRect.h, mouseX, mouseY);
-						RenderLine(gRenderer, outlineRect.x + outlineRect.w, outlineRect.y + outlineRect.h, mouseX, mouseY);
-						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
-						for (int i = 0; i < SCREEN_HEIGHT; i += 4)
-						{
-							RenderPoint(gRenderer, SCREEN_WIDTH / 2 / 2, i);
-						}
-						SDL_SetRenderTarget(gRenderer, NULL);
-						gTargetTexture.render(0, 0, NULL, secondAngle, &screenCenter);
-						gTargetTexture.render(SCREEN_WIDTH * 0.5f, 0, NULL, secondAngle, &screenCenter);
-
-						gIconArrow.render(
+						gSun.render(
 							0,
-							gWindow.getHeight() - gIconArrow.getHeight(),
+							0,
+							NULL,
+							-minuteAngle);
+						gMoon.render(
+							gWindow.getWidth() - gMoon.getWidth(),
+							0,
+							NULL,
+							minuteAngle);
+						gIconCursor.render(
+							0,
+							gWindow.getHeight() - gIconCursor.getHeight(),
 							NULL,
 							joystickAngle);
-						gIconArrow.render(
-							gWindow.getWidth() - gIconArrow.getWidth(),
-							gWindow.getHeight() - gIconArrow.getHeight(),
+						gIconCursor.render(
+							gWindow.getWidth() - gIconCursor.getWidth(),
+							gWindow.getHeight() - gIconCursor.getHeight(),
 							NULL,
 							degrees,
 							NULL,
