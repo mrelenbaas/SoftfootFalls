@@ -90,6 +90,15 @@ enum KeyPressSurfaces
 	KEY_PRESS_SURFACE_TOTAL
 };
 
+enum Directions
+{
+	DIRECTION_UP,
+	DIRECTION_DOWN,
+	DIRECTION_LEFT,
+	DIRECTION_RIGHT,
+	DIRECTION_TOTAL
+};
+
 class LTexture
 {
 public:
@@ -321,15 +330,14 @@ LTexture gBGTexture;
 LTexture gInputTextTexture;
 LTexture gDataTextures[TOTAL_DATA];
 Sint32 gData[TOTAL_DATA];
-LTexture gSceneTexture;
 LTexture gRedTexture;
 LTexture gGreenTexture;
 LTexture gBlueTexture;
 LTexture gShimmerTexture;
-LTexture gFooTexture;
 LBitmapFont gBitmapFont;
 DataStream gDataStream;
 LTexture gTargetTexture;
+Directions gDirection = DIRECTION_UP;
 
 
 LTexture::LTexture()
@@ -1870,11 +1878,6 @@ bool loadMedia()
 		SDL_Log("Failed to load background texture~\n");
 		success = false;
 	}
-	if (!gSceneTexture.loadFromFile(load->Path("window.png")))
-	{
-		SDL_Log("Failed to load window texture!\n");
-		success = false;
-	}
 	if (!gRedTexture.loadFromFile(load->Path("red.bmp")))
 	{
 		SDL_Log("Failed to load red texture!\n");
@@ -1899,29 +1902,6 @@ bool loadMedia()
 	gGreenTexture.setAlpha(192);
 	gBlueTexture.setAlpha(192);
 	gShimmerTexture.setAlpha(192);
-	if (!gFooTexture.loadPixelsFromFile(load->Path("foo3.png")))
-	{
-		SDL_Log("Unable to load Foo' texture\n");
-		success = false;
-	}
-	else
-	{
-		Uint32* pixels = gFooTexture.getPixels32();
-		int pixelCount = gFooTexture.getPitch32() * gFooTexture.getHeight();
-		Uint32 colorKey = gFooTexture.mapRGBA(0xFF, 0x00, 0xFF, 0xFF);
-		Uint32 transparent = gFooTexture.mapRGBA(0xFF, 0xFF, 0xFF, 0x00);
-		for (int i = 0; i < pixelCount; ++i)
-		{
-			if (pixels[i] == colorKey)
-			{
-				pixels[i] = transparent;
-			}
-		}
-		if (!gFooTexture.loadFromPixels())
-		{
-			SDL_Log("Unable to load Foo' texture from surface!\n");
-		}
-	}
 	if (!gBitmapFont.buildFont(load->Path("lazyfont.png")))
 	{
 		SDL_Log("Failed to load bitmap font!\n");
@@ -2034,12 +2014,10 @@ void close()
 	{
 		gDataTextures[i].free();
 	}
-	gSceneTexture.free();
 	gRedTexture.free();
 	gGreenTexture.free();
 	gBlueTexture.free();
 	gShimmerTexture.free();
-	gFooTexture.free();
 	gBitmapFont.free();
 	gDataStream.free();
 	gTargetTexture.free();
@@ -2192,7 +2170,6 @@ int main(int argc, char* argv[])
 			int countedFrames = 0;
 			fpsTimer.start();
 			Dot dot;
-			//Dot otherDot();
 //#ifdef _WIN32
 //			SDL_FRect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 //#elif __linux__
@@ -2452,6 +2429,21 @@ int main(int argc, char* argv[])
 							isDebug = !isDebug;
 							break;
 						case SDLK_END:
+							switch (gDirection)
+							{
+							case DIRECTION_UP:
+								gDirection = DIRECTION_DOWN;
+								break;
+							case DIRECTION_DOWN:
+								gDirection = DIRECTION_LEFT;
+								break;
+							case DIRECTION_LEFT:
+								gDirection = DIRECTION_RIGHT;
+								break;
+							case DIRECTION_RIGHT:
+								gDirection = DIRECTION_UP;
+								break;
+							}
 							break;
 						case KEY_P:
 							startTime = SDL_GetTicks();
@@ -2818,45 +2810,59 @@ int main(int argc, char* argv[])
 					{
 						camera.y = LEVEL_HEIGHT - camera.h;
 					}*/
-					--scrollingOffset;
-					if (scrollingOffset < -gBGTexture.getWidth())
-					{
-						scrollingOffset = 0;
-					}
-					//gBGTexture.render(0, 0, &camera);
-					gBGTexture.render(scrollingOffset, 0);
-					gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
-					//otherDot.render();
 
-					if (renderText)
+					switch (gDirection)
 					{
-						if (inputText != "")
+					case DIRECTION_UP:
+						scrollingOffset = -gBGTexture.getHeight() * minuteNormal;
+						if (scrollingOffset < -gBGTexture.getHeight())
 						{
-							gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
+							scrollingOffset = 0;
 						}
-						else
+						break;
+					case DIRECTION_DOWN:
+						scrollingOffset = gBGTexture.getHeight() * minuteNormal;
+						if (scrollingOffset > gBGTexture.getHeight())
 						{
-							gInputTextTexture.loadFromRenderedText("", textColor);
+							scrollingOffset = 0;
 						}
+						break;
+					case DIRECTION_LEFT:
+						scrollingOffset = -gBGTexture.getWidth() * minuteNormal;
+						if (scrollingOffset < -gBGTexture.getWidth())
+						{
+							scrollingOffset = 0;
+						}
+						break;
+					case DIRECTION_RIGHT:
+						scrollingOffset = gBGTexture.getWidth() * minuteNormal;
+						if (scrollingOffset > gBGTexture.getWidth())
+						{
+							scrollingOffset = 0;
+						}
+						break;
 					}
-					gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
-					gInputTextTexture.render((SCREEN_WIDTH - gInputTextTexture.getWidth()) / 2, gPromptTextTexture.getHeight());
-					for (int i = 0; i < TOTAL_DATA; ++i)
+					switch (gDirection)
 					{
-						gDataTextures[i].render((SCREEN_WIDTH - gDataTextures[i].getWidth()) / 2, gPromptTextTexture.getHeight() + gDataTextures[0].getHeight() * i);
+					case DIRECTION_UP:
+					case DIRECTION_DOWN:
+						gBGTexture.render(0, scrollingOffset);
+						gBGTexture.render(0, scrollingOffset + gBGTexture.getHeight());
+						gBGTexture.render(0, scrollingOffset - gBGTexture.getHeight());
+						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset);
+						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset + gBGTexture.getHeight());
+						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset - gBGTexture.getHeight());
+						break;
+					case DIRECTION_LEFT:
+					case DIRECTION_RIGHT:
+						gBGTexture.render(scrollingOffset, 0);
+						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
+						gBGTexture.render(scrollingOffset - gBGTexture.getWidth(), 0);
+						gBGTexture.render(scrollingOffset, gBGTexture.getHeight());
+						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
+						gBGTexture.render(scrollingOffset - gBGTexture.getWidth(), gBGTexture.getHeight());
+						break;
 					}
-
-					gSceneTexture.render((gWindow.getWidth() - gSceneTexture.getWidth()) / 2, (gWindow.getHeight() - gSceneTexture.getHeight()) / 2);
-
-					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-					SDL_RenderClear(gRenderer);
-					dot.render(camera);
-
-					gFooTexture.render((SCREEN_WIDTH - gFooTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFooTexture.getHeight()) / 2);
-
-					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-					//SDL_RenderClear(gRenderer);
-					gBitmapFont.renderText(0, 0, "Bitmap Font:\nABDCEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789");
 
 					minuteAngle = 360 * minuteNormal;
 					hourAngle = 360 * hourNormal;
@@ -2896,6 +2902,7 @@ int main(int argc, char* argv[])
 					}
 					else
 					{
+						dot.render(camera);
 						gSun.render(
 							0,
 							0,
@@ -2918,6 +2925,24 @@ int main(int argc, char* argv[])
 							degrees,
 							NULL,
 							flipType);
+						gBitmapFont.renderText(0, 0, "Bitmap Font:\nABDCEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789");
+						for (int i = 0; i < TOTAL_DATA; ++i)
+						{
+							gDataTextures[i].render((SCREEN_WIDTH - gDataTextures[i].getWidth()) / 2, gPromptTextTexture.getHeight() + gDataTextures[0].getHeight() * i);
+						}
+						gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, gWindow.getHeight() - (gInputTextTexture.getHeight() * 2));
+						if (renderText)
+						{
+							if (inputText != "")
+							{
+								gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
+							}
+							else
+							{
+								gInputTextTexture.loadFromRenderedText("", textColor);
+							}
+						}
+						gInputTextTexture.render((SCREEN_WIDTH - gInputTextTexture.getWidth()) / 2, gWindow.getHeight() - gInputTextTexture.getHeight());
 					}
 					SDL_RenderPresent(gRenderer);
 				}
