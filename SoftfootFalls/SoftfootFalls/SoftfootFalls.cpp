@@ -53,24 +53,6 @@ const int TOTAL_DATA = 10;
 
 const int TOTAL_PARTICLES = 20;
 
-const int TILE_WIDTH = 80;
-const int TILE_HEIGHT = 80;
-const int TOTAL_TILES = 192;
-const int TOTAL_TILE_SPRITES = 12;
-
-const int TILE_RED = 0;
-const int TILE_GREEN = 1;
-const int TILE_BLUE = 2;
-const int TILE_CENTER = 3;
-const int TILE_TOP = 4;
-const int TILE_TOPRIGHT = 5;
-const int TILE_RIGHT = 6;
-const int TILE_BOTTOMRIGHT = 7;
-const int TILE_BOTTOM = 8;
-const int TILE_BOTTOMLEFT = 9;
-const int TILE_LEFT = 10;
-const int TILE_TOPLEFT = 11;
-
 enum LButtonSprite
 {
 	BUTTON_SPRITE_MOUSE_OUT = 0,
@@ -160,18 +142,6 @@ private:
 	bool mStarted;
 };
 
-class Tile
-{
-public:
-	Tile(int x, int y, int tileType);
-	void render(SDL_Rect& camera);
-	int getType();
-	SDL_Rect getBox();
-private:
-	SDL_Rect mBox;
-	int mType;
-};
-
 class Particle
 {
 public:
@@ -193,8 +163,7 @@ public:
 	Dot();
 	~Dot();
 	void handleEvent(SDL_Event& e);
-	void move(Tile* tiles[], float timestep);
-	void setCamera(SDL_Rect& camera);
+	void move(float timestep);
 	void render(SDL_Rect& camera);
 private:
 	Particle* particles[TOTAL_PARTICLES];
@@ -263,12 +232,9 @@ private:
 
 bool init();
 bool loadMedia();
-void close(Tile* tiles[]);
+void close();
 SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
-bool checkCollision(SDL_Rect a, SDL_Rect b);
-bool touchesWall(SDL_Rect box, Tile* tiles[]);
-bool setTiles(Tile* tiles[]);
 
 LWindow gWindow;
 SDL_Renderer* gRenderer = NULL;
@@ -333,21 +299,12 @@ LTexture gBGTexture;
 LTexture gInputTextTexture;
 LTexture gDataTextures[TOTAL_DATA];
 Sint32 gData[TOTAL_DATA];
-LTexture gSceneTexture;
 LTexture gRedTexture;
 LTexture gGreenTexture;
 LTexture gBlueTexture;
 LTexture gShimmerTexture;
-//LTexture gTileTexture;
-//#ifdef _WIN32
-//SDL_FRect gTileClips[TOTAL_TILE_SPRITES];
-//#elif __linux__
-//SDL_Rect gTileClips[TOTAL_TILE_SPRITES];
-//#endif
 LTexture gFooTexture;
 LBitmapFont gBitmapFont;
-//LTexture gStreamingTexture;
-//DataStream gDataStream;
 LTexture gTargetTexture;
 
 
@@ -733,33 +690,6 @@ void LButton::render()
 	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
 }
 
-Tile::Tile(int x, int y, int tileType)
-{
-	mBox.x = x;
-	mBox.y = y;
-	mBox.w = TILE_WIDTH;
-	mBox.h = TILE_HEIGHT;
-	mType = tileType;
-}
-
-void Tile::render(SDL_Rect& camera)
-{
-	if (checkCollision(camera, mBox))
-	{
-		//gTileTexture.render(mBox.x - camera.x, mBox.y - camera.y, &gTileClips[mType]);
-	}
-}
-
-int Tile::getType()
-{
-	return mType;
-}
-
-SDL_Rect Tile::getBox()
-{
-	return mBox;
-}
-
 Particle::Particle(int x, int y)
 {
 	mPosX = x - 5 + (rand() % 25);
@@ -850,40 +780,17 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move(Tile* tiles[], float timeStep)
+void Dot::move(float timeStep)
 {
 	mBox.x += mVelX * timeStep;
-	if ((mBox.x < 0) || (mBox.x + DOT_WIDTH > LEVEL_WIDTH) || touchesWall(mBox, tiles))
+	if ((mBox.x < 0) || (mBox.x + DOT_WIDTH > LEVEL_WIDTH))
 	{
 		mBox.x -= mVelX;
 	}
 	mBox.y += mVelY * timeStep;
-	if ((mBox.y < 0) || (mBox.y + DOT_HEIGHT > LEVEL_HEIGHT) || touchesWall(mBox, tiles))
+	if ((mBox.y < 0) || (mBox.y + DOT_HEIGHT > LEVEL_HEIGHT))
 	{
 		mBox.y -= mVelY;
-	}
-}
-
-void Dot::setCamera(SDL_Rect& camera)
-{
-	camera.x = (mBox.x + DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
-	camera.y = (mBox.y + DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
-
-	if (camera.x < 0)
-	{
-		camera.x = 0;
-	}
-	if (camera.y < 0)
-	{
-		camera.y = 0;
-	}
-	if (camera.x > LEVEL_WIDTH - camera.w)
-	{
-		camera.x = LEVEL_WIDTH - camera.w;
-	}
-	if (camera.y > LEVEL_HEIGHT - camera.h)
-	{
-		camera.y = LEVEL_HEIGHT - camera.h;
 	}
 }
 
@@ -1916,11 +1823,6 @@ bool loadMedia()
 		SDL_Log("Failed to load background texture~\n");
 		success = false;
 	}
-	if (!gSceneTexture.loadFromFile(load->Path("window.png")))
-	{
-		SDL_Log("Failed to load window texture!\n");
-		success = false;
-	}
 	if (!gRedTexture.loadFromFile(load->Path("red.bmp")))
 	{
 		SDL_Log("Failed to load red texture!\n");
@@ -1945,16 +1847,6 @@ bool loadMedia()
 	gGreenTexture.setAlpha(192);
 	gBlueTexture.setAlpha(192);
 	gShimmerTexture.setAlpha(192);
-	//if (!gTileTexture.loadFromFile(load->Path("tiles.png")))
-	//{
-	//	printf("Failed to load tile set texture!\n");
-	//	success = false;
-	//}
-	//if (!setTiles(tiles))
-	//{
-	//	printf("Failed to load tile set!\n");
-	//	success = false;
-	//}
 	if (!gFooTexture.loadPixelsFromFile(load->Path("foo3.png")))
 	{
 		SDL_Log("Unable to load Foo' texture\n");
@@ -1983,16 +1875,6 @@ bool loadMedia()
 		SDL_Log("Failed to load bitmap font!\n");
 		success = false;
 	}
-	//if (!gStreamingTexture.createBlank(64, 205, SDL_TEXTUREACCESS_STREAMING))
-	//{
-	//	SDL_Log("Failed to create streaming texture!\n");
-	//	success = false;
-	//}
-	//if (!gDataStream.loadMedia())
-	//{
-	//	SDL_Log("Unable to load data stream!\n");
-	//	success = false;
-	//}
 	if (!gTargetTexture.createBlank(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_TEXTUREACCESS_TARGET))
 	{
 		SDL_Log("Failed to create target texture!\n");
@@ -2100,24 +1982,12 @@ void close()
 	{
 		gDataTextures[i].free();
 	}
-	gSceneTexture.free();
 	gRedTexture.free();
 	gGreenTexture.free();
 	gBlueTexture.free();
 	gShimmerTexture.free();
-	//for (int i = 0; i < TOTAL_TILES; ++i)
-	//{
-	//	if (tiles[i] != NULL)
-	//	{
-	//		delete tiles[i];
-	//		tiles[i] = NULL;
-	//	}
-	//}
-	//gTileTexture.free();
 	gFooTexture.free();
 	gBitmapFont.free();
-	//gStreamingTexture.free();
-	//gDataStream.free();
 	gTargetTexture.free();
 
 	delete load;
@@ -2227,131 +2097,6 @@ bool checkCollision(SDL_Rect a, SDL_Rect b)
 	return true;
 }
 
-bool setTiles(Tile* tiles[])
-{
-	Load* load = new Load(SDL_GetBasePath());
-
-	bool tilesLoaded = true;
-	int x = 0, y = 0;
-	std::ifstream map(load->Path("lazy.map"));
-
-	if (map.fail())
-	{
-		printf("Unable to load map file!\n");
-		tilesLoaded = false;
-	}
-	else
-	{
-		for (int i = 0; i < TOTAL_TILES; ++i)
-		{
-			int tileType = -1;
-			map >> tileType;
-			if (map.fail())
-			{
-				printf("Error loading map: Unexpected end of file!\n");
-				tilesLoaded = false;
-				break;
-			}
-			if ((tileType >= 0) && (tileType < TOTAL_TILE_SPRITES))
-			{
-				tiles[i] = new Tile(x, y, tileType);
-			}
-			else
-			{
-				printf("Error loading map: Invalid tile type at %d!\n", i);
-				tilesLoaded = false;
-				break;
-			}
-			x += TILE_WIDTH;
-			if (x >= LEVEL_WIDTH)
-			{
-				x = 0;
-				y += TILE_HEIGHT;
-			}
-		}
-		//if (tilesLoaded)
-		//{
-		//	gTileClips[TILE_RED].x = 0;
-		//	gTileClips[TILE_RED].y = 0;
-		//	gTileClips[TILE_RED].w = TILE_WIDTH;
-		//	gTileClips[TILE_RED].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_GREEN].x = 0;
-		//	gTileClips[TILE_GREEN].y = 80;
-		//	gTileClips[TILE_GREEN].w = TILE_WIDTH;
-		//	gTileClips[TILE_GREEN].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_BLUE].x = 0;
-		//	gTileClips[TILE_BLUE].y = 160;
-		//	gTileClips[TILE_BLUE].w = TILE_WIDTH;
-		//	gTileClips[TILE_BLUE].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_TOPLEFT].x = 80;
-		//	gTileClips[TILE_TOPLEFT].y = 0;
-		//	gTileClips[TILE_TOPLEFT].w = TILE_WIDTH;
-		//	gTileClips[TILE_TOPLEFT].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_LEFT].x = 80;
-		//	gTileClips[TILE_LEFT].y = 80;
-		//	gTileClips[TILE_LEFT].w = TILE_WIDTH;
-		//	gTileClips[TILE_LEFT].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_BOTTOMLEFT].x = 80;
-		//	gTileClips[TILE_BOTTOMLEFT].y = 160;
-		//	gTileClips[TILE_BOTTOMLEFT].w = TILE_WIDTH;
-		//	gTileClips[TILE_BOTTOMLEFT].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_TOP].x = 160;
-		//	gTileClips[TILE_TOP].y = 0;
-		//	gTileClips[TILE_TOP].w = TILE_WIDTH;
-		//	gTileClips[TILE_TOP].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_CENTER].x = 160;
-		//	gTileClips[TILE_CENTER].y = 80;
-		//	gTileClips[TILE_CENTER].w = TILE_WIDTH;
-		//	gTileClips[TILE_CENTER].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_BOTTOM].x = 160;
-		//	gTileClips[TILE_BOTTOM].y = 160;
-		//	gTileClips[TILE_BOTTOM].w = TILE_WIDTH;
-		//	gTileClips[TILE_BOTTOM].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_TOPRIGHT].x = 240;
-		//	gTileClips[TILE_TOPRIGHT].y = 0;
-		//	gTileClips[TILE_TOPRIGHT].w = TILE_WIDTH;
-		//	gTileClips[TILE_TOPRIGHT].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_RIGHT].x = 240;
-		//	gTileClips[TILE_RIGHT].y = 80;
-		//	gTileClips[TILE_RIGHT].w = TILE_WIDTH;
-		//	gTileClips[TILE_RIGHT].h = TILE_HEIGHT;
-		//
-		//	gTileClips[TILE_BOTTOMRIGHT].x = 240;
-		//	gTileClips[TILE_BOTTOMRIGHT].y = 160;
-		//	gTileClips[TILE_BOTTOMRIGHT].w = TILE_WIDTH;
-		//	gTileClips[TILE_BOTTOMRIGHT].h = TILE_HEIGHT;
-		//}
-	}
-	map.close();
-	delete load;
-	return tilesLoaded;
-}
-
-bool touchesWall(SDL_Rect box, Tile* tiles[])
-{
-	for (int i = 0; i < TOTAL_TILES; ++i)
-	{
-		if ((tiles[i]->getType() >= TILE_CENTER) && (tiles[i]->getType() <= TILE_TOPLEFT))
-		{
-			if (checkCollision(box, tiles[i]->getBox()))
-			{
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 int main(int argc, char* argv[])
 {
     Clock* clock = new Clock();
@@ -2394,12 +2139,6 @@ int main(int argc, char* argv[])
 			int countedFrames = 0;
 			fpsTimer.start();
 			Dot dot;
-			//Dot otherDot();
-//#ifdef _WIN32
-//			SDL_FRect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-//#elif __linux__
-			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-//#endif
 #ifdef _WIN32
 			SDL_FRect fwall;
 #elif __linux__
@@ -2444,6 +2183,7 @@ int main(int argc, char* argv[])
 			long long hourDelta = 0L;
 			long long halfDayDelta = 0L;
 			long long fullDayDelta = 0L;
+			bool isScrollingHorizontal = true;
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -2654,6 +2394,7 @@ int main(int argc, char* argv[])
 							isDebug = !isDebug;
 							break;
 						case SDLK_END:
+							isScrollingHorizontal = !isScrollingHorizontal;
 							break;
 						case KEY_P:
 							startTime = SDL_GetTicks();
@@ -2993,42 +2734,27 @@ int main(int argc, char* argv[])
 					gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 
 					float timeStep = stepTimer.getTicks() / 1000.f;
-					//dot.move(tileSet, timeStep);
-					//stepTimer.start();
-					//dot.setCamera(camera);
-					/*				fwall.x = (float)wall.x;
-									fwall.y = (float)wall.y;
-									fwall.w = (float)wall.w;
-									fwall.h = (float)wall.h;
-					*/
-					/*camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
-					camera.y = (dot.getPosY() + Dot::DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
-					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-					if (camera.x < 0)
+
+					if (isScrollingHorizontal)
 					{
-						camera.x = 0;
+						scrollingOffset = -gBGTexture.getWidth() * minuteNormal;
+						if (scrollingOffset < -gBGTexture.getWidth())
+						{
+							scrollingOffset = 0;
+						}
+						gBGTexture.render(scrollingOffset, 0);
+						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
 					}
-					if (camera.y < 0)
+					else
 					{
-						camera.y = 0;
+						scrollingOffset = -gBGTexture.getHeight() * minuteNormal;
+						if (scrollingOffset < -gBGTexture.getHeight())
+						{
+							scrollingOffset = 0;
+						}
+						gBGTexture.render(0, scrollingOffset);
+						gBGTexture.render(0, scrollingOffset + gBGTexture.getHeight());
 					}
-					if (camera.x > LEVEL_WIDTH - camera.w)
-					{
-						camera.x = LEVEL_WIDTH - camera.w;
-					}
-					if (camera.y > LEVEL_HEIGHT - camera.h)
-					{
-						camera.y = LEVEL_HEIGHT - camera.h;
-					}*/
-					--scrollingOffset;
-					if (scrollingOffset < -gBGTexture.getWidth())
-					{
-						scrollingOffset = 0;
-					}
-					//gBGTexture.render(0, 0, &camera);
-					gBGTexture.render(scrollingOffset, 0);
-					gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
-					//otherDot.render();
 
 					if (renderText)
 					{
@@ -3048,26 +2774,11 @@ int main(int argc, char* argv[])
 						gDataTextures[i].render((SCREEN_WIDTH - gDataTextures[i].getWidth()) / 2, gPromptTextTexture.getHeight() + gDataTextures[0].getHeight() * i);
 					}
 
-					gSceneTexture.render((gWindow.getWidth() - gSceneTexture.getWidth()) / 2, (gWindow.getHeight() - gSceneTexture.getHeight()) / 2);
-
-					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-					//SDL_RenderClear(gRenderer);
-					//for (int i = 0; i < TOTAL_TILES; ++i)
-					//{
-					//	tileSet[i]->render(camera);
-					//}
-					//dot.render(camera);
-
 					gFooTexture.render((SCREEN_WIDTH - gFooTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFooTexture.getHeight()) / 2);
 
 					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 					//SDL_RenderClear(gRenderer);
 					gBitmapFont.renderText(0, 0, "Bitmap Font:\nABDCEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789");
-
-					//gStreamingTexture.lockTexture();
-					//gStreamingTexture.copyRawPixels32(gDataStream.getBuffer());
-					//gStreamingTexture.unlockTexture();
-					//gStreamingTexture.render((SCREEN_WIDTH - gStreamingTexture.getWidth()) / 2, (SCREEN_HEIGHT - gStreamingTexture.getHeight()) / 2);
 
 					minuteAngle = 360 * minuteNormal;
 					hourAngle = 360 * hourNormal;
