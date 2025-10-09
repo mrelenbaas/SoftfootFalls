@@ -53,6 +53,24 @@ const int TOTAL_DATA = 10;
 
 const int TOTAL_PARTICLES = 20;
 
+const int TILE_WIDTH = 80;
+const int TILE_HEIGHT = 80;
+const int TOTAL_TILES = 192;
+const int TOTAL_TILE_SPRITES = 12;
+
+const int TILE_RED = 0;
+const int TILE_GREEN = 1;
+const int TILE_BLUE = 2;
+const int TILE_CENTER = 3;
+const int TILE_TOP = 4;
+const int TILE_TOPRIGHT = 5;
+const int TILE_RIGHT = 6;
+const int TILE_BOTTOMRIGHT = 7;
+const int TILE_BOTTOM = 8;
+const int TILE_BOTTOMLEFT = 9;
+const int TILE_LEFT = 10;
+const int TILE_TOPLEFT = 11;
+
 enum LButtonSprite
 {
 	BUTTON_SPRITE_MOUSE_OUT = 0,
@@ -142,6 +160,18 @@ private:
 	bool mStarted;
 };
 
+class Tile
+{
+public:
+	Tile(int x, int y, int tileType);
+	void render(SDL_Rect& camera);
+	int getType();
+	SDL_Rect getBox();
+private:
+	SDL_Rect mBox;
+	int mType;
+};
+
 class Particle
 {
 public:
@@ -163,7 +193,8 @@ public:
 	Dot();
 	~Dot();
 	void handleEvent(SDL_Event& e);
-	void move(float timestep);
+	void move(Tile* tiles[], float timestep);
+	void setCamera(SDL_Rect& camera);
 	void render(SDL_Rect& camera);
 private:
 	Particle* particles[TOTAL_PARTICLES];
@@ -231,10 +262,13 @@ private:
 };
 
 bool init();
-bool loadMedia();
-void close();
+bool loadMedia(Tile* tiles[]);
+void close(Tile* tiles[]);
 SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
+bool checkCollision(SDL_Rect a, SDL_Rect b);
+bool touchesWall(SDL_Rect box, Tile* tiles[]);
+bool setTiles(Tile* tiles[]);
 
 LWindow gWindow;
 SDL_Renderer* gRenderer = NULL;
@@ -299,12 +333,21 @@ LTexture gBGTexture;
 LTexture gInputTextTexture;
 LTexture gDataTextures[TOTAL_DATA];
 Sint32 gData[TOTAL_DATA];
+LTexture gSceneTexture;
 LTexture gRedTexture;
 LTexture gGreenTexture;
 LTexture gBlueTexture;
 LTexture gShimmerTexture;
+LTexture gTileTexture;
+#ifdef _WIN32
+SDL_FRect gTileClips[TOTAL_TILE_SPRITES];
+#elif __linux__
+SDL_Rect gTileClips[TOTAL_TILE_SPRITES];
+#endif
 LTexture gFooTexture;
 LBitmapFont gBitmapFont;
+LTexture gStreamingTexture;
+DataStream gDataStream;
 LTexture gTargetTexture;
 
 
@@ -690,6 +733,33 @@ void LButton::render()
 	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
 }
 
+Tile::Tile(int x, int y, int tileType)
+{
+	mBox.x = x;
+	mBox.y = y;
+	mBox.w = TILE_WIDTH;
+	mBox.h = TILE_HEIGHT;
+	mType = tileType;
+}
+
+void Tile::render(SDL_Rect& camera)
+{
+	if (checkCollision(camera, mBox))
+	{
+		gTileTexture.render(mBox.x - camera.x, mBox.y - camera.y, &gTileClips[mType]);
+	}
+}
+
+int Tile::getType()
+{
+	return mType;
+}
+
+SDL_Rect Tile::getBox()
+{
+	return mBox;
+}
+
 Particle::Particle(int x, int y)
 {
 	mPosX = x - 5 + (rand() % 25);
@@ -780,17 +850,40 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move(float timeStep)
+void Dot::move(Tile* tiles[], float timeStep)
 {
 	mBox.x += mVelX * timeStep;
-	if ((mBox.x < 0) || (mBox.x + DOT_WIDTH > LEVEL_WIDTH))
+	if ((mBox.x < 0) || (mBox.x + DOT_WIDTH > LEVEL_WIDTH) || touchesWall(mBox, tiles))
 	{
 		mBox.x -= mVelX;
 	}
 	mBox.y += mVelY * timeStep;
-	if ((mBox.y < 0) || (mBox.y + DOT_HEIGHT > LEVEL_HEIGHT))
+	if ((mBox.y < 0) || (mBox.y + DOT_HEIGHT > LEVEL_HEIGHT) || touchesWall(mBox, tiles))
 	{
 		mBox.y -= mVelY;
+	}
+}
+
+void Dot::setCamera(SDL_Rect& camera)
+{
+	camera.x = (mBox.x + DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
+	camera.y = (mBox.y + DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
+
+	if (camera.x < 0)
+	{
+		camera.x = 0;
+	}
+	if (camera.y < 0)
+	{
+		camera.y = 0;
+	}
+	if (camera.x > LEVEL_WIDTH - camera.w)
+	{
+		camera.x = LEVEL_WIDTH - camera.w;
+	}
+	if (camera.y > LEVEL_HEIGHT - camera.h)
+	{
+		camera.y = LEVEL_HEIGHT - camera.h;
 	}
 }
 
@@ -1126,72 +1219,72 @@ bool LWindow::isMinimized()
 
 LBitmapFont::LBitmapFont()
 {
-    mNewLine = 0;
-    mSpace = 0;
+	mNewLine = 0;
+	mSpace = 0;
 }
 
-bool LBitmapFont::buildFont( std::string path )
+bool LBitmapFont::buildFont(std::string path)
 {
 	free();
 	bool success = true;
-	if( !mFontTexture.loadPixelsFromFile( path.c_str() ) )
+	if (!mFontTexture.loadPixelsFromFile(path.c_str()))
 	{
-		SDL_Log( "Unable to load bitmap font surface!\n" );
+		SDL_Log("Unable to load bitmap font surface!\n");
 		success = false;
 	}
 	else
 	{
-		Uint32 bgColor = mFontTexture.getPixel32( 0, 0 );
+		Uint32 bgColor = mFontTexture.getPixel32(0, 0);
 		int cellW = mFontTexture.getWidth() / 16;
 		int cellH = mFontTexture.getHeight() / 16;
 		int top = cellH;
 		int baseA = cellH;
 		int currentChar = 0;
-		for( int rows = 0; rows < 16; ++rows )
+		for (int rows = 0; rows < 16; ++rows)
 		{
-			for( int cols = 0; cols < 16; ++cols )
+			for (int cols = 0; cols < 16; ++cols)
 			{
-				mChars[ currentChar ].x = cellW * cols;
-				mChars[ currentChar ].y = cellH * rows;
-				mChars[ currentChar ].w = cellW;
-				mChars[ currentChar ].h = cellH;
-				for( int pCol = 0; pCol < cellW; ++pCol )
+				mChars[currentChar].x = cellW * cols;
+				mChars[currentChar].y = cellH * rows;
+				mChars[currentChar].w = cellW;
+				mChars[currentChar].h = cellH;
+				for (int pCol = 0; pCol < cellW; ++pCol)
 				{
-					for( int pRow = 0; pRow < cellH; ++pRow )
+					for (int pRow = 0; pRow < cellH; ++pRow)
 					{
-						int pX = ( cellW * cols ) + pCol;
-						int pY = ( cellH * rows ) + pRow;
-						if( mFontTexture.getPixel32( pX, pY ) != bgColor )
+						int pX = (cellW * cols) + pCol;
+						int pY = (cellH * rows) + pRow;
+						if (mFontTexture.getPixel32(pX, pY) != bgColor)
 						{
-							mChars[ currentChar ].x = pX;
+							mChars[currentChar].x = pX;
 							pCol = cellW;
 							pRow = cellH;
 						}
 					}
 				}
-				for( int pColW = cellW - 1; pColW >= 0; --pColW )
+				for (int pColW = cellW - 1; pColW >= 0; --pColW)
 				{
-					for( int pRowW = 0; pRowW < cellH; ++pRowW )
+					for (int pRowW = 0; pRowW < cellH; ++pRowW)
 					{
-						int pX = ( cellW * cols ) + pColW;
-						int pY = ( cellH * rows ) + pRowW;
-						if( mFontTexture.getPixel32( pX, pY ) != bgColor )
+						int pX = (cellW * cols) + pColW;
+						int pY = (cellH * rows) + pRowW;
+						if (mFontTexture.getPixel32(pX, pY) != bgColor)
 						{
-							mChars[ currentChar ].w = ( pX - mChars[ currentChar ].x ) + 1;
+							mChars[currentChar].w = (pX - mChars[currentChar].x) + 1;
 							pColW = -1;
 							pRowW = cellH;
 						}
 					}
 				}
-				for( int pRow = 0; pRow < cellH; ++pRow )
+				for (int pRow = 0; pRow < cellH; ++pRow)
 				{
-					for( int pCol = 0; pCol < cellW; ++pCol )
+					for (int pCol = 0; pCol < cellW; ++pCol)
 					{
-						int pX = ( cellW * cols ) + pCol;
-						int pY = ( cellH * rows ) + pRow;
-						if( mFontTexture.getPixel32( pX, pY ) != bgColor )
+						int pX = (cellW * cols) + pCol;
+						int pY = (cellH * rows) + pRow;
+						if (mFontTexture.getPixel32(pX, pY) != bgColor)
 						{
-							if( pRow < top )
+							if (pRow < top)
 							{
 								top = pRow;
 							}
@@ -1200,15 +1293,15 @@ bool LBitmapFont::buildFont( std::string path )
 						}
 					}
 				}
-				if( currentChar == 'A' )
+				if (currentChar == 'A')
 				{
-					for( int pRow = cellH - 1; pRow >= 0; --pRow )
+					for (int pRow = cellH - 1; pRow >= 0; --pRow)
 					{
-						for( int pCol = 0; pCol < cellW; ++pCol )
+						for (int pCol = 0; pCol < cellW; ++pCol)
 						{
-							int pX = ( cellW * cols ) + pCol;
-							int pY = ( cellH * rows ) + pRow;
-							if( mFontTexture.getPixel32( pX, pY ) != bgColor )
+							int pX = (cellW * cols) + pCol;
+							int pY = (cellH * rows) + pRow;
+							if (mFontTexture.getPixel32(pX, pY) != bgColor)
 							{
 								baseA = pRow;
 								pCol = cellW;
@@ -1222,14 +1315,14 @@ bool LBitmapFont::buildFont( std::string path )
 		}
 		mSpace = cellW / 2;
 		mNewLine = baseA - top;
-		for( int i = 0; i < 256; ++i )
+		for (int i = 0; i < 256; ++i)
 		{
-			mChars[ i ].y += top;
-			mChars[ i ].h -= top;
+			mChars[i].y += top;
+			mChars[i].h -= top;
 		}
-		if( !mFontTexture.loadFromPixels() )
+		if (!mFontTexture.loadFromPixels())
 		{
-			SDL_Log( "Unable to create font texture!\n" );
+			SDL_Log("Unable to create font texture!\n");
 			success = false;
 		}
 	}
@@ -1242,30 +1335,30 @@ void LBitmapFont::free()
 	mFontTexture.free();
 }
 
-void LBitmapFont::renderText( int x, int y, std::string text )
+void LBitmapFont::renderText(int x, int y, std::string text)
 {
-    if( mFontTexture.getWidth() > 0 )
-    {
+	if (mFontTexture.getWidth() > 0)
+	{
 		int curX = x, curY = y;
-        for( int i = 0; i < text.length(); ++i )
-        {
-            if( text[ i ] == ' ' )
-            {
-                curX += mSpace;
-            }
-            else if( text[ i ] == '\n' )
-            {
-                curY += mNewLine;
-                curX = x;
-            }
-            else
-            {
-                int ascii = (unsigned char)text[ i ];
-				mFontTexture.render( curX, curY, &mChars[ ascii ] );
-                curX += mChars[ ascii ].w + 1;
-            }
-        }
-    }
+		for (int i = 0; i < text.length(); ++i)
+		{
+			if (text[i] == ' ')
+			{
+				curX += mSpace;
+			}
+			else if (text[i] == '\n')
+			{
+				curY += mNewLine;
+				curX = x;
+			}
+			else
+			{
+				int ascii = (unsigned char)text[i];
+				mFontTexture.render(curX, curY, &mChars[ascii]);
+				curX += mChars[ascii].w + 1;
+			}
+		}
+	}
 }
 
 DataStream::DataStream()
@@ -1560,11 +1653,11 @@ bool init()
 			gScreenSurface = SDL_GetWindowSurface(gWindow.getWindow());
 		}
 	}
-	
+
 	return success;
 }
 
-bool loadMedia()
+bool loadMedia(Tile* tiles[])
 {
 	using namespace std;
 
@@ -1823,6 +1916,11 @@ bool loadMedia()
 		SDL_Log("Failed to load background texture~\n");
 		success = false;
 	}
+	if (!gSceneTexture.loadFromFile(load->Path("window.png")))
+	{
+		SDL_Log("Failed to load window texture!\n");
+		success = false;
+	}
 	if (!gRedTexture.loadFromFile(load->Path("red.bmp")))
 	{
 		SDL_Log("Failed to load red texture!\n");
@@ -1847,6 +1945,16 @@ bool loadMedia()
 	gGreenTexture.setAlpha(192);
 	gBlueTexture.setAlpha(192);
 	gShimmerTexture.setAlpha(192);
+	if (!gTileTexture.loadFromFile(load->Path("tiles.png")))
+	{
+		printf("Failed to load tile set texture!\n");
+		success = false;
+	}
+	if (!setTiles(tiles))
+	{
+		printf("Failed to load tile set!\n");
+		success = false;
+	}
 	if (!gFooTexture.loadPixelsFromFile(load->Path("foo3.png")))
 	{
 		SDL_Log("Unable to load Foo' texture\n");
@@ -1875,6 +1983,16 @@ bool loadMedia()
 		SDL_Log("Failed to load bitmap font!\n");
 		success = false;
 	}
+	if (!gStreamingTexture.createBlank(64, 205, SDL_TEXTUREACCESS_STREAMING))
+	{
+		SDL_Log("Failed to create streaming texture!\n");
+		success = false;
+	}
+	if (!gDataStream.loadMedia())
+	{
+		SDL_Log("Unable to load data stream!\n");
+		success = false;
+	}
 	if (!gTargetTexture.createBlank(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_TEXTUREACCESS_TARGET))
 	{
 		SDL_Log("Failed to create target texture!\n");
@@ -1885,10 +2003,10 @@ bool loadMedia()
 	return success;
 }
 
-void close()
+void close(Tile* tiles[])
 {
 	Load* load = new Load(SDL_GetBasePath());
-	
+
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
 	gFooTexture2.free();
@@ -1982,12 +2100,24 @@ void close()
 	{
 		gDataTextures[i].free();
 	}
+	gSceneTexture.free();
 	gRedTexture.free();
 	gGreenTexture.free();
 	gBlueTexture.free();
 	gShimmerTexture.free();
+	for (int i = 0; i < TOTAL_TILES; ++i)
+	{
+		if (tiles[i] != NULL)
+		{
+			delete tiles[i];
+			tiles[i] = NULL;
+		}
+	}
+	gTileTexture.free();
 	gFooTexture.free();
 	gBitmapFont.free();
+	gStreamingTexture.free();
+	gDataStream.free();
 	gTargetTexture.free();
 
 	delete load;
@@ -2093,13 +2223,138 @@ bool checkCollision(SDL_Rect a, SDL_Rect b)
 	{
 		return false;
 	}
-	
+
 	return true;
+}
+
+bool setTiles(Tile* tiles[])
+{
+	Load* load = new Load(SDL_GetBasePath());
+
+	bool tilesLoaded = true;
+	int x = 0, y = 0;
+	std::ifstream map(load->Path("lazy.map"));
+
+	if (map.fail())
+	{
+		printf("Unable to load map file!\n");
+		tilesLoaded = false;
+	}
+	else
+	{
+		for (int i = 0; i < TOTAL_TILES; ++i)
+		{
+			int tileType = -1;
+			map >> tileType;
+			if (map.fail())
+			{
+				printf("Error loading map: Unexpected end of file!\n");
+				tilesLoaded = false;
+				break;
+			}
+			if ((tileType >= 0) && (tileType < TOTAL_TILE_SPRITES))
+			{
+				tiles[i] = new Tile(x, y, tileType);
+			}
+			else
+			{
+				printf("Error loading map: Invalid tile type at %d!\n", i);
+				tilesLoaded = false;
+				break;
+			}
+			x += TILE_WIDTH;
+			if (x >= LEVEL_WIDTH)
+			{
+				x = 0;
+				y += TILE_HEIGHT;
+			}
+		}
+		if (tilesLoaded)
+		{
+			gTileClips[TILE_RED].x = 0;
+			gTileClips[TILE_RED].y = 0;
+			gTileClips[TILE_RED].w = TILE_WIDTH;
+			gTileClips[TILE_RED].h = TILE_HEIGHT;
+
+			gTileClips[TILE_GREEN].x = 0;
+			gTileClips[TILE_GREEN].y = 80;
+			gTileClips[TILE_GREEN].w = TILE_WIDTH;
+			gTileClips[TILE_GREEN].h = TILE_HEIGHT;
+
+			gTileClips[TILE_BLUE].x = 0;
+			gTileClips[TILE_BLUE].y = 160;
+			gTileClips[TILE_BLUE].w = TILE_WIDTH;
+			gTileClips[TILE_BLUE].h = TILE_HEIGHT;
+
+			gTileClips[TILE_TOPLEFT].x = 80;
+			gTileClips[TILE_TOPLEFT].y = 0;
+			gTileClips[TILE_TOPLEFT].w = TILE_WIDTH;
+			gTileClips[TILE_TOPLEFT].h = TILE_HEIGHT;
+
+			gTileClips[TILE_LEFT].x = 80;
+			gTileClips[TILE_LEFT].y = 80;
+			gTileClips[TILE_LEFT].w = TILE_WIDTH;
+			gTileClips[TILE_LEFT].h = TILE_HEIGHT;
+
+			gTileClips[TILE_BOTTOMLEFT].x = 80;
+			gTileClips[TILE_BOTTOMLEFT].y = 160;
+			gTileClips[TILE_BOTTOMLEFT].w = TILE_WIDTH;
+			gTileClips[TILE_BOTTOMLEFT].h = TILE_HEIGHT;
+
+			gTileClips[TILE_TOP].x = 160;
+			gTileClips[TILE_TOP].y = 0;
+			gTileClips[TILE_TOP].w = TILE_WIDTH;
+			gTileClips[TILE_TOP].h = TILE_HEIGHT;
+
+			gTileClips[TILE_CENTER].x = 160;
+			gTileClips[TILE_CENTER].y = 80;
+			gTileClips[TILE_CENTER].w = TILE_WIDTH;
+			gTileClips[TILE_CENTER].h = TILE_HEIGHT;
+
+			gTileClips[TILE_BOTTOM].x = 160;
+			gTileClips[TILE_BOTTOM].y = 160;
+			gTileClips[TILE_BOTTOM].w = TILE_WIDTH;
+			gTileClips[TILE_BOTTOM].h = TILE_HEIGHT;
+
+			gTileClips[TILE_TOPRIGHT].x = 240;
+			gTileClips[TILE_TOPRIGHT].y = 0;
+			gTileClips[TILE_TOPRIGHT].w = TILE_WIDTH;
+			gTileClips[TILE_TOPRIGHT].h = TILE_HEIGHT;
+
+			gTileClips[TILE_RIGHT].x = 240;
+			gTileClips[TILE_RIGHT].y = 80;
+			gTileClips[TILE_RIGHT].w = TILE_WIDTH;
+			gTileClips[TILE_RIGHT].h = TILE_HEIGHT;
+
+			gTileClips[TILE_BOTTOMRIGHT].x = 240;
+			gTileClips[TILE_BOTTOMRIGHT].y = 160;
+			gTileClips[TILE_BOTTOMRIGHT].w = TILE_WIDTH;
+			gTileClips[TILE_BOTTOMRIGHT].h = TILE_HEIGHT;
+		}
+	}
+	map.close();
+	delete load;
+	return tilesLoaded;
+}
+
+bool touchesWall(SDL_Rect box, Tile* tiles[])
+{
+	for (int i = 0; i < TOTAL_TILES; ++i)
+	{
+		if ((tiles[i]->getType() >= TILE_CENTER) && (tiles[i]->getType() <= TILE_TOPLEFT))
+		{
+			if (checkCollision(box, tiles[i]->getBox()))
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 int main(int argc, char* argv[])
 {
-    Clock* clock = new Clock();
+	Clock* clock = new Clock();
 	Timer* myTimer = new Timer(Timer::Print, 1);
 
 	if (!init())
@@ -2108,8 +2363,8 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		//Tile* tileSet[TOTAL_TILES];
-		if (!loadMedia())
+		Tile* tileSet[TOTAL_TILES];
+		if (!loadMedia(tileSet))
 		{
 			SDL_Log("Failed to load media!\n");
 		}
@@ -2139,6 +2394,12 @@ int main(int argc, char* argv[])
 			int countedFrames = 0;
 			fpsTimer.start();
 			Dot dot;
+			//Dot otherDot();
+//#ifdef _WIN32
+//			SDL_FRect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+//#elif __linux__
+			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+			//#endif
 #ifdef _WIN32
 			SDL_FRect fwall;
 #elif __linux__
@@ -2183,7 +2444,6 @@ int main(int argc, char* argv[])
 			long long hourDelta = 0L;
 			long long halfDayDelta = 0L;
 			long long fullDayDelta = 0L;
-			bool isScrollingHorizontal = true;
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -2329,36 +2589,36 @@ int main(int argc, char* argv[])
 					{
 						//if (e.jaxis.which == 0)
 						//{
-							if (e.jaxis.axis == 0)
+						if (e.jaxis.axis == 0)
+						{
+							if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
 							{
-								if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
-								{
-									xDir = -1;
-								}
-								else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
-								{
-									xDir = 1;
-								}
-								else
-								{
-									xDir = 0;
-								}
+								xDir = -1;
 							}
-							else if (e.jaxis.axis == 1)
+							else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
 							{
-								if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
-								{
-									yDir = -1;
-								}
-								else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
-								{
-									yDir = 1;
-								}
-								else
-								{
-									yDir = 0;
-								}
+								xDir = 1;
 							}
+							else
+							{
+								xDir = 0;
+							}
+						}
+						else if (e.jaxis.axis == 1)
+						{
+							if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
+							{
+								yDir = -1;
+							}
+							else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
+							{
+								yDir = 1;
+							}
+							else
+							{
+								yDir = 0;
+							}
+						}
 						//}
 						//printf("%i, %i\n", xDir, yDir);
 					}
@@ -2394,7 +2654,6 @@ int main(int argc, char* argv[])
 							isDebug = !isDebug;
 							break;
 						case SDLK_END:
-							isScrollingHorizontal = !isScrollingHorizontal;
 							break;
 						case KEY_P:
 							startTime = SDL_GetTicks();
@@ -2520,7 +2779,7 @@ int main(int argc, char* argv[])
 							break;
 						}
 					}
-					
+
 #ifdef _WIN32
 					if (e.type == SDL_EVENT_KEY_DOWN)
 #elif __linux__
@@ -2734,27 +2993,42 @@ int main(int argc, char* argv[])
 					gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 
 					float timeStep = stepTimer.getTicks() / 1000.f;
-
-					if (isScrollingHorizontal)
+					dot.move(tileSet, timeStep);
+					stepTimer.start();
+					dot.setCamera(camera);
+					/*				fwall.x = (float)wall.x;
+									fwall.y = (float)wall.y;
+									fwall.w = (float)wall.w;
+									fwall.h = (float)wall.h;
+					*/
+					/*camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
+					camera.y = (dot.getPosY() + Dot::DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
+					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
+					if (camera.x < 0)
 					{
-						scrollingOffset = -gBGTexture.getWidth() * minuteNormal;
-						if (scrollingOffset < -gBGTexture.getWidth())
-						{
-							scrollingOffset = 0;
-						}
-						gBGTexture.render(scrollingOffset, 0);
-						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
+						camera.x = 0;
 					}
-					else
+					if (camera.y < 0)
 					{
-						scrollingOffset = -gBGTexture.getHeight() * minuteNormal;
-						if (scrollingOffset < -gBGTexture.getHeight())
-						{
-							scrollingOffset = 0;
-						}
-						gBGTexture.render(0, scrollingOffset);
-						gBGTexture.render(0, scrollingOffset + gBGTexture.getHeight());
+						camera.y = 0;
 					}
+					if (camera.x > LEVEL_WIDTH - camera.w)
+					{
+						camera.x = LEVEL_WIDTH - camera.w;
+					}
+					if (camera.y > LEVEL_HEIGHT - camera.h)
+					{
+						camera.y = LEVEL_HEIGHT - camera.h;
+					}*/
+					--scrollingOffset;
+					if (scrollingOffset < -gBGTexture.getWidth())
+					{
+						scrollingOffset = 0;
+					}
+					//gBGTexture.render(0, 0, &camera);
+					gBGTexture.render(scrollingOffset, 0);
+					gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
+					//otherDot.render();
 
 					if (renderText)
 					{
@@ -2774,11 +3048,26 @@ int main(int argc, char* argv[])
 						gDataTextures[i].render((SCREEN_WIDTH - gDataTextures[i].getWidth()) / 2, gPromptTextTexture.getHeight() + gDataTextures[0].getHeight() * i);
 					}
 
+					gSceneTexture.render((gWindow.getWidth() - gSceneTexture.getWidth()) / 2, (gWindow.getHeight() - gSceneTexture.getHeight()) / 2);
+
+					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+					SDL_RenderClear(gRenderer);
+					for (int i = 0; i < TOTAL_TILES; ++i)
+					{
+						tileSet[i]->render(camera);
+					}
+					dot.render(camera);
+
 					gFooTexture.render((SCREEN_WIDTH - gFooTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFooTexture.getHeight()) / 2);
 
 					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 					//SDL_RenderClear(gRenderer);
 					gBitmapFont.renderText(0, 0, "Bitmap Font:\nABDCEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789");
+
+					gStreamingTexture.lockTexture();
+					gStreamingTexture.copyRawPixels32(gDataStream.getBuffer());
+					gStreamingTexture.unlockTexture();
+					gStreamingTexture.render((SCREEN_WIDTH - gStreamingTexture.getWidth()) / 2, (SCREEN_HEIGHT - gStreamingTexture.getHeight()) / 2);
 
 					minuteAngle = 360 * minuteNormal;
 					hourAngle = 360 * hourNormal;
@@ -2864,10 +3153,10 @@ int main(int argc, char* argv[])
 			SDL_StopTextInput();
 #endif
 		}
-		close();
+		close(tileSet);
 	}
-	
+
 	delete myTimer;
-    delete clock;
-    return 0;
+	delete clock;
+	return 0;
 }
