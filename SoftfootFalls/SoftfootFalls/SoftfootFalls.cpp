@@ -262,7 +262,7 @@ private:
 };
 
 bool init();
-bool loadMedia(Tile* tiles[]);
+bool loadMedia();
 void close(Tile* tiles[]);
 SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
@@ -338,16 +338,16 @@ LTexture gRedTexture;
 LTexture gGreenTexture;
 LTexture gBlueTexture;
 LTexture gShimmerTexture;
-LTexture gTileTexture;
-#ifdef _WIN32
-SDL_FRect gTileClips[TOTAL_TILE_SPRITES];
-#elif __linux__
-SDL_Rect gTileClips[TOTAL_TILE_SPRITES];
-#endif
+//LTexture gTileTexture;
+//#ifdef _WIN32
+//SDL_FRect gTileClips[TOTAL_TILE_SPRITES];
+//#elif __linux__
+//SDL_Rect gTileClips[TOTAL_TILE_SPRITES];
+//#endif
 LTexture gFooTexture;
 LBitmapFont gBitmapFont;
-LTexture gStreamingTexture;
-DataStream gDataStream;
+//LTexture gStreamingTexture;
+//DataStream gDataStream;
 LTexture gTargetTexture;
 
 
@@ -746,7 +746,7 @@ void Tile::render(SDL_Rect& camera)
 {
 	if (checkCollision(camera, mBox))
 	{
-		gTileTexture.render(mBox.x - camera.x, mBox.y - camera.y, &gTileClips[mType]);
+		//gTileTexture.render(mBox.x - camera.x, mBox.y - camera.y, &gTileClips[mType]);
 	}
 }
 
@@ -1657,7 +1657,7 @@ bool init()
 	return success;
 }
 
-bool loadMedia(Tile* tiles[])
+bool loadMedia()
 {
 	using namespace std;
 
@@ -1945,16 +1945,16 @@ bool loadMedia(Tile* tiles[])
 	gGreenTexture.setAlpha(192);
 	gBlueTexture.setAlpha(192);
 	gShimmerTexture.setAlpha(192);
-	if (!gTileTexture.loadFromFile(load->Path("tiles.png")))
-	{
-		printf("Failed to load tile set texture!\n");
-		success = false;
-	}
-	if (!setTiles(tiles))
-	{
-		printf("Failed to load tile set!\n");
-		success = false;
-	}
+	//if (!gTileTexture.loadFromFile(load->Path("tiles.png")))
+	//{
+	//	printf("Failed to load tile set texture!\n");
+	//	success = false;
+	//}
+	//if (!setTiles(tiles))
+	//{
+	//	printf("Failed to load tile set!\n");
+	//	success = false;
+	//}
 	if (!gFooTexture.loadPixelsFromFile(load->Path("foo3.png")))
 	{
 		SDL_Log("Unable to load Foo' texture\n");
@@ -1983,16 +1983,16 @@ bool loadMedia(Tile* tiles[])
 		SDL_Log("Failed to load bitmap font!\n");
 		success = false;
 	}
-	if (!gStreamingTexture.createBlank(64, 205, SDL_TEXTUREACCESS_STREAMING))
-	{
-		SDL_Log("Failed to create streaming texture!\n");
-		success = false;
-	}
-	if (!gDataStream.loadMedia())
-	{
-		SDL_Log("Unable to load data stream!\n");
-		success = false;
-	}
+	//if (!gStreamingTexture.createBlank(64, 205, SDL_TEXTUREACCESS_STREAMING))
+	//{
+	//	SDL_Log("Failed to create streaming texture!\n");
+	//	success = false;
+	//}
+	//if (!gDataStream.loadMedia())
+	//{
+	//	SDL_Log("Unable to load data stream!\n");
+	//	success = false;
+	//}
 	if (!gTargetTexture.createBlank(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_TEXTUREACCESS_TARGET))
 	{
 		SDL_Log("Failed to create target texture!\n");
@@ -2003,7 +2003,7 @@ bool loadMedia(Tile* tiles[])
 	return success;
 }
 
-void close(Tile* tiles[])
+void close()
 {
 	Load* load = new Load(SDL_GetBasePath());
 	
@@ -2105,19 +2105,19 @@ void close(Tile* tiles[])
 	gGreenTexture.free();
 	gBlueTexture.free();
 	gShimmerTexture.free();
-	for (int i = 0; i < TOTAL_TILES; ++i)
-	{
-		if (tiles[i] != NULL)
-		{
-			delete tiles[i];
-			tiles[i] = NULL;
-		}
-	}
-	gTileTexture.free();
+	//for (int i = 0; i < TOTAL_TILES; ++i)
+	//{
+	//	if (tiles[i] != NULL)
+	//	{
+	//		delete tiles[i];
+	//		tiles[i] = NULL;
+	//	}
+	//}
+	//gTileTexture.free();
 	gFooTexture.free();
 	gBitmapFont.free();
-	gStreamingTexture.free();
-	gDataStream.free();
+	//gStreamingTexture.free();
+	//gDataStream.free();
 	gTargetTexture.free();
 
 	delete load;
@@ -2269,68 +2269,68 @@ bool setTiles(Tile* tiles[])
 				y += TILE_HEIGHT;
 			}
 		}
-		if (tilesLoaded)
-		{
-			gTileClips[TILE_RED].x = 0;
-			gTileClips[TILE_RED].y = 0;
-			gTileClips[TILE_RED].w = TILE_WIDTH;
-			gTileClips[TILE_RED].h = TILE_HEIGHT;
-
-			gTileClips[TILE_GREEN].x = 0;
-			gTileClips[TILE_GREEN].y = 80;
-			gTileClips[TILE_GREEN].w = TILE_WIDTH;
-			gTileClips[TILE_GREEN].h = TILE_HEIGHT;
-
-			gTileClips[TILE_BLUE].x = 0;
-			gTileClips[TILE_BLUE].y = 160;
-			gTileClips[TILE_BLUE].w = TILE_WIDTH;
-			gTileClips[TILE_BLUE].h = TILE_HEIGHT;
-
-			gTileClips[TILE_TOPLEFT].x = 80;
-			gTileClips[TILE_TOPLEFT].y = 0;
-			gTileClips[TILE_TOPLEFT].w = TILE_WIDTH;
-			gTileClips[TILE_TOPLEFT].h = TILE_HEIGHT;
-
-			gTileClips[TILE_LEFT].x = 80;
-			gTileClips[TILE_LEFT].y = 80;
-			gTileClips[TILE_LEFT].w = TILE_WIDTH;
-			gTileClips[TILE_LEFT].h = TILE_HEIGHT;
-
-			gTileClips[TILE_BOTTOMLEFT].x = 80;
-			gTileClips[TILE_BOTTOMLEFT].y = 160;
-			gTileClips[TILE_BOTTOMLEFT].w = TILE_WIDTH;
-			gTileClips[TILE_BOTTOMLEFT].h = TILE_HEIGHT;
-
-			gTileClips[TILE_TOP].x = 160;
-			gTileClips[TILE_TOP].y = 0;
-			gTileClips[TILE_TOP].w = TILE_WIDTH;
-			gTileClips[TILE_TOP].h = TILE_HEIGHT;
-
-			gTileClips[TILE_CENTER].x = 160;
-			gTileClips[TILE_CENTER].y = 80;
-			gTileClips[TILE_CENTER].w = TILE_WIDTH;
-			gTileClips[TILE_CENTER].h = TILE_HEIGHT;
-
-			gTileClips[TILE_BOTTOM].x = 160;
-			gTileClips[TILE_BOTTOM].y = 160;
-			gTileClips[TILE_BOTTOM].w = TILE_WIDTH;
-			gTileClips[TILE_BOTTOM].h = TILE_HEIGHT;
-
-			gTileClips[TILE_TOPRIGHT].x = 240;
-			gTileClips[TILE_TOPRIGHT].y = 0;
-			gTileClips[TILE_TOPRIGHT].w = TILE_WIDTH;
-			gTileClips[TILE_TOPRIGHT].h = TILE_HEIGHT;
-
-			gTileClips[TILE_RIGHT].x = 240;
-			gTileClips[TILE_RIGHT].y = 80;
-			gTileClips[TILE_RIGHT].w = TILE_WIDTH;
-			gTileClips[TILE_RIGHT].h = TILE_HEIGHT;
-
-			gTileClips[TILE_BOTTOMRIGHT].x = 240;
-			gTileClips[TILE_BOTTOMRIGHT].y = 160;
-			gTileClips[TILE_BOTTOMRIGHT].w = TILE_WIDTH;
-			gTileClips[TILE_BOTTOMRIGHT].h = TILE_HEIGHT;
-		}
+		//if (tilesLoaded)
+		//{
+		//	gTileClips[TILE_RED].x = 0;
+		//	gTileClips[TILE_RED].y = 0;
+		//	gTileClips[TILE_RED].w = TILE_WIDTH;
+		//	gTileClips[TILE_RED].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_GREEN].x = 0;
+		//	gTileClips[TILE_GREEN].y = 80;
+		//	gTileClips[TILE_GREEN].w = TILE_WIDTH;
+		//	gTileClips[TILE_GREEN].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_BLUE].x = 0;
+		//	gTileClips[TILE_BLUE].y = 160;
+		//	gTileClips[TILE_BLUE].w = TILE_WIDTH;
+		//	gTileClips[TILE_BLUE].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_TOPLEFT].x = 80;
+		//	gTileClips[TILE_TOPLEFT].y = 0;
+		//	gTileClips[TILE_TOPLEFT].w = TILE_WIDTH;
+		//	gTileClips[TILE_TOPLEFT].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_LEFT].x = 80;
+		//	gTileClips[TILE_LEFT].y = 80;
+		//	gTileClips[TILE_LEFT].w = TILE_WIDTH;
+		//	gTileClips[TILE_LEFT].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_BOTTOMLEFT].x = 80;
+		//	gTileClips[TILE_BOTTOMLEFT].y = 160;
+		//	gTileClips[TILE_BOTTOMLEFT].w = TILE_WIDTH;
+		//	gTileClips[TILE_BOTTOMLEFT].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_TOP].x = 160;
+		//	gTileClips[TILE_TOP].y = 0;
+		//	gTileClips[TILE_TOP].w = TILE_WIDTH;
+		//	gTileClips[TILE_TOP].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_CENTER].x = 160;
+		//	gTileClips[TILE_CENTER].y = 80;
+		//	gTileClips[TILE_CENTER].w = TILE_WIDTH;
+		//	gTileClips[TILE_CENTER].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_BOTTOM].x = 160;
+		//	gTileClips[TILE_BOTTOM].y = 160;
+		//	gTileClips[TILE_BOTTOM].w = TILE_WIDTH;
+		//	gTileClips[TILE_BOTTOM].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_TOPRIGHT].x = 240;
+		//	gTileClips[TILE_TOPRIGHT].y = 0;
+		//	gTileClips[TILE_TOPRIGHT].w = TILE_WIDTH;
+		//	gTileClips[TILE_TOPRIGHT].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_RIGHT].x = 240;
+		//	gTileClips[TILE_RIGHT].y = 80;
+		//	gTileClips[TILE_RIGHT].w = TILE_WIDTH;
+		//	gTileClips[TILE_RIGHT].h = TILE_HEIGHT;
+		//
+		//	gTileClips[TILE_BOTTOMRIGHT].x = 240;
+		//	gTileClips[TILE_BOTTOMRIGHT].y = 160;
+		//	gTileClips[TILE_BOTTOMRIGHT].w = TILE_WIDTH;
+		//	gTileClips[TILE_BOTTOMRIGHT].h = TILE_HEIGHT;
+		//}
 	}
 	map.close();
 	delete load;
@@ -2363,8 +2363,8 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		Tile* tileSet[TOTAL_TILES];
-		if (!loadMedia(tileSet))
+		//Tile* tileSet[TOTAL_TILES];
+		if (!loadMedia())
 		{
 			SDL_Log("Failed to load media!\n");
 		}
@@ -2993,9 +2993,9 @@ int main(int argc, char* argv[])
 					gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 
 					float timeStep = stepTimer.getTicks() / 1000.f;
-					dot.move(tileSet, timeStep);
-					stepTimer.start();
-					dot.setCamera(camera);
+					//dot.move(tileSet, timeStep);
+					//stepTimer.start();
+					//dot.setCamera(camera);
 					/*				fwall.x = (float)wall.x;
 									fwall.y = (float)wall.y;
 									fwall.w = (float)wall.w;
@@ -3051,12 +3051,12 @@ int main(int argc, char* argv[])
 					gSceneTexture.render((gWindow.getWidth() - gSceneTexture.getWidth()) / 2, (gWindow.getHeight() - gSceneTexture.getHeight()) / 2);
 
 					//SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-					SDL_RenderClear(gRenderer);
-					for (int i = 0; i < TOTAL_TILES; ++i)
-					{
-						tileSet[i]->render(camera);
-					}
-					dot.render(camera);
+					//SDL_RenderClear(gRenderer);
+					//for (int i = 0; i < TOTAL_TILES; ++i)
+					//{
+					//	tileSet[i]->render(camera);
+					//}
+					//dot.render(camera);
 
 					gFooTexture.render((SCREEN_WIDTH - gFooTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFooTexture.getHeight()) / 2);
 
@@ -3064,10 +3064,10 @@ int main(int argc, char* argv[])
 					//SDL_RenderClear(gRenderer);
 					gBitmapFont.renderText(0, 0, "Bitmap Font:\nABDCEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789");
 
-					gStreamingTexture.lockTexture();
-					gStreamingTexture.copyRawPixels32(gDataStream.getBuffer());
-					gStreamingTexture.unlockTexture();
-					gStreamingTexture.render((SCREEN_WIDTH - gStreamingTexture.getWidth()) / 2, (SCREEN_HEIGHT - gStreamingTexture.getHeight()) / 2);
+					//gStreamingTexture.lockTexture();
+					//gStreamingTexture.copyRawPixels32(gDataStream.getBuffer());
+					//gStreamingTexture.unlockTexture();
+					//gStreamingTexture.render((SCREEN_WIDTH - gStreamingTexture.getWidth()) / 2, (SCREEN_HEIGHT - gStreamingTexture.getHeight()) / 2);
 
 					minuteAngle = 360 * minuteNormal;
 					hourAngle = 360 * hourNormal;
@@ -3153,7 +3153,7 @@ int main(int argc, char* argv[])
 			SDL_StopTextInput();
 #endif
 		}
-		close(tileSet);
+		close();
 	}
 	
 	delete myTimer;
