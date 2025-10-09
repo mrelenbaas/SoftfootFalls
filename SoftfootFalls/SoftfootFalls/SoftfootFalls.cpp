@@ -2420,8 +2420,10 @@ int main(int argc, char* argv[])
 #elif __linux__
 			SDL_StartTextInput();
 #endif
-			double secondAngle = 0;
 			double minuteAngle = 0;
+			double hourAngle = 0;
+			double halfDayAngle = 0;
+			double fullDayAngle = 0;
 #ifdef _WIN32
 			SDL_FPoint screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 #elif __linux__
@@ -2438,25 +2440,47 @@ int main(int argc, char* argv[])
 
 			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 			std::cout << previousTime << std::endl;
-			long long secondDelta = 0L;
 			long long minuteDelta = 0L;
+			long long hourDelta = 0L;
+			long long halfDayDelta = 0L;
+			long long fullDayDelta = 0L;
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-				secondDelta += currentTime - previousTime;
+				//secondDelta += currentTime - previousTime;
 				minuteDelta += currentTime - previousTime;
+				hourDelta += currentTime - previousTime;
+				halfDayDelta += currentTime - previousTime;
+				fullDayDelta += currentTime - previousTime;
 				double secondLimit = 1'000'000'000;
 				double minuteLimit = 60'000'000'000;
-				if (secondDelta > secondLimit)
-				{
-					secondDelta -= secondLimit;
-				}
+				double hourLimit = 3'600'000'000'000;
+				double halfDayLimit = 43'200'000'000'000;
+				double fullDayLimit = 86'400'000'000'000;
+				//if (secondDelta > secondLimit)
+				//{
+				//	secondDelta -= secondLimit;
+				//}
 				if (minuteDelta > minuteLimit)
 				{
 					minuteDelta -= minuteLimit;
 				}
-				double secondNormal = (double)secondDelta / secondLimit;
+				if (hourDelta > hourLimit)
+				{
+					hourDelta -= hourLimit;
+				}
+				if (halfDayDelta > halfDayLimit)
+				{
+					halfDayDelta -= halfDayLimit;
+				}
+				if (fullDayDelta > fullDayLimit)
+				{
+					fullDayDelta -= fullDayLimit;
+				}
 				double minuteNormal = (double)minuteDelta / minuteLimit;
+				double hourNormal = (double)hourDelta / hourLimit;
+				double halfDayNormal = (double)halfDayDelta / halfDayLimit;
+				double fullDayNormal = (double)fullDayDelta / fullDayLimit;
 				previousTime = currentTime;
 
 				SDL_GetMouseState(&mouseX, &mouseY);
@@ -3045,8 +3069,10 @@ int main(int argc, char* argv[])
 					gStreamingTexture.unlockTexture();
 					gStreamingTexture.render((SCREEN_WIDTH - gStreamingTexture.getWidth()) / 2, (SCREEN_HEIGHT - gStreamingTexture.getHeight()) / 2);
 
-					secondAngle = 360 * secondNormal;
 					minuteAngle = 360 * minuteNormal;
+					hourAngle = 360 * hourNormal;
+					halfDayAngle = 360 * halfDayNormal;
+					fullDayAngle = 360 * fullDayNormal;
 					if (isDebug)
 					{
 						gTargetTexture.setAsRenderTarget();
@@ -3074,10 +3100,10 @@ int main(int argc, char* argv[])
 						RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
 						RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
 						RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
-						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, secondAngle, &screenCenter);
-						gTargetTexture.render(SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, minuteAngle, &screenCenter);
-						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, joystickAngle, &screenCenter);
-						//gTargetTexture.render(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f, NULL, joystickAngle, &screenCenter);
+						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, fullDayAngle, &screenCenter);
+						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, halfDayAngle, &screenCenter);
+						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, hourAngle, &screenCenter);
+						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, minuteAngle, &screenCenter);
 					}
 					else
 					{
