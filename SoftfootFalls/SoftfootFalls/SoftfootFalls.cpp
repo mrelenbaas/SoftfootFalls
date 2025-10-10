@@ -2737,53 +2737,32 @@ int main(int argc, char* argv[])
 					switch (gDirection)
 					{
 					case DIRECTION_UP:
-						scrollingOffset = -gBGTexture.getHeight() * minuteNormal;
+						scrollingOffset = -gBGTexture.getHeight() * secondNormal;
 						if (scrollingOffset < -gBGTexture.getHeight())
 						{
 							scrollingOffset = 0;
 						}
 						break;
 					case DIRECTION_DOWN:
-						scrollingOffset = gBGTexture.getHeight() * minuteNormal;
+						scrollingOffset = gBGTexture.getHeight() * secondNormal;
 						if (scrollingOffset > gBGTexture.getHeight())
 						{
 							scrollingOffset = 0;
 						}
 						break;
 					case DIRECTION_LEFT:
-						scrollingOffset = -gBGTexture.getWidth() * minuteNormal;
+						scrollingOffset = -gBGTexture.getWidth() * secondNormal;
 						if (scrollingOffset < -gBGTexture.getWidth())
 						{
 							scrollingOffset = 0;
 						}
 						break;
 					case DIRECTION_RIGHT:
-						scrollingOffset = gBGTexture.getWidth() * minuteNormal;
+						scrollingOffset = gBGTexture.getWidth() * secondNormal;
 						if (scrollingOffset > gBGTexture.getWidth())
 						{
 							scrollingOffset = 0;
 						}
-						break;
-					}
-					switch (gDirection)
-					{
-					case DIRECTION_UP:
-					case DIRECTION_DOWN:
-						gBGTexture.render(0, scrollingOffset);
-						gBGTexture.render(0, scrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(0, scrollingOffset - gBGTexture.getHeight());
-						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset);
-						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset - gBGTexture.getHeight());
-						break;
-					case DIRECTION_LEFT:
-					case DIRECTION_RIGHT:
-						gBGTexture.render(scrollingOffset, 0);
-						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
-						gBGTexture.render(scrollingOffset - gBGTexture.getWidth(), 0);
-						gBGTexture.render(scrollingOffset, gBGTexture.getHeight());
-						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
-						gBGTexture.render(scrollingOffset - gBGTexture.getWidth(), gBGTexture.getHeight());
 						break;
 					}
 
@@ -2834,6 +2813,41 @@ int main(int argc, char* argv[])
 					}
 					else
 					{
+						switch (gDirection)
+						{
+						case DIRECTION_UP:
+							gBGTexture.render(0, scrollingOffset);
+							gBGTexture.render(0, scrollingOffset + gBGTexture.getHeight());
+							gBGTexture.render(0, scrollingOffset + (gBGTexture.getHeight() * 2));
+							gBGTexture.render(gBGTexture.getWidth(), scrollingOffset);
+							gBGTexture.render(gBGTexture.getWidth(), scrollingOffset + gBGTexture.getHeight());
+							gBGTexture.render(gBGTexture.getWidth(), scrollingOffset + (gBGTexture.getHeight() * 2));
+							break;
+						case DIRECTION_DOWN:
+							gBGTexture.render(0, scrollingOffset);
+							gBGTexture.render(0, scrollingOffset + gBGTexture.getHeight());
+							gBGTexture.render(0, scrollingOffset - gBGTexture.getHeight());
+							gBGTexture.render(gBGTexture.getWidth(), scrollingOffset);
+							gBGTexture.render(gBGTexture.getWidth(), scrollingOffset + gBGTexture.getHeight());
+							gBGTexture.render(gBGTexture.getWidth(), scrollingOffset - gBGTexture.getHeight());
+							break;
+						case DIRECTION_LEFT:
+							gBGTexture.render(scrollingOffset, 0);
+							gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
+							gBGTexture.render(scrollingOffset + (gBGTexture.getWidth() * 2), 0);
+							gBGTexture.render(scrollingOffset, gBGTexture.getHeight());
+							gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
+							gBGTexture.render(scrollingOffset + (gBGTexture.getWidth() * 2), gBGTexture.getHeight());
+							break;
+						case DIRECTION_RIGHT:
+							gBGTexture.render(scrollingOffset, 0);
+							gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
+							gBGTexture.render(scrollingOffset - gBGTexture.getWidth(), 0);
+							gBGTexture.render(scrollingOffset, gBGTexture.getHeight());
+							gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
+							gBGTexture.render(scrollingOffset - gBGTexture.getWidth(), gBGTexture.getHeight());
+							break;
+						}
 						dot.render(camera);
 						gSun.render(
 							0,
