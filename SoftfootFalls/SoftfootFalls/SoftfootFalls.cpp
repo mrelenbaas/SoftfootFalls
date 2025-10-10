@@ -291,7 +291,6 @@ LTexture gIconCursor;
 LTexture gSun;
 LTexture gMoon;
 TTF_Font* gFont = NULL;
-LTexture gTextTexture;
 #ifdef _WIN32
 SDL_FRect gSpriteClips[BUTTON_SPRITE_TOTAL];
 #elif __linux__
@@ -320,10 +319,7 @@ static SDL_AudioStream* stream = NULL;
 //static SDL_AudioFormat stream;
 //#endif
 static int current_sine_sample = 0;
-LTexture gTimeTextTexture;
 LTexture gPromptTextTexture;
-LTexture gPausePromptTexture;
-LTexture gStartPromptTexture;
 LTexture gFPSTextTexture;
 LTexture gDotTexture;
 LTexture gBGTexture;
@@ -1726,11 +1722,6 @@ bool loadMedia()
 	else
 	{
 		SDL_Color textColor = { 0, 0, 0, 0 };
-		if (!gTextTexture.loadFromRenderedText("Press Enter to reset timer", textColor))
-		{
-			SDL_Log("Failed to render text texture!\n");
-			success = false;
-		}
 		if (!gPromptTextTexture.loadFromRenderedText("Enter Data:", textColor))
 		{
 			SDL_Log("Failed to render prompt text!\n");
@@ -1857,17 +1848,6 @@ bool loadMedia()
 		success = false;
 	}*/
 
-	//SDL_Color textColor = { 0, 0, 0, 255 };
-	if (!gStartPromptTexture.loadFromRenderedText("Press S to Start or Stop the Timer", textColor))
-	{
-		SDL_Log("Unable to render start/stop prompt texture!\n");
-		success = false;
-	}
-	if (!gPausePromptTexture.loadFromRenderedText("Press P to Pause or Unpause the Timer", textColor))
-	{
-		SDL_Log("Unable to render pause/unpause prompt texture!\n");
-		success = false;
-	}
 	if (!gDotTexture.loadFromFile(load->Path("dot.bmp")))
 	{
 		SDL_Log("Failed to load dot texture!\n");
@@ -1932,7 +1912,6 @@ void close()
 	gIconCursor.free();
 	gSun.free();
 	gMoon.free();
-	gTextTexture.free();
 	TTF_CloseFont(gFont);
 	gFont = NULL;
 	gButtonSpriteSheetTexture.free();
@@ -1977,10 +1956,7 @@ void close()
 	//gLow = NULL;
 	//MIX_DestroyMixer(gMusic);
 	//gMusic = NULL;
-	gTimeTextTexture.free();
 	gPromptTextTexture.free();
-	gStartPromptTexture.free();
-	gPausePromptTexture.free();
 	gFPSTextTexture.free();
 	gDotTexture.free();
 	gBGTexture.free();
@@ -2204,7 +2180,6 @@ int main(int argc, char* argv[])
 #elif __linux__
 			SDL_Point screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 #endif
-			LTimer stepTimer;
 			bool isDebug = false;
 			bool isDebugReleased = false;
 #ifdef _WIN32
@@ -2215,6 +2190,7 @@ int main(int argc, char* argv[])
 
 			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 			std::cout << previousTime << std::endl;
+			long long secondDelta = 0L;
 			long long minuteDelta = 0L;
 			long long hourDelta = 0L;
 			long long halfDayDelta = 0L;
@@ -2222,7 +2198,7 @@ int main(int argc, char* argv[])
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-				//secondDelta += currentTime - previousTime;
+				secondDelta += currentTime - previousTime;
 				minuteDelta += currentTime - previousTime;
 				hourDelta += currentTime - previousTime;
 				halfDayDelta += currentTime - previousTime;
@@ -2232,10 +2208,10 @@ int main(int argc, char* argv[])
 				double hourLimit = 3'600'000'000'000;
 				double halfDayLimit = 43'200'000'000'000;
 				double fullDayLimit = 86'400'000'000'000;
-				//if (secondDelta > secondLimit)
-				//{
-				//	secondDelta -= secondLimit;
-				//}
+				if (secondDelta > secondLimit)
+				{
+					secondDelta -= secondLimit;
+				}
 				if (minuteDelta > minuteLimit)
 				{
 					minuteDelta -= minuteLimit;
@@ -2252,6 +2228,7 @@ int main(int argc, char* argv[])
 				{
 					fullDayDelta -= fullDayLimit;
 				}
+				double secondNormal = (double)secondDelta / secondLimit;
 				double minuteNormal = (double)minuteDelta / minuteLimit;
 				double hourNormal = (double)hourDelta / hourLimit;
 				double halfDayNormal = (double)halfDayDelta / halfDayLimit;
@@ -2701,7 +2678,6 @@ int main(int argc, char* argv[])
 #elif __linux__
 					SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 #endif
-
 					SDL_Rect bottomViewport;
 					bottomViewport.x = 0;
 					bottomViewport.y = SCREEN_HEIGHT / 2;
@@ -2731,33 +2707,20 @@ int main(int argc, char* argv[])
 					gDotSpriteSheetTexture.render(0, SCREEN_HEIGHT - gDotSpriteClips[2].h, &gDotSpriteClips[2]);
 					gDotSpriteSheetTexture.render(SCREEN_WIDTH - gDotSpriteClips[3].w, SCREEN_HEIGHT - gDotSpriteClips[3].h, &gDotSpriteClips[3]);
 
-					gBackgroundTexture.render(0, 0);
-					gModulatedTexture.setColor(r, g, b);
-					gModulatedTexture.setAlpha(a);
-					gModulatedTexture.render(0, 0);
 
+					frame = 4 * secondNormal;
+					std::cout << frame << std::endl;
 #ifdef _WIN32
-					SDL_FRect* currentClip = &gWalkingSpriteClips[frame / 4];
+					SDL_FRect* currentClip = &gWalkingSpriteClips[frame];
 #elif __linux__
-					SDL_Rect* currentClip = &gWalkingSpriteClips[frame / 4];
+					SDL_Rect* currentClip = &gWalkingSpriteClips[frame];
 #endif
-					gWalkingSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
-
-					gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2);
-
-					for (int i = 0; i < TOTAL_BUTTONS; ++i)
-					{
-						gButtons[i].render();
-					}
 
 					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
-					//printf("%lf\n", joystickAngle);
 					if (xDir == 0 && yDir == 0)
 					{
 						joystickAngle = 0;
 					}
-
-					//gSplashTexture.render(0, 0);
 
 					float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
 					if (avgFPS > 2000000)
@@ -2765,51 +2728,11 @@ int main(int argc, char* argv[])
 						avgFPS = 0;
 					}
 					timeText.str("");
-					//timeText << "TIME: " << SDL_GetTicks() - startTime;
-					//timeText << "TIME: " << (timer.getTicks() / 1000.f);
 					timeText << "TIME: " << avgFPS;
-					if (!gTimeTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
-					{
-						SDL_Log("Unable to render time texture!\n");
-					}
 					if (!gFPSTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
 					{
 						SDL_Log("Unable to render FPS texture!\n");
 					}
-					//gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
-					//gStartPromptTexture.render((SCREEN_WIDTH - gStartPromptTexture.getWidth()) / 2, 0);
-					//gPausePromptTexture.render((SCREEN_WIDTH - gPausePromptTexture.getWidth()) / 2, gStartPromptTexture.getHeight());
-					//gTimeTextTexture.render((SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight()) / 2);
-					gFPSTextTexture.render((SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
-
-					float timeStep = stepTimer.getTicks() / 1000.f;
-					dot.move(timeStep);
-					stepTimer.start();
-					dot.setCamera(camera);
-					/*				fwall.x = (float)wall.x;
-									fwall.y = (float)wall.y;
-									fwall.w = (float)wall.w;
-									fwall.h = (float)wall.h;
-					*/
-					/*camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
-					camera.y = (dot.getPosY() + Dot::DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
-					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-					if (camera.x < 0)
-					{
-						camera.x = 0;
-					}
-					if (camera.y < 0)
-					{
-						camera.y = 0;
-					}
-					if (camera.x > LEVEL_WIDTH - camera.w)
-					{
-						camera.x = LEVEL_WIDTH - camera.w;
-					}
-					if (camera.y > LEVEL_HEIGHT - camera.h)
-					{
-						camera.y = LEVEL_HEIGHT - camera.h;
-					}*/
 
 					switch (gDirection)
 					{
@@ -2868,8 +2791,17 @@ int main(int argc, char* argv[])
 					hourAngle = 360 * hourNormal;
 					halfDayAngle = 360 * halfDayNormal;
 					fullDayAngle = 360 * fullDayNormal;
+
 					if (isDebug)
 					{
+						//gBackgroundTexture.render(0, 0);
+						gModulatedTexture.setColor(r, g, b);
+						gModulatedTexture.setAlpha(a);
+						gModulatedTexture.render(0, 0);
+						for (int i = 0; i < TOTAL_BUTTONS; ++i)
+						{
+							gButtons[i].render();
+						}
 						gTargetTexture.setAsRenderTarget();
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
 						SDL_RenderClear(gRenderer);
@@ -2926,6 +2858,7 @@ int main(int argc, char* argv[])
 							NULL,
 							flipType);
 						gBitmapFont.renderText(0, 0, "Bitmap Font:\nABDCEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789");
+						gFPSTextTexture.render(0, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 						for (int i = 0; i < TOTAL_DATA; ++i)
 						{
 							gDataTextures[i].render((SCREEN_WIDTH - gDataTextures[i].getWidth()) / 2, gPromptTextTexture.getHeight() + gDataTextures[0].getHeight() * i);
@@ -2943,14 +2876,9 @@ int main(int argc, char* argv[])
 							}
 						}
 						gInputTextTexture.render((SCREEN_WIDTH - gInputTextTexture.getWidth()) / 2, gWindow.getHeight() - gInputTextTexture.getHeight());
+						gWalkingSpriteSheetTexture.render((SCREEN_WIDTH - currentClip->w) / 2, (SCREEN_HEIGHT - currentClip->h) / 2, currentClip);
 					}
 					SDL_RenderPresent(gRenderer);
-				}
-
-				++frame;
-				if (frame / 4 >= WALKING_ANIMATION_FRAMES)
-				{
-					frame = 0;
 				}
 
 				++countedFrames;
