@@ -1811,7 +1811,7 @@ bool loadMedia()
 	gGreenTexture.setAlpha(192);
 	gBlueTexture.setAlpha(192);
 	gShimmerTexture.setAlpha(192);
-	if (!gBitmapFont.buildFont(load->Path("lazyfont.png")))
+	if (!gBitmapFont.buildFont(load->Path("font_000.png")))
 	{
 		SDL_Log("Failed to load bitmap font!\n");
 		success = false;
@@ -2621,7 +2621,7 @@ int main(int argc, char* argv[])
 						degrees,
 						NULL,
 						flipType);
-					gBitmapFont.renderText(0, 0, "Bitmap Font:\nABDCEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789");
+					gBitmapFont.renderText(0, 0, "|||");
 					gFPSTextTexture.render(0, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
 					for (int i = 0; i < TOTAL_DATA; ++i)
 					{
