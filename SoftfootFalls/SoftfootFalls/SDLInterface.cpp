@@ -48,3 +48,12 @@ void RenderRect(SDL_Renderer* renderer, SDL_Rect* rect)
 	SDL_RenderDrawRect(renderer, rect);
 #endif
 }
+
+void SetRenderViewport(SDL_Renderer* renderer, SDL_Rect* rect)
+{
+#if _WIN32
+	SDL_SetRenderViewport(renderer, rect);
+#elif __linux__
+	SDL_RenderSetViewport(renderer, rect);
+#endif
+}

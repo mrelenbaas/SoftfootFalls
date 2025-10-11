@@ -2641,7 +2641,7 @@ int main(int argc, char* argv[])
 					fullscreenViewport.h = gWindow.getHeight();
 					if (isDebug)
 					{
-						SDL_SetRenderViewport(gRenderer, &fullscreenViewport);
+						SetRenderViewport(gRenderer, &fullscreenViewport);
 						gModulatedTexture.render(0, 0);
 #ifdef _WIN32
 						SDL_RenderTexture(gRenderer, gModulatedTexture.getTexture(), NULL, NULL);
@@ -2697,7 +2697,7 @@ int main(int argc, char* argv[])
 					middleViewport.y = (gWindow.getHeight() * 0.5f) - 100;
 					middleViewport.w = 200;
 					middleViewport.h = 200;
-					SDL_SetRenderViewport(gRenderer, &middleViewport);
+					SetRenderViewport(gRenderer, &middleViewport);
 #ifdef _WIN32
 					SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
 #elif __linux__
@@ -2708,13 +2708,13 @@ int main(int argc, char* argv[])
 						(middleViewport.h - currentClip->h) / 2,
 						currentClip);
 					middleViewport.y += middleViewport.h / 2;
-					SDL_SetRenderViewport(gRenderer, &middleViewport);
+					SetRenderViewport(gRenderer, &middleViewport);
 #ifdef _WIN32
 					SDL_RenderTexture(gRenderer, gBox->getTexture(), NULL, NULL);
 #elif __linux__
 					SDL_RenderCopy(gRenderer, gBox->getTexture(), NULL, NULL);
 #endif
-					SDL_SetRenderViewport(gRenderer, &fullscreenViewport);
+					SetRenderViewport(gRenderer, &fullscreenViewport);
 
 					
 
