@@ -82,7 +82,6 @@ enum LButtonSprite
 
 enum KeyPressSurfaces
 {
-	KEY_PRESS_SURFACE_DEFAULT,
 	KEY_PRESS_SURFACE_UP,
 	KEY_PRESS_SURFACE_DOWN,
 	KEY_PRESS_SURFACE_LEFT,
@@ -316,6 +315,10 @@ LTexture gPromptTextTexture;
 LTexture gFPSTextTexture;
 LTexture gDotTexture;
 LTexture gBGTexture;
+const int HORIZON_SIZE = 8;
+LTexture gHorizons[HORIZON_SIZE];
+LTexture gBoxes[KEY_PRESS_SURFACE_TOTAL];
+LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
 LTexture gInputTextTexture;
 LTexture gDataTextures[TOTAL_DATA];
 Sint32 gData[TOTAL_DATA];
@@ -1787,6 +1790,68 @@ bool loadMedia()
 		SDL_Log("Failed to load background texture~\n");
 		success = false;
 	}
+	if (!gHorizons[0].loadFromFile(load->Path("Horizon000.png")))
+	{
+		SDL_Log("Failed to load background texture~\n");
+		success = false;
+	}
+	if (!gHorizons[1].loadFromFile(load->Path("Horizon001.png")))
+	{
+		SDL_Log("Failed to load background texture~\n");
+		success = false;
+	}
+	if (!gHorizons[2].loadFromFile(load->Path("Horizon002.png")))
+	{
+		SDL_Log("Failed to load background texture~\n");
+		success = false;
+	}
+	if (!gHorizons[3].loadFromFile(load->Path("Horizon003.png")))
+	{
+		SDL_Log("Failed to load background texture~\n");
+		success = false;
+	}
+	if (!gHorizons[4].loadFromFile(load->Path("Horizon004.png")))
+	{
+		SDL_Log("Failed to load background texture~\n");
+		success = false;
+	}
+	if (!gHorizons[5].loadFromFile(load->Path("Horizon005.png")))
+	{
+		SDL_Log("Failed to load background texture~\n");
+		success = false;
+	}
+	if (!gHorizons[6].loadFromFile(load->Path("Horizon006.png")))
+	{
+		SDL_Log("Failed to load background texture~\n");
+		success = false;
+	}
+	if (!gHorizons[7].loadFromFile(load->Path("Horizon007.png")))
+	{
+		SDL_Log("Failed to load background texture~\n");
+		success = false;
+	}
+	if (!gBoxes[KEY_PRESS_SURFACE_UP].loadFromFile(load->Path("BoxUp.png")))
+	{
+		SDL_Log("Failed to load BoxUp texture~\n");
+		success = false;
+	}
+	if (!gBoxes[KEY_PRESS_SURFACE_DOWN].loadFromFile(load->Path("BoxDown.png")))
+	{
+		SDL_Log("Failed to load BoxDown texture~\n");
+		success = false;
+	}
+	if (!gBoxes[KEY_PRESS_SURFACE_LEFT].loadFromFile(load->Path("BoxLeft.png")))
+	{
+		SDL_Log("Failed to load BoxLeft texture~\n");
+		success = false;
+	}
+	if (!gBoxes[KEY_PRESS_SURFACE_RIGHT].loadFromFile(load->Path("BoxRight.png")))
+	{
+		SDL_Log("Failed to load BoxRight texture~\n");
+		success = false;
+	}
+
+
 	if (!gRedTexture.loadFromFile(load->Path("CharacterFairySmallcol000_64x64.png")))
 	{
 		SDL_Log("Failed to load red texture!\n");
@@ -1883,6 +1948,14 @@ void close()
 	gFPSTextTexture.free();
 	gDotTexture.free();
 	gBGTexture.free();
+	for (int i = 0; i < HORIZON_SIZE; ++i)
+	{
+		gHorizons[i].free();
+	}
+	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i)
+	{
+		gBoxes[i].free();
+	}
 	gInputTextTexture.free();
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "w+b");
@@ -2059,7 +2132,6 @@ int main(int argc, char* argv[])
 			SDL_Color textColor = { 0, 0, 0, 255 };
 			Uint64 startTime = 0;
 			std::stringstream timeText;
-			LTimer timer;
 			LTimer fpsTimer;
 			LTimer capTimer;
 			int countedFrames = 0;
@@ -2080,7 +2152,8 @@ int main(int argc, char* argv[])
 			wall.y = 40;
 			wall.w = 40;
 			wall.h = 400;
-			int scrollingOffset = 0;
+			int backgroundScrollingOffset = 0;
+			int horizonScrollingOffset = 0;
 			std::string inputText = "Some Text";
 			gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
 			int currentData = 0;
@@ -2340,44 +2413,9 @@ int main(int argc, char* argv[])
 								break;
 							}
 							break;
-						case KEY_P:
-							startTime = SDL_GetTicks();
-							if (timer.isPaused())
-							{
-								timer.unpause();
-							}
-							else
-							{
-								timer.pause();
-							}
-							break;
-#ifdef _WIN32
-						case SDLK_W:
-#elif __linux__
-						case SDLK_w:
-#endif
-							break;
-#ifdef _WIN32
-						case SDLK_A:
-#elif __linux__
-						case SDLK_a:
-#endif
-							degrees -= 60;
-							break;
-#ifdef _WIN32
-						case SDLK_S:
-#elif __linux__
-						case SDLK_s:
-#endif
-							break;
-#ifdef _WIN32
-						case SDLK_D:
-#elif __linux__
-						case SDLK_d:
-#endif
-							degrees += 60;
-							break;
 						case SDLK_UP:
+						case KEY_W:
+							gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), textColor);
 							--currentData;
 							if (currentData < 0)
@@ -2386,7 +2424,9 @@ int main(int argc, char* argv[])
 							}
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
-						case SDLK_DOWN:
+						case SDLK_LEFT:
+						case KEY_A:
+							gBox = &gBoxes[KEY_PRESS_SURFACE_LEFT];
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), textColor);
 							++currentData;
 							if (currentData == TOTAL_DATA)
@@ -2394,14 +2434,20 @@ int main(int argc, char* argv[])
 								currentData = 0;
 							}
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
+							degrees -= 60;
 							break;
-						case SDLK_LEFT:
+						case SDLK_DOWN:
+						case KEY_S:
+							gBox = &gBoxes[KEY_PRESS_SURFACE_DOWN];
 							--gData[currentData];
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
 						case SDLK_RIGHT:
+						case KEY_D:
+							gBox = &gBoxes[KEY_PRESS_SURFACE_RIGHT];
 							++gData[currentData];
 							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
+							degrees += 60;
 							break;
 						default:
 							break;
@@ -2498,33 +2544,38 @@ int main(int argc, char* argv[])
 					switch (gDirection)
 					{
 					case DIRECTION_UP:
-						scrollingOffset = -gBGTexture.getHeight() * minuteNormal;
-						if (scrollingOffset < -gBGTexture.getHeight())
+						backgroundScrollingOffset = -gBGTexture.getHeight() * minuteNormal;
+						if (backgroundScrollingOffset < -gBGTexture.getHeight())
 						{
-							scrollingOffset = 0;
+							backgroundScrollingOffset = 0;
 						}
 						break;
 					case DIRECTION_DOWN:
-						scrollingOffset = gBGTexture.getHeight() * minuteNormal;
-						if (scrollingOffset > gBGTexture.getHeight())
+						backgroundScrollingOffset = gBGTexture.getHeight() * minuteNormal;
+						if (backgroundScrollingOffset > gBGTexture.getHeight())
 						{
-							scrollingOffset = 0;
+							backgroundScrollingOffset = 0;
 						}
 						break;
 					case DIRECTION_LEFT:
-						scrollingOffset = -gBGTexture.getWidth() * minuteNormal;
-						if (scrollingOffset < -gBGTexture.getWidth())
+						backgroundScrollingOffset = -gBGTexture.getWidth() * minuteNormal;
+						if (backgroundScrollingOffset < -gBGTexture.getWidth())
 						{
-							scrollingOffset = 0;
+							backgroundScrollingOffset = 0;
 						}
 						break;
 					case DIRECTION_RIGHT:
-						scrollingOffset = gBGTexture.getWidth() * minuteNormal;
-						if (scrollingOffset > gBGTexture.getWidth())
+						backgroundScrollingOffset = gBGTexture.getWidth() * minuteNormal;
+						if (backgroundScrollingOffset > gBGTexture.getWidth())
 						{
-							scrollingOffset = 0;
+							backgroundScrollingOffset = 0;
 						}
 						break;
+					}
+					horizonScrollingOffset = (- gHorizons[0].getWidth() * HORIZON_SIZE) * minuteNormal;
+					if (horizonScrollingOffset < -gHorizons[0].getWidth() * HORIZON_SIZE)
+					{
+						horizonScrollingOffset = 0;
 					}
 
 					minuteAngle = 360 * minuteNormal;
@@ -2547,37 +2598,41 @@ int main(int argc, char* argv[])
 					switch (gDirection)
 					{
 					case DIRECTION_UP:
-						gBGTexture.render(0, scrollingOffset);
-						gBGTexture.render(0, scrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(0, scrollingOffset + (gBGTexture.getHeight() * 2));
-						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset);
-						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset + (gBGTexture.getHeight() * 2));
+						gBGTexture.render(0, backgroundScrollingOffset);
+						gBGTexture.render(0, backgroundScrollingOffset + gBGTexture.getHeight());
+						gBGTexture.render(0, backgroundScrollingOffset + (gBGTexture.getHeight() * 2));
+						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset);
+						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset + gBGTexture.getHeight());
+						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset + (gBGTexture.getHeight() * 2));
 						break;
 					case DIRECTION_DOWN:
-						gBGTexture.render(0, scrollingOffset);
-						gBGTexture.render(0, scrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(0, scrollingOffset - gBGTexture.getHeight());
-						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset);
-						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(gBGTexture.getWidth(), scrollingOffset - gBGTexture.getHeight());
+						gBGTexture.render(0, backgroundScrollingOffset);
+						gBGTexture.render(0, backgroundScrollingOffset + gBGTexture.getHeight());
+						gBGTexture.render(0, backgroundScrollingOffset - gBGTexture.getHeight());
+						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset);
+						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset + gBGTexture.getHeight());
+						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset - gBGTexture.getHeight());
 						break;
 					case DIRECTION_LEFT:
-						gBGTexture.render(scrollingOffset, 0);
-						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
-						gBGTexture.render(scrollingOffset + (gBGTexture.getWidth() * 2), 0);
-						gBGTexture.render(scrollingOffset, gBGTexture.getHeight());
-						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
-						gBGTexture.render(scrollingOffset + (gBGTexture.getWidth() * 2), gBGTexture.getHeight());
+						gBGTexture.render(backgroundScrollingOffset, 0);
+						gBGTexture.render(backgroundScrollingOffset + gBGTexture.getWidth(), 0);
+						gBGTexture.render(backgroundScrollingOffset + (gBGTexture.getWidth() * 2), 0);
+						gBGTexture.render(backgroundScrollingOffset, gBGTexture.getHeight());
+						gBGTexture.render(backgroundScrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
+						gBGTexture.render(backgroundScrollingOffset + (gBGTexture.getWidth() * 2), gBGTexture.getHeight());
 						break;
 					case DIRECTION_RIGHT:
-						gBGTexture.render(scrollingOffset, 0);
-						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), 0);
-						gBGTexture.render(scrollingOffset - gBGTexture.getWidth(), 0);
-						gBGTexture.render(scrollingOffset, gBGTexture.getHeight());
-						gBGTexture.render(scrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
-						gBGTexture.render(scrollingOffset - gBGTexture.getWidth(), gBGTexture.getHeight());
+						gBGTexture.render(backgroundScrollingOffset, 0);
+						gBGTexture.render(backgroundScrollingOffset + gBGTexture.getWidth(), 0);
+						gBGTexture.render(backgroundScrollingOffset - gBGTexture.getWidth(), 0);
+						gBGTexture.render(backgroundScrollingOffset, gBGTexture.getHeight());
+						gBGTexture.render(backgroundScrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
+						gBGTexture.render(backgroundScrollingOffset - gBGTexture.getWidth(), gBGTexture.getHeight());
 						break;
+					}
+					for (int i = 0; i < HORIZON_SIZE; ++i)
+					{
+						gHorizons[i].render(horizonScrollingOffset + (gHorizons[i].getWidth() * i), 0 /*gWindow.getHeight() - gHorizons[i].getHeight()*/);
 					}
 					SDL_Rect fullscreenViewport;
 					fullscreenViewport.x = 0;
@@ -2586,11 +2641,7 @@ int main(int argc, char* argv[])
 					fullscreenViewport.h = gWindow.getHeight();
 					if (isDebug)
 					{
-#ifdef _WIN32
 						SDL_SetRenderViewport(gRenderer, &fullscreenViewport);
-#elif __linux__
-						SDL_RenderSetViewport(gRenderer, &fullscreenViewport);
-#endif
 						gModulatedTexture.render(0, 0);
 #ifdef _WIN32
 						SDL_RenderTexture(gRenderer, gModulatedTexture.getTexture(), NULL, NULL);
@@ -2646,11 +2697,7 @@ int main(int argc, char* argv[])
 					middleViewport.y = (gWindow.getHeight() * 0.5f) - 100;
 					middleViewport.w = 200;
 					middleViewport.h = 200;
-#ifdef _WIN32
 					SDL_SetRenderViewport(gRenderer, &middleViewport);
-#elif __linux__
-					SDL_RenderSetViewport(gRenderer, &middleViewport);
-#endif
 #ifdef _WIN32
 					SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
 #elif __linux__
@@ -2660,11 +2707,14 @@ int main(int argc, char* argv[])
 						(middleViewport.w - currentClip->w) / 2,
 						(middleViewport.h - currentClip->h) / 2,
 						currentClip);
+					middleViewport.y += middleViewport.h / 2;
+					SDL_SetRenderViewport(gRenderer, &middleViewport);
 #ifdef _WIN32
-					SDL_SetRenderViewport(gRenderer, &fullscreenViewport);
+					SDL_RenderTexture(gRenderer, gBox->getTexture(), NULL, NULL);
 #elif __linux__
-					SDL_RenderSetViewport(gRenderer, &fullscreenViewport);
+					SDL_RenderCopy(gRenderer, gBox->getTexture(), NULL, NULL);
 #endif
+					SDL_SetRenderViewport(gRenderer, &fullscreenViewport);
 
 					
 
