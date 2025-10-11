@@ -24,7 +24,6 @@
 #elif __linux__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
 #endif
 #include "SDLInterface.h"
@@ -106,9 +105,6 @@ public:
 	bool loadFromFile(const char* path);
 	bool loadPixelsFromFile(const char* path);
 	bool loadFromPixels();
-#if defined(SDL_TTF_MAJOR_VERSION)
-	bool loadFromRenderedText(const char* textureText, SDL_Color textColor);
-#endif
 	bool createBlank(int width, int height, SDL_TextureAccess access);
 	void free();
 	void setColor(Uint8 red, Uint8 green, Uint8 blue);
@@ -267,7 +263,6 @@ bool loadMedia();
 void close();
 SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
-bool checkCollision(SDL_Rect a, SDL_Rect b);
 
 LWindow gWindow;
 SDL_Renderer* gRenderer = NULL;
@@ -284,7 +279,6 @@ LTexture gWalkingSpriteSheetTexture;
 LTexture gIconCursor;
 LTexture gSun;
 LTexture gMoon;
-TTF_Font* gFont = NULL;
 #ifdef _WIN32
 SDL_FRect gSpriteClips[BUTTON_SPRITE_TOTAL];
 #elif __linux__
@@ -311,23 +305,18 @@ static SDL_AudioStream* stream = NULL;
 //static SDL_AudioFormat stream;
 //#endif
 static int current_sine_sample = 0;
-LTexture gPromptTextTexture;
-LTexture gFPSTextTexture;
 LTexture gDotTexture;
 LTexture gBGTexture;
 const int HORIZON_SIZE = 8;
 LTexture gHorizons[HORIZON_SIZE];
 LTexture gBoxes[KEY_PRESS_SURFACE_TOTAL];
 LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
-LTexture gInputTextTexture;
-LTexture gDataTextures[TOTAL_DATA];
 Sint32 gData[TOTAL_DATA];
 LTexture gRedTexture;
 LTexture gGreenTexture;
 LTexture gBlueTexture;
 LTexture gShimmerTexture;
 LBitmapFont gBitmapFont;
-DataStream gDataStream;
 LTexture gTargetTexture;
 Directions gDirection = DIRECTION_UP;
 
@@ -410,41 +399,6 @@ bool LTexture::loadFromPixels()
 	return mTexture != NULL;
 }
 
-#if defined(SDL_TTF_MAJOR_VERSION)
-bool LTexture::loadFromRenderedText(const char* textureText, SDL_Color textColor)
-{
-	free();
-#ifdef _WIN32
-	SDL_Surface* textSurface = TTF_RenderText_Blended(gFont, textureText, 0, textColor);
-#elif __linux__
-	SDL_Surface* textSurface = TTF_RenderText_Solid(gFont, textureText, textColor);
-#endif
-	if (textSurface == NULL)
-	{
-		SDL_Log("Unable to render text surface! SDL_ttf Error: %s\n", SDL_GetError());
-	}
-	else
-	{
-		mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
-		if (mTexture == NULL)
-		{
-			SDL_Log("Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError());
-		}
-		else
-		{
-			mWidth = textSurface->w;
-			mHeight = textSurface->h;
-		}
-#ifdef _WIN32
-		SDL_DestroySurface(textSurface);
-#elif __linux__
-		SDL_FreeSurface(textSurface);
-#endif
-	}
-	return mTexture != NULL;
-}
-#endif
-
 bool LTexture::createBlank(int width, int height, SDL_TextureAccess access)
 {
 	free();
@@ -520,10 +474,8 @@ void LTexture::render(int x, int y, SDL_Rect* clip, double secondAngle, SDL_Poin
 		renderQuad.h = clip->h;
 	}
 #ifdef _WIN32
-	//SDL_RenderTexture(gRenderer, mTexture, clip, &renderQuad);
 	SDL_RenderTextureRotated(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 #elif __linux__
-	//SDL_RenderCopy(gRenderer, mTexture, clip, &renderQuad);
 	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, secondAngle, center, flip);
 #endif
 }
@@ -1654,21 +1606,6 @@ bool loadMedia()
 		SDL_Log("Failed to load CharacterFairyMoon_000_256x256 texture!\n");
 		success = false;
 	}
-	gFont = TTF_OpenFont(load->Path("lazy.ttf"), 28);
-	if (gFont == NULL)
-	{
-		SDL_Log("Failed to load lazy font! SDL_ttf Error: %s\n", SDL_GetError());
-		success = false;
-	}
-	else
-	{
-		SDL_Color textColor = { 0, 0, 0, 0 };
-		if (!gPromptTextTexture.loadFromRenderedText("Enter Data:", textColor))
-		{
-			SDL_Log("Failed to render prompt text!\n");
-			success = false;
-		}
-	}
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "r+b");
 #elif __linux__
@@ -1722,11 +1659,6 @@ bool loadMedia()
 #elif __linux__
 		SDL_RWclose(file);
 #endif
-	}
-	gDataTextures[0].loadFromRenderedText(std::to_string(gData[0]).c_str(), highlightColor);
-	for (int i = 1; i < TOTAL_DATA; ++i)
-	{
-		gDataTextures[i].loadFromRenderedText(std::to_string(gData[i]).c_str(), textColor);
 	}
 	if (!gButtonSpriteSheetTexture.loadFromFile(load->Path("button.png")))
 	{
@@ -1902,8 +1834,6 @@ void close()
 	gIconCursor.free();
 	gSun.free();
 	gMoon.free();
-	TTF_CloseFont(gFont);
-	gFont = NULL;
 	gButtonSpriteSheetTexture.free();
 	if (gGameController != NULL)
 	{
@@ -1944,8 +1874,6 @@ void close()
 	//gLow = NULL;
 	//MIX_DestroyMixer(gMusic);
 	//gMusic = NULL;
-	gPromptTextTexture.free();
-	gFPSTextTexture.free();
 	gDotTexture.free();
 	gBGTexture.free();
 	for (int i = 0; i < HORIZON_SIZE; ++i)
@@ -1956,7 +1884,6 @@ void close()
 	{
 		gBoxes[i].free();
 	}
-	gInputTextTexture.free();
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "w+b");
 #elif __linux__
@@ -1982,16 +1909,11 @@ void close()
 	{
 		SDL_Log("Error: Unable to save file!\n", SDL_GetError());
 	}
-	for (int i = 0; i < TOTAL_DATA; ++i)
-	{
-		gDataTextures[i].free();
-	}
 	gRedTexture.free();
 	gGreenTexture.free();
 	gBlueTexture.free();
 	gShimmerTexture.free();
 	gBitmapFont.free();
-	gDataStream.free();
 	gTargetTexture.free();
 
 	delete load;
@@ -2064,43 +1986,6 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
 	return newTexture;
 }
 
-bool checkCollision(SDL_Rect a, SDL_Rect b)
-{
-	int leftA, leftB;
-	int rightA, rightB;
-	int topA, topB;
-	int bottomA, bottomB;
-
-	leftA = a.x;
-	rightA = a.x + a.w;
-	topA = a.y;
-	bottomA = a.y + a.h;
-
-	leftB = b.x;
-	rightB = b.x + b.w;
-	topB = b.y;
-	bottomB = b.y + b.h;
-
-	if (bottomA <= topB)
-	{
-		return false;
-	}
-	if (topA >= bottomB)
-	{
-		return false;
-	}
-	if (rightA <= leftB)
-	{
-		return false;
-	}
-	if (leftA >= rightB)
-	{
-		return false;
-	}
-
-	return true;
-}
-
 int main(int argc, char* argv[])
 {
 	Clock* clock = new Clock();
@@ -2131,7 +2016,6 @@ int main(int argc, char* argv[])
 			int yDir = 0;
 			SDL_Color textColor = { 0, 0, 0, 255 };
 			Uint64 startTime = 0;
-			std::stringstream timeText;
 			LTimer fpsTimer;
 			LTimer capTimer;
 			int countedFrames = 0;
@@ -2155,7 +2039,6 @@ int main(int argc, char* argv[])
 			int backgroundScrollingOffset = 0;
 			int horizonScrollingOffset = 0;
 			std::string inputText = "Some Text";
-			gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
 			int currentData = 0;
 			SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 #ifdef _WIN32
@@ -2291,7 +2174,6 @@ int main(int argc, char* argv[])
 #endif
 				myTimer->Update();
 				capTimer.start();
-				bool renderText = false;
 				while (SDL_PollEvent(&e) != 0)
 				{
 					if (IsWindowQuit(e)) quit = true;
@@ -2416,37 +2298,31 @@ int main(int argc, char* argv[])
 						case SDLK_UP:
 						case KEY_W:
 							gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
-							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), textColor);
 							--currentData;
 							if (currentData < 0)
 							{
 								currentData = TOTAL_DATA - 1;
 							}
-							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							break;
-						case SDLK_LEFT:
-						case KEY_A:
-							gBox = &gBoxes[KEY_PRESS_SURFACE_LEFT];
-							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), textColor);
+						case SDLK_DOWN:
+						case KEY_S:
+							gBox = &gBoxes[KEY_PRESS_SURFACE_DOWN];
 							++currentData;
 							if (currentData == TOTAL_DATA)
 							{
 								currentData = 0;
 							}
-							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
-							degrees -= 60;
 							break;
-						case SDLK_DOWN:
-						case KEY_S:
-							gBox = &gBoxes[KEY_PRESS_SURFACE_DOWN];
+						case SDLK_LEFT:
+						case KEY_A:
+							gBox = &gBoxes[KEY_PRESS_SURFACE_LEFT];
 							--gData[currentData];
-							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
+							degrees -= 60;
 							break;
 						case SDLK_RIGHT:
 						case KEY_D:
 							gBox = &gBoxes[KEY_PRESS_SURFACE_RIGHT];
 							++gData[currentData];
-							gDataTextures[currentData].loadFromRenderedText(std::to_string(gData[currentData]).c_str(), highlightColor);
 							degrees += 60;
 							break;
 						default:
@@ -2467,7 +2343,6 @@ int main(int argc, char* argv[])
 #endif
 						{
 							inputText.pop_back();
-							renderText = true;
 						}
 #ifdef _WIN32
 						else if (e.key.key == SDLK_C && SDL_GetModState() & SDL_KMOD_CTRL)
@@ -2486,7 +2361,6 @@ int main(int argc, char* argv[])
 							char* tempText = SDL_GetClipboardText();
 							inputText = tempText;
 							SDL_free(tempText);
-							renderText = true;
 						}
 					}
 #ifdef _WIN32
@@ -2502,7 +2376,6 @@ int main(int argc, char* argv[])
 #endif
 						{
 							inputText += e.text.text;
-							renderText = true;
 						}
 					}
 					for (int i = 0; i < TOTAL_BUTTONS; ++i)
@@ -2527,18 +2400,6 @@ int main(int argc, char* argv[])
 					if (xDir == 0 && yDir == 0)
 					{
 						joystickAngle = 0;
-					}
-
-					float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
-					if (avgFPS > 2000000)
-					{
-						avgFPS = 0;
-					}
-					timeText.str("");
-					timeText << "TIME: " << avgFPS;
-					if (!gFPSTextTexture.loadFromRenderedText(timeText.str().c_str(), textColor))
-					{
-						SDL_Log("Unable to render FPS texture!\n");
 					}
 
 					switch (gDirection)
@@ -2643,13 +2504,26 @@ int main(int argc, char* argv[])
 					{
 						SetRenderViewport(gRenderer, &fullscreenViewport);
 						gModulatedTexture.render(0, 0);
-#ifdef _WIN32
-						SDL_RenderTexture(gRenderer, gModulatedTexture.getTexture(), NULL, NULL);
-#elif __linux__
-						SDL_RenderCopy(gRenderer, gModulatedTexture.getTexture(), NULL, NULL);
-#endif
+						RenderTexture(gRenderer, gModulatedTexture.getTexture());
 					}
 					dot.render(camera);
+
+					SDL_Rect middleViewport;
+					middleViewport.x = (gWindow.getWidth() * 0.5f) - 100;
+					middleViewport.y = (gWindow.getHeight() * 0.5f) - 100;
+					middleViewport.w = 200;
+					middleViewport.h = 200;
+					SetRenderViewport(gRenderer, &middleViewport);
+					RenderTexture(gRenderer, gTexture);
+					gWalkingSpriteSheetTexture.render(
+						(middleViewport.w - currentClip->w) / 2,
+						(middleViewport.h - currentClip->h) / 2,
+						currentClip);
+					middleViewport.y += middleViewport.h / 2;
+					SetRenderViewport(gRenderer, &middleViewport);
+					RenderTexture(gRenderer, gBox->getTexture());
+					SetRenderViewport(gRenderer, &fullscreenViewport);
+
 					gSun.render(
 						0,
 						0,
@@ -2672,51 +2546,6 @@ int main(int argc, char* argv[])
 						degrees,
 						NULL,
 						flipType);
-					gBitmapFont.renderText(0, 0, "|||");
-					gFPSTextTexture.render(0, (SCREEN_HEIGHT - gFPSTextTexture.getHeight()) / 2);
-					for (int i = 0; i < TOTAL_DATA; ++i)
-					{
-						gDataTextures[i].render((SCREEN_WIDTH - gDataTextures[i].getWidth()) / 2, gPromptTextTexture.getHeight() + gDataTextures[0].getHeight() * i);
-					}
-					gPromptTextTexture.render((SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, gWindow.getHeight() - (gInputTextTexture.getHeight() * 2));
-					if (renderText)
-					{
-						if (inputText != "")
-						{
-							gInputTextTexture.loadFromRenderedText(inputText.c_str(), textColor);
-						}
-						else
-						{
-							gInputTextTexture.loadFromRenderedText("", textColor);
-						}
-					}
-					gInputTextTexture.render((SCREEN_WIDTH - gInputTextTexture.getWidth()) / 2, gWindow.getHeight() - gInputTextTexture.getHeight());
-
-					SDL_Rect middleViewport;
-					middleViewport.x = (gWindow.getWidth() * 0.5f) - 100;
-					middleViewport.y = (gWindow.getHeight() * 0.5f) - 100;
-					middleViewport.w = 200;
-					middleViewport.h = 200;
-					SetRenderViewport(gRenderer, &middleViewport);
-#ifdef _WIN32
-					SDL_RenderTexture(gRenderer, gTexture, NULL, NULL);
-#elif __linux__
-					SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-#endif
-					gWalkingSpriteSheetTexture.render(
-						(middleViewport.w - currentClip->w) / 2,
-						(middleViewport.h - currentClip->h) / 2,
-						currentClip);
-					middleViewport.y += middleViewport.h / 2;
-					SetRenderViewport(gRenderer, &middleViewport);
-#ifdef _WIN32
-					SDL_RenderTexture(gRenderer, gBox->getTexture(), NULL, NULL);
-#elif __linux__
-					SDL_RenderCopy(gRenderer, gBox->getTexture(), NULL, NULL);
-#endif
-					SetRenderViewport(gRenderer, &fullscreenViewport);
-
-					
 
 					if (isDebug)
 					{
@@ -2753,13 +2582,18 @@ int main(int argc, char* argv[])
 						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, halfDayAngle, &screenCenter);
 						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, hourAngle, &screenCenter);
 						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, minuteAngle, &screenCenter);
-					}
-					else
-					{
+						if (inputText != "")
+						{
+							gBitmapFont.renderText(0, gWindow.getHeight() - 128, inputText.c_str());
+						}
+						else
+						{
+							gBitmapFont.renderText(0, gWindow.getHeight() - 128, "");
+						}
+						gBitmapFont.renderText(0, 0, std::to_string(gData[currentData]).c_str());
 					}
 					SDL_RenderPresent(gRenderer);
 				}
-
 				++countedFrames;
 
 				//int frameTicks = capTimer.getTicks();

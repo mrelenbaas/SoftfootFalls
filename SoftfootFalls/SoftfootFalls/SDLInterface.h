@@ -56,4 +56,6 @@ void RenderRect(SDL_Renderer*, SDL_FRect* rect);
 void RenderRect(SDL_Renderer*, SDL_Rect* rect);
 #endif
 
+void RenderTexture(SDL_Renderer*, SDL_Texture*);
+
 void SetRenderViewport(SDL_Renderer*, SDL_Rect*);

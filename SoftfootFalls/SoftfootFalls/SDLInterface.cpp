@@ -49,6 +49,15 @@ void RenderRect(SDL_Renderer* renderer, SDL_Rect* rect)
 #endif
 }
 
+void RenderTexture(SDL_Renderer* renderer, SDL_Texture* texture)
+{
+#ifdef _WIN32
+	SDL_RenderTexture(renderer, texture, NULL, NULL);
+#elif __linux__
+	SDL_RenderCopy(renderer, texture, NULL, NULL);
+#endif
+}
+
 void SetRenderViewport(SDL_Renderer* renderer, SDL_Rect* rect)
 {
 #if _WIN32
