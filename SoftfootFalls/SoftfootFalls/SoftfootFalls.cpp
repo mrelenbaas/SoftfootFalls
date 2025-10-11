@@ -19,7 +19,6 @@
 #ifdef _WIN32
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_image.h>
-#include <SDL3/SDL_ttf.h>
 #include <SDL3/SDL_mixer.h>
 #elif __linux__
 #include <SDL2/SDL.h>
@@ -1492,15 +1491,6 @@ bool init()
 			}
 #endif
 #ifdef _WIN32
-			if (!TTF_Init())
-#elif __linux__
-			if (TTF_Init() == -1)
-#endif
-			{
-				SDL_Log("SDL_ttf could not initialize! SDL_ttf Error: %s\n", SDL_GetError());
-				success = false;
-			}
-#ifdef _WIN32
 			if (!MIX_Init())
 			{
 				printf("MIX_Init failed");
@@ -1919,7 +1909,6 @@ void close()
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
 	gWindow.free();
-	TTF_Quit();
 #ifdef _WIN32
 	MIX_Quit();
 #elif __linux__
