@@ -9,6 +9,7 @@
 #include <cmath>
 #include <vector>
 #include <fstream>
+#include <cmath>
 
 #include "Print.h"
 #include "Time.h"
@@ -50,24 +51,6 @@ const double M_PI = 3.14159265359;
 const int TOTAL_DATA = 10;
 
 const int TOTAL_PARTICLES = 20;
-
-const int TILE_WIDTH = 80;
-const int TILE_HEIGHT = 80;
-const int TOTAL_TILES = 192;
-const int TOTAL_TILE_SPRITES = 12;
-
-const int TILE_RED = 0;
-const int TILE_GREEN = 1;
-const int TILE_BLUE = 2;
-const int TILE_CENTER = 3;
-const int TILE_TOP = 4;
-const int TILE_TOPRIGHT = 5;
-const int TILE_RIGHT = 6;
-const int TILE_BOTTOMRIGHT = 7;
-const int TILE_BOTTOM = 8;
-const int TILE_BOTTOMLEFT = 9;
-const int TILE_LEFT = 10;
-const int TILE_TOPLEFT = 11;
 
 enum LButtonSprite
 {
@@ -244,23 +227,9 @@ private:
 	int mNewLine, mSpace;
 };
 
-class DataStream
-{
-public:
-	DataStream();
-	bool loadMedia();
-	void free();
-	void* getBuffer();
-private:
-	SDL_Surface* mImages[4];
-	int mCurrentImage;
-	int mDelayFrames;
-};
-
 bool init();
 bool loadMedia();
 void close();
-SDL_Surface* loadSurface(const char* path, Load* load, bool* success);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 
 LWindow gWindow;
@@ -310,6 +279,7 @@ const int HORIZON_SIZE = 8;
 LTexture gHorizons[HORIZON_SIZE];
 LTexture gBoxes[KEY_PRESS_SURFACE_TOTAL];
 LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
+LTexture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
 LTexture gRedTexture;
 LTexture gGreenTexture;
@@ -1250,77 +1220,6 @@ void LBitmapFont::renderText(int x, int y, std::string text)
 	}
 }
 
-DataStream::DataStream()
-{
-	mImages[0] = NULL;
-	mImages[1] = NULL;
-	mImages[2] = NULL;
-	mImages[3] = NULL;
-	mCurrentImage = 0;
-	mDelayFrames = 4;
-}
-
-bool DataStream::loadMedia()
-{
-	Load* load = new Load(SDL_GetBasePath());
-	bool success = true;
-	for (int i = 0; i < 4; ++i)
-	{
-		std::stringstream path;
-		path << "foo_walk_" << i << ".png";
-		//SDL_Surface* loadedSurface = IMG_Load(path.str().c_str());
-		SDL_Surface* loadedSurface = IMG_Load(load->Path(path.str().c_str()));
-		if (loadedSurface == NULL)
-		{
-			SDL_Log("Unable to load %s! SDL_image error: %s\n", path.str().c_str(), SDL_GetError());
-			success = false;
-		}
-		else
-		{
-#ifdef _WIN32
-			mImages[i] = SDL_ConvertSurface(loadedSurface, SDL_PIXELFORMAT_RGBA8888);
-#elif __linux__
-			mImages[i] = SDL_ConvertSurface(loadedSurface, gScreenSurface->format, 0);
-#endif
-		}
-#ifdef _WIN32
-		SDL_DestroySurface(loadedSurface);
-#elif __linux__
-		SDL_FreeSurface(loadedSurface);
-#endif
-	}
-	delete load;
-	return success;
-}
-
-void DataStream::free()
-{
-	for (int i = 0; i < 4; ++i)
-	{
-#ifdef _WIN32
-		SDL_DestroySurface(mImages[i]);
-#elif __linux__
-		SDL_FreeSurface(mImages[i]);
-#endif
-		mImages[i] = NULL;
-	}
-}
-
-void* DataStream::getBuffer()
-{
-	--mDelayFrames;
-	if (mDelayFrames == 0)
-	{
-		++mCurrentImage;
-		mDelayFrames = 4;
-	}
-	if (mCurrentImage == 4)
-	{
-		mCurrentImage = 0;
-	}
-	return mImages[mCurrentImage]->pixels;
-}
-
 bool init()
 {
 	bool success = true;
@@ -1772,8 +1671,11 @@ bool loadMedia()
 		SDL_Log("Failed to load BoxRight texture~\n");
 		success = false;
 	}
-
-
+	if (!characterFairyHopeful.loadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png")))
+	{
+		SDL_Log("Failed to load CharacterFairyHopeful_000_256x256 texture~\n");
+		success = false;
+	}
 	if (!gRedTexture.loadFromFile(load->Path("CharacterFairySmallcol000_64x64.png")))
 	{
 		SDL_Log("Failed to load red texture!\n");
@@ -1874,6 +1776,7 @@ void close()
 	{
 		gBoxes[i].free();
 	}
+	characterFairyHopeful.free();
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "w+b");
 #elif __linux__
@@ -1915,37 +1818,6 @@ void close()
 	Mix_Quit();
 #endif
 	SDL_Quit();
-}
-
-SDL_Surface* loadSurface(const char* path, Load* load, bool* success)
-{
-	SDL_Surface* optimizedSurface = NULL;
-	SDL_Surface* loadedSurface = IMG_Load(path);
-	load->Print(loadedSurface, path);
-	if (loadedSurface == NULL)
-	{
-		SDL_Log("Unable to load image %s! SDL Error: %s\n", path, SDL_GetError());
-		(*success) = false;
-	}
-	else
-	{
-#ifdef _WIN32
-		optimizedSurface = SDL_ConvertSurface(loadedSurface, gScreenSurface->format);
-#elif __linux__
-		optimizedSurface = SDL_ConvertSurface(loadedSurface, gScreenSurface->format, 0);
-#endif
-		if (optimizedSurface == NULL)
-		{
-			SDL_Log("Unable to optimize image %s! SDL Error: %s\n", path, SDL_GetError());
-		}
-#ifdef _WIN32
-		SDL_DestroySurface(loadedSurface);
-#elif __linux__
-		SDL_FreeSurface(loadedSurface);
-#endif
-	}
-
-	return optimizedSurface;
 }
 
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
@@ -2027,7 +1899,7 @@ int main(int argc, char* argv[])
 			wall.h = 400;
 			int backgroundScrollingOffset = 0;
 			int horizonScrollingOffset = 0;
-			std::string inputText = "Some Text";
+			std::string inputText = "Input";
 			int currentData = 0;
 			SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 #ifdef _WIN32
@@ -2053,27 +1925,53 @@ int main(int argc, char* argv[])
 #endif
 
 			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			long long decisecondDelta = 0L;
 			long long secondDelta = 0L;
+			long long trisecondDelta = 0L;
 			long long minuteDelta = 0L;
 			long long hourDelta = 0L;
 			long long halfDayDelta = 0L;
 			long long fullDayDelta = 0L;
+			bool trisecondToggle = false;
+			const int GRID_SIZE = 24;
+			int gridCounter = 0;
+			int playerI = 0;
+			int playerJ = 0;
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+				decisecondDelta += currentTime - previousTime;
 				secondDelta += currentTime - previousTime;
+				trisecondDelta += currentTime - previousTime;
 				minuteDelta += currentTime - previousTime;
 				hourDelta += currentTime - previousTime;
 				halfDayDelta += currentTime - previousTime;
 				fullDayDelta += currentTime - previousTime;
+				double decisecondLimit = 100'000'000;
 				double secondLimit = 1'000'000'000;
+				double trisecondLimit = 3'000'000'000;
 				double minuteLimit = 60'000'000'000;
 				double hourLimit = 3'600'000'000'000;
 				double halfDayLimit = 43'200'000'000'000;
 				double fullDayLimit = 86'400'000'000'000;
+				if (decisecondDelta > decisecondLimit)
+				{
+					decisecondDelta -= decisecondLimit;
+					++gridCounter;
+					if (gridCounter > GRID_SIZE * GRID_SIZE)
+					{
+						gridCounter = 0;
+					}
+					//std::cout << gridCounter << std::endl;
+				}
 				if (secondDelta > secondLimit)
 				{
 					secondDelta -= secondLimit;
+				}
+				if (trisecondDelta > trisecondLimit)
+				{
+					trisecondToggle = !trisecondToggle;
+					trisecondDelta -= trisecondLimit;
 				}
 				if (minuteDelta > minuteLimit)
 				{
@@ -2091,7 +1989,9 @@ int main(int argc, char* argv[])
 				{
 					fullDayDelta -= fullDayLimit;
 				}
+				double decisecondNormal = (double)decisecondDelta / decisecondLimit;
 				double secondNormal = (double)secondDelta / secondLimit;
+				double trisecondNormal = (double)trisecondDelta / trisecondLimit;
 				double minuteNormal = (double)minuteDelta / minuteLimit;
 				double hourNormal = (double)hourDelta / hourLimit;
 				double halfDayNormal = (double)halfDayDelta / halfDayLimit;
@@ -2292,6 +2192,8 @@ int main(int argc, char* argv[])
 							{
 								currentData = TOTAL_DATA - 1;
 							}
+							++playerI;
+							if (playerI >= GRID_SIZE) playerI = GRID_SIZE - 1;
 							break;
 						case SDLK_DOWN:
 						case KEY_S:
@@ -2301,17 +2203,23 @@ int main(int argc, char* argv[])
 							{
 								currentData = 0;
 							}
+							--playerI;
+							if (playerI < 0) playerI = 0;
 							break;
 						case SDLK_LEFT:
 						case KEY_A:
 							gBox = &gBoxes[KEY_PRESS_SURFACE_LEFT];
 							--gData[currentData];
+							--playerJ;
+							if (playerJ < 0) playerJ = 0;
 							degrees -= 60;
 							break;
 						case SDLK_RIGHT:
 						case KEY_D:
 							gBox = &gBoxes[KEY_PRESS_SURFACE_RIGHT];
 							++gData[currentData];
+							++playerJ;
+							if (playerJ >= GRID_SIZE) playerJ = GRID_SIZE - 1;
 							degrees += 60;
 							break;
 						default:
@@ -2422,11 +2330,11 @@ int main(int argc, char* argv[])
 						}
 						break;
 					}
-					horizonScrollingOffset = (- gHorizons[0].getWidth() * HORIZON_SIZE) * minuteNormal;
-					if (horizonScrollingOffset < -gHorizons[0].getWidth() * HORIZON_SIZE)
-					{
-						horizonScrollingOffset = 0;
-					}
+					//horizonScrollingOffset = (- gHorizons[0].getWidth() * HORIZON_SIZE) * minuteNormal;
+					//if (horizonScrollingOffset < -gHorizons[0].getWidth() * HORIZON_SIZE)
+					//{
+					//	horizonScrollingOffset = 0;
+					//}
 
 					minuteAngle = 360 * minuteNormal;
 					hourAngle = 360 * hourNormal;
@@ -2480,10 +2388,10 @@ int main(int argc, char* argv[])
 						gBGTexture.render(backgroundScrollingOffset - gBGTexture.getWidth(), gBGTexture.getHeight());
 						break;
 					}
-					for (int i = 0; i < HORIZON_SIZE; ++i)
-					{
-						gHorizons[i].render(horizonScrollingOffset + (gHorizons[i].getWidth() * i), 0 /*gWindow.getHeight() - gHorizons[i].getHeight()*/);
-					}
+					//for (int i = 0; i < HORIZON_SIZE; ++i)
+					//{
+					//	gHorizons[i].render(horizonScrollingOffset + (gHorizons[i].getWidth() * i), 0);
+					//}
 					SDL_Rect fullscreenViewport;
 					fullscreenViewport.x = 0;
 					fullscreenViewport.y = 0;
@@ -2502,17 +2410,67 @@ int main(int argc, char* argv[])
 					middleViewport.y = (gWindow.getHeight() * 0.5f) - 100;
 					middleViewport.w = 200;
 					middleViewport.h = 200;
+					SDL_Rect circleViewport;
+					float xOffset = (middleViewport.w * trisecondNormal);
+					if (trisecondToggle) xOffset = middleViewport.w * (1.0f - trisecondNormal);
+					circleViewport.w = middleViewport.w;
+					circleViewport.h = middleViewport.h;
+					circleViewport.x = middleViewport.x - (circleViewport.w / 2) + xOffset;
+					circleViewport.y = middleViewport.y;
+
+					double radians = (360.0 * trisecondNormal) * (M_PI / 180.0);
+					double circleX = cos(radians) * (middleViewport.w / 2);
+					double circleY = sin(radians) * (middleViewport.h / 2);
+					if (trisecondToggle)
+					{
+						circleY = circleY * trisecondNormal;
+					}
+					else
+					{
+						circleY = circleY * (1.0f - trisecondNormal);
+					}
+					SDL_Rect radianViewport;
+					radianViewport.x = middleViewport.x + (middleViewport.w / 2) + circleX;
+					radianViewport.y = middleViewport.y + (middleViewport.h / 2) + circleY;
+					if (trisecondToggle)
+					{
+						radianViewport.w = 100 * trisecondNormal;
+						radianViewport.h = 100 * trisecondNormal;
+					}
+					else
+					{
+						radianViewport.w = 100 * (1.0f - trisecondNormal);
+						radianViewport.h = 100 * (1.0f - trisecondNormal);
+					}
+
+					if (!trisecondToggle)
+					{
+						//SetRenderViewport(gRenderer, &circleViewport);
+						//RenderTexture(gRenderer, characterFairyHopeful.getTexture());
+						SetRenderViewport(gRenderer, &radianViewport);
+						RenderTexture(gRenderer, characterFairyHopeful.getTexture());
+						//SetRenderViewport(gRenderer, &fullscreenViewport);
+					}
 					SetRenderViewport(gRenderer, &middleViewport);
-					RenderTexture(gRenderer, gTexture);
+					//RenderTexture(gRenderer, gTexture);
 					gWalkingSpriteSheetTexture.render(
 						(middleViewport.w - currentClip->w) / 2,
 						(middleViewport.h - currentClip->h) / 2,
 						currentClip);
-					middleViewport.y += middleViewport.h / 2;
-					SetRenderViewport(gRenderer, &middleViewport);
+					SDL_Rect bottomViewport = middleViewport;
+					bottomViewport.y += bottomViewport.h / 2;
+					SetRenderViewport(gRenderer, &bottomViewport);
 					RenderTexture(gRenderer, gBox->getTexture());
-					SetRenderViewport(gRenderer, &fullscreenViewport);
+					if (trisecondToggle)
+					{
+						//SetRenderViewport(gRenderer, &circleViewport);
+						//RenderTexture(gRenderer, characterFairyHopeful.getTexture());
+						SetRenderViewport(gRenderer, &radianViewport);
+						RenderTexture(gRenderer, characterFairyHopeful.getTexture());
+						//SetRenderViewport(gRenderer, &fullscreenViewport);
+					}
 
+					SetRenderViewport(gRenderer, NULL);
 					gSun.render(
 						0,
 						0,
@@ -2535,6 +2493,165 @@ int main(int argc, char* argv[])
 						degrees,
 						NULL,
 						flipType);
+					//for (int i = 0; i <= GRID_SIZE; ++i)
+					//{
+					//	int xa1 = i * gWindow.getWidth() / GRID_SIZE;
+					//	if (i == GRID_SIZE) --xa1;
+					//	int xa2 = xa1;
+					//	int ya1 = 0;
+					//	int ya2 = gWindow.getHeight();
+					//	//SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+					//	//RenderLine(gRenderer, xa1, ya1, xa2, ya2);
+					//	for (int j = 0; j <= GRID_SIZE; ++j)
+					//	{
+					//		int xb1 = 0;
+					//		int xb2 = gWindow.getWidth();
+					//		int yb1 = j * gWindow.getHeight() / GRID_SIZE;
+					//		if (j == GRID_SIZE) --yb1;
+					//		int yb2 = yb1;
+					//		//SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
+					//		//RenderLine(gRenderer, xb1, yb1, xb2, yb2);
+					//		xb1 = 0;
+					//		xb2 = gWindow.getWidth();
+					//		yb1 = (j * gWindow.getHeight() * 0.25f / GRID_SIZE) + (gWindow.getHeight() * 0.625f);
+					//		//if (j == GRID_SIZE) --yb1;
+					//		yb2 = yb1;
+					//		//SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+					//		//RenderLine(gRenderer, xb1, yb1, xb2, yb2);
+
+					//		/*if ((j * GRID_SIZE) + i == gridCounter)
+					//		{
+					//			middleViewport.x = i * gWindow.getWidth() / GRID_SIZE;
+					//			middleViewport.y = j * gWindow.getHeight() / GRID_SIZE;
+					//			middleViewport.w = gWindow.getWidth() / GRID_SIZE;
+					//			middleViewport.h = gWindow.getHeight() / GRID_SIZE;
+					//			SetRenderViewport(gRenderer, &middleViewport);
+					//			RenderTexture(gRenderer, gTexture);
+					//			SetRenderViewport(gRenderer, &fullscreenViewport);
+					//		}*/
+
+					//		//if ((j * GRID_SIZE) + i == gridCounter)
+					//		//{
+					//		float xPercent = (float)i / (float)GRID_SIZE;
+					//		float yPercent = (float)j / (float)GRID_SIZE;
+					//		float x1 = 0 + (gWindow.getWidth() * yPercent);
+					//		float x2 = gWindow.getWidth() - (x1 * 2.0f);
+					//		float y1 = 0;
+					//		float y2 = gWindow.getHeight() / 2;
+					//		//float height = (y1 - y2) / GRID_SIZE;
+					//		//float percent = 0.5f;
+					//		int x = (x1 + x2) * xPercent;
+					//		int y = (y1 + y2) * yPercent;
+					//		//std::cout << j << ": "  << y << std::endl;
+					//		middleViewport.x = x;
+					//		middleViewport.y = y;
+					//		middleViewport.w = gWindow.getWidth() / GRID_SIZE;
+					//		middleViewport.h = gWindow.getHeight() / GRID_SIZE;
+					//		SetRenderViewport(gRenderer, &middleViewport);
+					//		RenderTexture(gRenderer, gTexture);
+					//		SetRenderViewport(gRenderer, &fullscreenViewport);
+					//		//}
+
+					//	}
+					//}
+					//for (int i = 0; i <= GRID_SIZE; ++i)
+					//{
+					//	for (int j = 0; j <= GRID_SIZE; ++j)
+					//	{
+					//		// Rectangles go here.
+					//	}
+					//}
+					float normal = secondNormal;
+					SDL_Point flattish;
+					flattish.x = gWindow.getWidth() * 0.2f;
+					flattish.y = gWindow.getHeight() * 0.9f;
+					SDL_Point perspectivish;
+					perspectivish.x = gWindow.getWidth() * 0.001f;
+					perspectivish.y = gWindow.getHeight() * 0.001f;
+					float flippyNormal = trisecondNormal;
+					if (trisecondToggle)
+					{
+						flippyNormal = 1.0f - trisecondNormal;
+					}
+					SDL_Point interpolationish;
+					interpolationish.x = (flattish.x + perspectivish.x) * flippyNormal;
+					interpolationish.y = (flattish.y + perspectivish.y) * flippyNormal;
+					float centerX = mouseX;// gWindow.getWidth() * 0.5f;
+					float centerY = gWindow.getHeight() - mouseY;// gWindow.getHeight() * 0.5f;
+					//float centerX = interpolationish.x;
+					//float centerY = interpolationish.y;
+					int horizonI = 0;
+					for (int i = GRID_SIZE - 1; i >= 0 ; --i)
+					{
+						normal = (float)i / (float)GRID_SIZE;
+						float x = (0 + centerX) * normal;
+						middleViewport.w = centerX / GRID_SIZE;
+						middleViewport.h = centerY / GRID_SIZE;
+						float y = 
+							gWindow.getHeight()
+							- middleViewport.h
+							- ((0 + centerY) * normal);
+						middleViewport.x = x;
+						middleViewport.y = y;
+						SDL_Rect leftViewport = middleViewport;
+
+						x = gWindow.getWidth() - middleViewport.w - ((0 + centerX) * normal);
+						middleViewport.w = centerX / GRID_SIZE;
+						middleViewport.h = centerY / GRID_SIZE;
+						y = 
+							gWindow.getHeight()
+							- middleViewport.h
+							- ((0 + centerY) * normal);
+						middleViewport.x = x;
+						middleViewport.y = y;
+						SDL_Rect rightViewport = middleViewport;
+
+						for (int j = 0; j < GRID_SIZE; ++j)
+						{
+							float width = rightViewport.x + rightViewport.w - leftViewport.x;
+							float xStep = width / GRID_SIZE;
+							x = leftViewport.x + (j * xStep);
+							middleViewport.w = width / GRID_SIZE;
+							middleViewport.h = middleViewport.w;
+							y = 
+								gWindow.getHeight()
+								- middleViewport.h
+								- ((0 + centerY) * normal);
+							middleViewport.x = x;
+							middleViewport.y = y;
+							if (middleViewport.x < 0) middleViewport.x = 0;
+							if (middleViewport.y < 0) middleViewport.y = 0;
+							if (middleViewport.w < 0) middleViewport.w = 0;
+							if (middleViewport.h < 0) middleViewport.h = 0;
+							++middleViewport.w;
+							SetRenderViewport(gRenderer, &middleViewport);
+							//RenderTexture(gRenderer, gTexture);
+							//RenderTexture(gRenderer, gHorizons[5].getTexture());
+							int modI = (i % 2 == 0) ? 0 : 4;
+							RenderTexture(gRenderer, gHorizons[modI + horizonI].getTexture());
+							++horizonI;
+							if (horizonI > 3)
+							{
+								horizonI = 0;
+							}
+							if (playerI == i && playerJ == j)
+							{
+								//gWalkingSpriteSheetTexture.render(
+								//	(middleViewport.w - currentClip->w) / 2,
+								//	(middleViewport.h - currentClip->h) / 2,
+								//	currentClip);
+								//RenderTexture(gRenderer, gSun.getTexture());
+								RenderTexture(gRenderer, gBox->getTexture());
+							}
+						}
+					}
+
+					SetRenderViewport(gRenderer, &fullscreenViewport);
+					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
+					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, 0, 0);
+					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, gWindow.getWidth(), 0);
+					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, 0, gWindow.getHeight());
+					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, gWindow.getWidth(), gWindow.getHeight());
 
 					if (isDebug)
 					{
@@ -2553,20 +2670,12 @@ int main(int argc, char* argv[])
 						RenderRect(gRenderer, &outlineRect);
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
 						RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
-						RenderLine(gRenderer, outlineRect.x, outlineRect.y, mouseX, mouseY);
-						RenderLine(gRenderer, outlineRect.x + outlineRect.w, outlineRect.y, mouseX, mouseY);
-						RenderLine(gRenderer, outlineRect.x, outlineRect.y + outlineRect.h, mouseX, mouseY);
-						RenderLine(gRenderer, outlineRect.x + outlineRect.w, outlineRect.y + outlineRect.h, mouseX, mouseY);
 						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
 						for (int i = 0; i < SCREEN_HEIGHT; i += 4)
 						{
 							RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
 						}
 						SDL_SetRenderTarget(gRenderer, NULL);
-						RenderLine(gRenderer, 0, 0, mouseX, mouseY);
-						RenderLine(gRenderer, SCREEN_WIDTH, 0, mouseX, mouseY);
-						RenderLine(gRenderer, 0, SCREEN_HEIGHT, mouseX, mouseY);
-						RenderLine(gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mouseX, mouseY);
 						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, fullDayAngle, &screenCenter);
 						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, halfDayAngle, &screenCenter);
 						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, hourAngle, &screenCenter);
@@ -2580,6 +2689,10 @@ int main(int argc, char* argv[])
 							gBitmapFont.renderText(0, gWindow.getHeight() - 128, "");
 						}
 						gBitmapFont.renderText(0, 0, std::to_string(gData[currentData]).c_str());
+						RenderLine(gRenderer, mouseX, mouseY, 0, 0);
+						RenderLine(gRenderer, mouseX, mouseY, gWindow.getWidth(), 0);
+						RenderLine(gRenderer, mouseX, mouseY, 0, gWindow.getHeight());
+						RenderLine(gRenderer, mouseX, mouseY, gWindow.getWidth(), gWindow.getHeight());
 					}
 					SDL_RenderPresent(gRenderer);
 				}
