@@ -116,10 +116,6 @@ private:
 	int mWidth;
 	int mHeight;
 };
-SDL_Texture* LTexture::getTexture()
-{
-	return mTexture;
-}
 
 class LButton
 {
@@ -168,13 +164,13 @@ class Dot
 public:
 	static const int DOT_WIDTH = 20;
 	static const int DOT_HEIGHT = 20;
-	static const int DOT_VEL = 640;
+	static const int DOT_VEL = 100;
 	Dot();
 	~Dot();
 	void handleEvent(SDL_Event& e);
 	void move(float timestep);
-	void setCamera(SDL_Rect& camera);
-	void render(SDL_Rect& camera);
+	void setIJ(int*, int*);
+	void render();
 private:
 	Particle* particles[TOTAL_PARTICLES];
 	void renderParticles();
@@ -288,6 +284,7 @@ LTexture gShimmerTexture;
 LBitmapFont gBitmapFont;
 LTexture gTargetTexture;
 Directions gDirection = DIRECTION_UP;
+const int GRID_SIZE = 24;
 
 
 LTexture::LTexture()
@@ -544,6 +541,11 @@ bool LTexture::unlockTexture()
 	return success;
 }
 
+SDL_Texture* LTexture::getTexture()
+{
+	return mTexture;
+}
+
 void LTexture::copyRawPixels32(void* pixels)
 {
 	if (mRawPixels != NULL)
@@ -699,10 +701,18 @@ void Dot::handleEvent(SDL_Event& e)
 		switch (e.key.keysym.sym)
 #endif
 		{
-		case SDLK_UP: mVelY -= DOT_VEL; break;
-		case SDLK_DOWN: mVelY += DOT_VEL; break;
-		case SDLK_LEFT: mVelX -= DOT_VEL; break;
-		case SDLK_RIGHT: mVelX += DOT_VEL; break;
+		case SDLK_UP:
+			mVelY -= DOT_VEL;
+			break;
+		case SDLK_DOWN:
+			mVelY += DOT_VEL;
+			break;
+		case SDLK_LEFT:
+			mVelX -= DOT_VEL;
+			break;
+		case SDLK_RIGHT:
+			mVelX += DOT_VEL;
+			break;
 		}
 	}
 #ifdef _WIN32
@@ -717,10 +727,18 @@ void Dot::handleEvent(SDL_Event& e)
 		switch (e.key.keysym.sym)
 #endif
 		{
-		case SDLK_UP: mVelY += DOT_VEL; break;
-		case SDLK_DOWN: mVelY -= DOT_VEL; break;
-		case SDLK_LEFT: mVelX += DOT_VEL; break;
-		case SDLK_RIGHT: mVelX -= DOT_VEL; break;
+		case SDLK_UP:
+			mVelY += DOT_VEL;
+			break;
+		case SDLK_DOWN:
+			mVelY -= DOT_VEL;
+			break;
+		case SDLK_LEFT:
+			mVelX += DOT_VEL;
+			break;
+		case SDLK_RIGHT:
+			mVelX -= DOT_VEL;
+			break;
 		}
 	}
 }
@@ -728,43 +746,41 @@ void Dot::handleEvent(SDL_Event& e)
 void Dot::move(float timeStep)
 {
 	mBox.x += mVelX * timeStep;
-	if ((mBox.x < 0) || (mBox.x + DOT_WIDTH > LEVEL_WIDTH))
+	if (mBox.x < 0)
 	{
-		mBox.x -= mVelX;
+		mBox.x = 0;
+	}
+	if (mBox.x + DOT_WIDTH > gWindow.getWidth())
+	{
+		mBox.x = gWindow.getWidth() - (DOT_WIDTH * 4.0f);
 	}
 	mBox.y += mVelY * timeStep;
-	if ((mBox.y < 0) || (mBox.y + DOT_HEIGHT > LEVEL_HEIGHT))
+	if (mBox.y < 0)
 	{
-		mBox.y -= mVelY;
+		mBox.y = 0;
+	}
+	if (mBox.y + DOT_HEIGHT > gWindow.getHeight())
+	{
+		mBox.y = gWindow.getHeight() - (DOT_HEIGHT * 4.0f);
 	}
 }
 
-void Dot::setCamera(SDL_Rect& camera)
+void Dot::setIJ(int* i, int* j)
 {
-	camera.x = (mBox.x + DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
-	camera.y = (mBox.y + DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
-
-	if (camera.x < 0)
-	{
-		camera.x = 0;
-	}
-	if (camera.y < 0)
-	{
-		camera.y = 0;
-	}
-	if (camera.x > LEVEL_WIDTH - camera.w)
-	{
-		camera.x = LEVEL_WIDTH - camera.w;
-	}
-	if (camera.y > LEVEL_HEIGHT - camera.h)
-	{
-		camera.y = LEVEL_HEIGHT - camera.h;
-	}
+	float width = (float)gWindow.getWidth();
+	float height = (float)gWindow.getHeight();
+	float x = (float)mBox.x;
+	float y = (float)mBox.y;
+	float jNormal = x / width;
+	float iNormal = y / height;
+	*i = GRID_SIZE - (GRID_SIZE * iNormal);
+	*j = GRID_SIZE * jNormal;
+	//std::cout << x << " / " << width << " = " << iNormal << " = " << ii << std::endl;
 }
 
-void Dot::render(SDL_Rect& camera)
+void Dot::render()
 {
-	gDotTexture.render(mBox.x - camera.x, mBox.y - camera.y);
+	gDotTexture.render(mBox.x, mBox.y);
 	renderParticles();
 }
 
@@ -1352,13 +1368,12 @@ bool init()
 		}
 #endif
 		srand(SDL_GetTicks());
-#ifdef _WIN32
-		//if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, 0, &gWindow, &gRenderer))
+//#ifdef _WIN32
+//		if (!gWindow.init(true))
+//#elif __linux__
+//		if (!gWindow.init(true))
+//#endif
 		if (!gWindow.init(true))
-#elif __linux__
-		//gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-		if (!gWindow.init(true))
-#endif
 		{
 			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 			success = false;
@@ -1882,11 +1897,6 @@ int main(int argc, char* argv[])
 			int countedFrames = 0;
 			fpsTimer.start();
 			Dot dot;
-//#ifdef _WIN32
-//			SDL_FRect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-//#elif __linux__
-			SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-			//#endif
 #ifdef _WIN32
 			SDL_FRect fwall;
 #elif __linux__
@@ -1932,16 +1942,20 @@ int main(int argc, char* argv[])
 			long long hourDelta = 0L;
 			long long halfDayDelta = 0L;
 			long long fullDayDelta = 0L;
+			long long playerDelta = 0L;
 			bool trisecondToggle = false;
-			const int GRID_SIZE = 24;
+			bool playerToggle = false;
 			int gridCounter = 0;
 			int playerI = 0;
 			int playerJ = 0;
+			int dotI = 0;
+			int dotJ = 0;
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 				decisecondDelta += currentTime - previousTime;
 				secondDelta += currentTime - previousTime;
+				playerDelta += currentTime - previousTime;
 				trisecondDelta += currentTime - previousTime;
 				minuteDelta += currentTime - previousTime;
 				hourDelta += currentTime - previousTime;
@@ -1954,6 +1968,7 @@ int main(int argc, char* argv[])
 				double hourLimit = 3'600'000'000'000;
 				double halfDayLimit = 43'200'000'000'000;
 				double fullDayLimit = 86'400'000'000'000;
+				double playerLimit = secondLimit;
 				if (decisecondDelta > decisecondLimit)
 				{
 					decisecondDelta -= decisecondLimit;
@@ -1962,7 +1977,6 @@ int main(int argc, char* argv[])
 					{
 						gridCounter = 0;
 					}
-					//std::cout << gridCounter << std::endl;
 				}
 				if (secondDelta > secondLimit)
 				{
@@ -1996,6 +2010,7 @@ int main(int argc, char* argv[])
 				double hourNormal = (double)hourDelta / hourLimit;
 				double halfDayNormal = (double)halfDayDelta / halfDayLimit;
 				double fullDayNormal = (double)fullDayDelta / fullDayLimit;
+				double playerNormal = (double)playerDelta / secondLimit;
 				previousTime = currentTime;
 
 				SDL_GetMouseState(&mouseX, &mouseY);
@@ -2059,7 +2074,6 @@ int main(int argc, char* argv[])
 					SDL_Quit();
 					return 1;
 				}
-				//printf("Got %d bytes of converted audio from the stream.\n", get_result);
 #endif
 				myTimer->Update();
 				capTimer.start();
@@ -2136,11 +2150,12 @@ int main(int argc, char* argv[])
 						//}
 						//printf("%i, %i\n", xDir, yDir);
 					}
-#ifdef _WIN32
-					else if (e.type == SDL_EVENT_KEY_UP)
-#elif __linux__
-					else if (e.type == SDL_KEYUP)
-#endif
+//#ifdef _WIN32
+//					else if (e.type == SDL_EVENT_KEY_UP)
+//#elif __linux__
+//					else if (e.type == SDL_KEYUP)
+//#endif
+					else if (e.type == KEY_RELEASED)
 					{
 #ifdef _WIN32
 						switch (e.key.key)
@@ -2152,11 +2167,12 @@ int main(int argc, char* argv[])
 							break;
 						}
 					}
-#ifdef _WIN32
-					else if (e.type == SDL_EVENT_KEY_DOWN)
-#elif __linux__
-					else if (e.type == SDL_KEYDOWN)
-#endif
+//#ifdef _WIN32
+//					else if (e.type == SDL_EVENT_KEY_DOWN)
+//#elif __linux__
+//					else if (e.type == SDL_KEYDOWN)
+//#endif
+					else if (e.type == KEY_PRESSED)
 					{
 #ifdef _WIN32
 						switch (e.key.key)
@@ -2194,6 +2210,7 @@ int main(int argc, char* argv[])
 							}
 							++playerI;
 							if (playerI >= GRID_SIZE) playerI = GRID_SIZE - 1;
+							playerToggle = true;
 							break;
 						case SDLK_DOWN:
 						case KEY_S:
@@ -2205,6 +2222,7 @@ int main(int argc, char* argv[])
 							}
 							--playerI;
 							if (playerI < 0) playerI = 0;
+							playerToggle = true;
 							break;
 						case SDLK_LEFT:
 						case KEY_A:
@@ -2212,6 +2230,7 @@ int main(int argc, char* argv[])
 							--gData[currentData];
 							--playerJ;
 							if (playerJ < 0) playerJ = 0;
+							playerToggle = true;
 							degrees -= 60;
 							break;
 						case SDLK_RIGHT:
@@ -2220,6 +2239,7 @@ int main(int argc, char* argv[])
 							++gData[currentData];
 							++playerJ;
 							if (playerJ >= GRID_SIZE) playerJ = GRID_SIZE - 1;
+							playerToggle = true;
 							degrees += 60;
 							break;
 						default:
@@ -2330,11 +2350,6 @@ int main(int argc, char* argv[])
 						}
 						break;
 					}
-					//horizonScrollingOffset = (- gHorizons[0].getWidth() * HORIZON_SIZE) * minuteNormal;
-					//if (horizonScrollingOffset < -gHorizons[0].getWidth() * HORIZON_SIZE)
-					//{
-					//	horizonScrollingOffset = 0;
-					//}
 
 					minuteAngle = 360 * minuteNormal;
 					hourAngle = 360 * hourNormal;
@@ -2388,10 +2403,6 @@ int main(int argc, char* argv[])
 						gBGTexture.render(backgroundScrollingOffset - gBGTexture.getWidth(), gBGTexture.getHeight());
 						break;
 					}
-					//for (int i = 0; i < HORIZON_SIZE; ++i)
-					//{
-					//	gHorizons[i].render(horizonScrollingOffset + (gHorizons[i].getWidth() * i), 0);
-					//}
 					SDL_Rect fullscreenViewport;
 					fullscreenViewport.x = 0;
 					fullscreenViewport.y = 0;
@@ -2403,7 +2414,8 @@ int main(int argc, char* argv[])
 						gModulatedTexture.render(0, 0);
 						RenderTexture(gRenderer, gModulatedTexture.getTexture());
 					}
-					dot.render(camera);
+					dot.move(0.01f);
+					dot.setIJ(&dotI, &dotJ);
 
 					SDL_Rect middleViewport;
 					middleViewport.x = (gWindow.getWidth() * 0.5f) - 100;
@@ -2625,8 +2637,6 @@ int main(int argc, char* argv[])
 							if (middleViewport.h < 0) middleViewport.h = 0;
 							++middleViewport.w;
 							SetRenderViewport(gRenderer, &middleViewport);
-							//RenderTexture(gRenderer, gTexture);
-							//RenderTexture(gRenderer, gHorizons[5].getTexture());
 							int modI = (i % 2 == 0) ? 0 : 4;
 							RenderTexture(gRenderer, gHorizons[modI + horizonI].getTexture());
 							++horizonI;
@@ -2634,15 +2644,24 @@ int main(int argc, char* argv[])
 							{
 								horizonI = 0;
 							}
-							if (playerI == i && playerJ == j)
+							//std::cout << dotI << ", " << dotJ << std::endl;
+							if (dotI == i && dotJ == j)
 							{
 								//gWalkingSpriteSheetTexture.render(
 								//	(middleViewport.w - currentClip->w) / 2,
 								//	(middleViewport.h - currentClip->h) / 2,
 								//	currentClip);
 								//RenderTexture(gRenderer, gSun.getTexture());
+								RenderTexture(gRenderer, gTexture);
 								RenderTexture(gRenderer, gBox->getTexture());
+								SetRenderViewport(gRenderer, &middleViewport);
 							}
+							/*if (playerI == i && playerJ == j)
+							{
+								RenderTexture(gRenderer, gTexture);
+								RenderTexture(gRenderer, gBox->getTexture());
+								SetRenderViewport(gRenderer, &middleViewport);
+							}*/
 						}
 					}
 
@@ -2652,6 +2671,7 @@ int main(int argc, char* argv[])
 					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, gWindow.getWidth(), 0);
 					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, 0, gWindow.getHeight());
 					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, gWindow.getWidth(), gWindow.getHeight());
+					dot.render();
 
 					if (isDebug)
 					{

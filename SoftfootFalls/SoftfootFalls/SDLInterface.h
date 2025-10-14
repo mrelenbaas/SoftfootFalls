@@ -36,6 +36,17 @@
 	const SDL_Keycode KEY_D = SDLK_d;
 #endif
 
+#ifdef _WIN32
+		const SDL_EventType KEY_RELEASED = SDL_EVENT_KEY_UP;
+#elif __linux__
+		const SDL_EventType KEY_RELEASED = SDL_KEYUP;
+#endif
+#ifdef _WIN32
+		const SDL_EventType KEY_PRESSED = SDL_EVENT_KEY_DOWN;
+#elif __linux__
+		const SDL_EventType KEY_PRESSED = SDL_KEYDOWN;
+#endif
+
 ///////////////////////////////////////////////////////////////////////
 //  WINDOW  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
@@ -50,7 +61,7 @@ void RenderLine(SDL_Renderer*, float, float, float, float);
 
 void RenderPoint(SDL_Renderer*, float, float);
 
-#if _WIN32
+#ifdef _WIN32
 void RenderRect(SDL_Renderer*, SDL_FRect* rect);
 #elif __linux__
 void RenderRect(SDL_Renderer*, SDL_Rect* rect);
