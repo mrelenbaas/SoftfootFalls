@@ -11,7 +11,8 @@ SOURCES = \
 	./SoftfootFalls/SoftfootFalls/Timer.cpp \
 	./SoftfootFalls/SoftfootFalls/Load.cpp \
 	./SoftfootFalls/SoftfootFalls/Node.cpp \
-	./SoftfootFalls/SoftfootFalls/SDLInterface.cpp
+	./SoftfootFalls/SoftfootFalls/SDLInterface.cpp \
+	./SoftfootFalls/SoftfootFalls/Tile.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 # Default target

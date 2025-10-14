@@ -25,6 +25,7 @@
 #elif __linux__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <cstdlib>
 #endif
 #include "SDLInterface.h"
 #include "Load.h"
@@ -2032,7 +2033,11 @@ int main(int argc, char* argv[])
 								gDirection = DIRECTION_UP;
 								break;
 							}
+#ifdef _WIN32
 							PlaySound(L"C:/Users/belenbaa/Desktop/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav", NULL, SND_FILENAME | SND_ASYNC);
+#elif __linux__
+							system("aplay ~/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav");
+#endif
 							break;
 						case SDLK_UP:
 						case KEY_W:
