@@ -20,11 +20,11 @@
 #ifdef _WIN32
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_image.h>
-#include <SDL3/SDL_mixer.h>
+#include <windows.h>
+#include <mmsystem.h>
 #elif __linux__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
 #endif
 #include "SDLInterface.h"
 #include "Load.h"
@@ -257,17 +257,6 @@ SDL_GameController* gGameController;
 #endif
 SDL_Joystick* gJoystick = NULL;
 SDL_Haptic* gJoyHaptic = NULL;
-//MIX_Mixer* gMusic = NULL;
-//MIX_Audio* gBeat = NULL;
-//MIX_Audio* gScratch = NULL;
-//MIX_Audio* gHigh = NULL;
-//MIX_Audio* gMedium = NULL;
-//MIX_Audio* gLow = NULL;
-//#ifdef _WIN32
-static SDL_AudioStream* stream = NULL;
-//#elif __linux__
-//static SDL_AudioFormat stream;
-//#endif
 static int current_sine_sample = 0;
 LTexture gDotTexture;
 LTexture gBGTexture;
@@ -1368,11 +1357,6 @@ bool init()
 		}
 #endif
 		srand(SDL_GetTicks());
-//#ifdef _WIN32
-//		if (!gWindow.init(true))
-//#elif __linux__
-//		if (!gWindow.init(true))
-//#endif
 		if (!gWindow.init(true))
 		{
 			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -1402,45 +1386,6 @@ bool init()
 					printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
 					success = false;
 				}
-			}
-#endif
-#ifdef _WIN32
-			if (!MIX_Init())
-			{
-				printf("MIX_Init failed");
-			}
-			//SDL_zero(audio_spec);
-			//audio_spec.format = SDL_AUDIO_F32;
-			//audio_spec.channels = 2;
-			//audio_spec.freq = 48000;
-			//gMusic = MIX_CreateMixerDevice(0, NULL);
-			//gMusic = MIX_CreateMixer(NULL);
-			//if (gMusic == NULL)
-			//{
-			//	SDL_Log("Could not create mixer: %s\n", SDL_GetError());
-			//}
-			//gMusic = MIX_CreateMixerDevice(0, nullptr);
-			//if (gMusic != 0) {
-			//	SDL_Log("Unable to initialize SDL_mixer\n");
-			//	SDL_Quit();
-			//	return 1;
-			//}
-			SDL_AudioSpec spec;
-			spec.channels = 1;
-			spec.format = SDL_AUDIO_F32;
-			spec.freq = 8000;
-			stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
-			if (!stream) {
-				SDL_Log("Couldn't create audio stream: %s", SDL_GetError());
-				return SDL_APP_FAILURE;
-			}
-			/* SDL_OpenAudioDeviceStream starts the device paused. You have to tell it to start! */
-			SDL_ResumeAudioStreamDevice(stream);
-#elif __linux__
-			if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-			{
-				printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-				success = false;
 			}
 #endif
 			//gScreenSurface = SDL_GetWindowSurface(gWindow);
@@ -1583,38 +1528,6 @@ bool loadMedia()
 		gButtons[2].setPosition(0, SCREEN_HEIGHT - BUTTON_HEIGHT);
 		gButtons[3].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT);
 	}
-	/*
-	//gMusic = Mix_LoadMUS(load->Path("beat.wav"));
-	gBeat = MIX_LoadAudio(gMusic, load->Path("beat.wav"), false);
-	if (gBeat == NULL)
-	{
-		SDL_Log("Failed to load beat music! SDL_mixer Error: %s\n", SDL_GetError());
-		success = false;
-	}
-	gScratch = MIX_LoadAudio(gMusic, load->Path("scratch.wav"), false);
-	if (gScratch == NULL)
-	{
-		SDL_Log("Failed to load scratch music! SDL_mixer Error: %s\n", SDL_GetError());
-		success = false;
-	}
-	gHigh = MIX_LoadAudio(gMusic, load->Path("high.wav"), false);
-	if (gHigh == NULL)
-	{
-		SDL_Log("Failed to load high music! SDL_mixer Error: %s\n", SDL_GetError());
-		success = false;
-	}
-	gMedium = MIX_LoadAudio(gMusic, load->Path("medium.wav"), false);
-	if (gMedium == NULL)
-	{
-		SDL_Log("Failed to load medium music! SDL_mixer Error: %s\n", SDL_GetError());
-		success = false;
-	}
-	gLow = MIX_LoadAudio(gMusic, load->Path("low.wav"), false);
-	if (gLow == NULL)
-	{
-		SDL_Log("Failed to load low music! SDL_mixer Error: %s\n", SDL_GetError());
-		success = false;
-	}*/
 
 	if (!gDotTexture.loadFromFile(load->Path("CharacterFairySmallwig000_64x64.png")))
 	{
@@ -1769,18 +1682,6 @@ void close()
 	gGameController = NULL;
 	gJoystick = NULL;
 	gJoyHaptic = NULL;
-	//MIX_DestroyAudio(gBeat);
-	//MIX_DestroyAudio(gScratch);
-	//MIX_DestroyAudio(gHigh);
-	//MIX_DestroyAudio(gMedium);
-	//MIX_DestroyAudio(gLow);
-	//gBeat = NULL;
-	//gScratch = NULL;
-	//gHigh = NULL;
-	//gMedium = NULL;
-	//gLow = NULL;
-	//MIX_DestroyMixer(gMusic);
-	//gMusic = NULL;
 	gDotTexture.free();
 	gBGTexture.free();
 	for (int i = 0; i < HORIZON_SIZE; ++i)
@@ -1827,11 +1728,6 @@ void close()
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
 	gWindow.free();
-#ifdef _WIN32
-	MIX_Quit();
-#elif __linux__
-	Mix_Quit();
-#endif
 	SDL_Quit();
 }
 
@@ -1866,6 +1762,7 @@ int main(int argc, char* argv[])
 {
 	Clock* clock = new Clock();
 	Timer* myTimer = new Timer(Timer::Print, 1);
+	Load* load = new Load(SDL_GetBasePath());
 
 	if (!init())
 	{
@@ -2014,67 +1911,6 @@ int main(int argc, char* argv[])
 				previousTime = currentTime;
 
 				SDL_GetMouseState(&mouseX, &mouseY);
-#ifdef _WIN32
-				const int minimum_audio = (8000 * sizeof(float)) / 2;  /* 8000 float samples per second. Half of that. */
-				if (SDL_GetAudioStreamQueued(stream) < minimum_audio) {
-					static float samples[512];  /* this will feed 512 samples each frame until we get to our maximum. */
-					int i;
-
-					/* generate a 440Hz pure tone */
-					for (i = 0; i < SDL_arraysize(samples); i++) {
-						const int freq = 440;
-						const float phase = current_sine_sample * freq / 8000.0f;
-						samples[i] = SDL_sinf(phase * 2 * SDL_PI_F);
-						current_sine_sample++;
-					}
-
-					/* wrapping around to avoid floating-point errors */
-					current_sine_sample %= 8000;
-
-					/* feed the new data to the stream. It will queue at the end, and trickle out as the hardware needs more data. */
-					SDL_PutAudioStreamData(stream, samples, sizeof(samples));
-				}
-#elif __linux__
-				SDL_AudioFormat src_format = AUDIO_S16;
-				Uint8 src_channels = 1;
-				int src_rate = 22050;
-				SDL_AudioFormat dst_format = AUDIO_F32;
-				Uint8 dst_channels = 2;
-				int dst_rate = 48000;
-				stream = SDL_NewAudioStream(src_format, src_channels, src_rate, dst_format, dst_channels, dst_rate);
-				if (stream == NULL) {
-					fprintf(stderr, "Failed to create audio stream: %s\n", SDL_GetError());
-					SDL_Quit();
-					return 1;
-				}
-				const int num_src_samples = 1024;
-				Sint16 src_audio_buffer[num_src_samples];
-				for (int i = 0; i < num_src_samples; ++i)
-				{
-					src_audio_buffer[i] = (Sint16)(30000 * sin(i * M_PI / 100.0));
-				}
-				int put_result = SDL_AudioStreamPut(stream, src_audio_buffer, num_src_samples * sizeof(Sint16));
-				if (put_result == -1)
-				{
-					fprintf(stderr, "Failed to put data into audio stream: %s\n", SDL_GetError());
-					SDL_FreeAudioStream(stream);
-					SDL_Quit();
-					return 1;
-				}
-				//printf("Put %d bytes of source audio into the stream.\n", num_src_samples * sizeof(Sint16));
-				const int num_dst_samples_estimate = (int)(num_src_samples * (double)dst_rate / src_rate * dst_channels / src_channels);
-				float dst_audio_buffer[num_dst_samples_estimate];
-				int available_bytes = SDL_AudioStreamAvailable(stream);
-				//printf("Available converted bytes in stream: %d\n", available_bytes);
-				int get_result = SDL_AudioStreamGet(stream, dst_audio_buffer, available_bytes);
-				if (get_result == -1)
-				{
-					fprintf(stderr, "Failed to get data from audio stream: %s\n", SDL_GetError());
-					SDL_FreeAudioStream(stream);
-					SDL_Quit();
-					return 1;
-				}
-#endif
 				myTimer->Update();
 				capTimer.start();
 				while (SDL_PollEvent(&e) != 0)
@@ -2150,11 +1986,6 @@ int main(int argc, char* argv[])
 						//}
 						//printf("%i, %i\n", xDir, yDir);
 					}
-//#ifdef _WIN32
-//					else if (e.type == SDL_EVENT_KEY_UP)
-//#elif __linux__
-//					else if (e.type == SDL_KEYUP)
-//#endif
 					else if (e.type == KEY_RELEASED)
 					{
 #ifdef _WIN32
@@ -2167,11 +1998,6 @@ int main(int argc, char* argv[])
 							break;
 						}
 					}
-//#ifdef _WIN32
-//					else if (e.type == SDL_EVENT_KEY_DOWN)
-//#elif __linux__
-//					else if (e.type == SDL_KEYDOWN)
-//#endif
 					else if (e.type == KEY_PRESSED)
 					{
 #ifdef _WIN32
@@ -2199,6 +2025,7 @@ int main(int argc, char* argv[])
 								gDirection = DIRECTION_UP;
 								break;
 							}
+							PlaySound(L"C:/Users/belenbaa/Desktop/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav", NULL, SND_FILENAME | SND_ASYNC);
 							break;
 						case SDLK_UP:
 						case KEY_W:
@@ -2656,12 +2483,12 @@ int main(int argc, char* argv[])
 								RenderTexture(gRenderer, gBox->getTexture());
 								SetRenderViewport(gRenderer, &middleViewport);
 							}
-							/*if (playerI == i && playerJ == j)
+							if (playerI == i && playerJ == j)
 							{
 								RenderTexture(gRenderer, gTexture);
 								RenderTexture(gRenderer, gBox->getTexture());
 								SetRenderViewport(gRenderer, &middleViewport);
-							}*/
+							}
 						}
 					}
 
@@ -2733,6 +2560,7 @@ int main(int argc, char* argv[])
 		close();
 	}
 
+	delete load;
 	delete myTimer;
 	delete clock;
 	return 0;
