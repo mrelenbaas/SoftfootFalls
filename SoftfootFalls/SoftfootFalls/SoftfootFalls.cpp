@@ -29,6 +29,10 @@
 #include "SDLInterface.h"
 #include "Load.h"
 
+#include "Tile.h"
+#include "Character.h"
+#include "Player.h"
+
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -273,7 +277,7 @@ LTexture gShimmerTexture;
 LBitmapFont gBitmapFont;
 LTexture gTargetTexture;
 Directions gDirection = DIRECTION_UP;
-const int GRID_SIZE = 24;
+const int ROW_SIZE = 24;
 
 
 LTexture::LTexture()
@@ -762,8 +766,8 @@ void Dot::setIJ(int* i, int* j)
 	float y = (float)mBox.y;
 	float jNormal = x / width;
 	float iNormal = y / height;
-	*i = GRID_SIZE - (GRID_SIZE * iNormal);
-	*j = GRID_SIZE * jNormal;
+	*i = ROW_SIZE - (ROW_SIZE * iNormal);
+	*j = ROW_SIZE * jNormal;
 	//std::cout << x << " / " << width << " = " << iNormal << " = " << ii << std::endl;
 }
 
@@ -1763,6 +1767,9 @@ int main(int argc, char* argv[])
 	Clock* clock = new Clock();
 	Timer* myTimer = new Timer(Timer::Print, 1);
 	Load* load = new Load(SDL_GetBasePath());
+	const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
+	Tile** tiles = new Tile*[GRID_SIZE];
+	Tile* player = new Tile;
 
 	if (!init())
 	{
@@ -1870,7 +1877,7 @@ int main(int argc, char* argv[])
 				{
 					decisecondDelta -= decisecondLimit;
 					++gridCounter;
-					if (gridCounter > GRID_SIZE * GRID_SIZE)
+					if (gridCounter > ROW_SIZE * ROW_SIZE)
 					{
 						gridCounter = 0;
 					}
@@ -2036,7 +2043,7 @@ int main(int argc, char* argv[])
 								currentData = TOTAL_DATA - 1;
 							}
 							++playerI;
-							if (playerI >= GRID_SIZE) playerI = GRID_SIZE - 1;
+							if (playerI >= ROW_SIZE) playerI = ROW_SIZE - 1;
 							playerToggle = true;
 							break;
 						case SDLK_DOWN:
@@ -2065,7 +2072,7 @@ int main(int argc, char* argv[])
 							gBox = &gBoxes[KEY_PRESS_SURFACE_RIGHT];
 							++gData[currentData];
 							++playerJ;
-							if (playerJ >= GRID_SIZE) playerJ = GRID_SIZE - 1;
+							if (playerJ >= ROW_SIZE) playerJ = ROW_SIZE - 1;
 							playerToggle = true;
 							degrees += 60;
 							break;
@@ -2194,7 +2201,6 @@ int main(int argc, char* argv[])
 					SDL_Rect outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
 #endif
 
-
 					switch (gDirection)
 					{
 					case DIRECTION_UP:
@@ -2284,14 +2290,10 @@ int main(int argc, char* argv[])
 
 					if (!trisecondToggle)
 					{
-						//SetRenderViewport(gRenderer, &circleViewport);
-						//RenderTexture(gRenderer, characterFairyHopeful.getTexture());
 						SetRenderViewport(gRenderer, &radianViewport);
 						RenderTexture(gRenderer, characterFairyHopeful.getTexture());
-						//SetRenderViewport(gRenderer, &fullscreenViewport);
 					}
 					SetRenderViewport(gRenderer, &middleViewport);
-					//RenderTexture(gRenderer, gTexture);
 					gWalkingSpriteSheetTexture.render(
 						(middleViewport.w - currentClip->w) / 2,
 						(middleViewport.h - currentClip->h) / 2,
@@ -2302,11 +2304,8 @@ int main(int argc, char* argv[])
 					RenderTexture(gRenderer, gBox->getTexture());
 					if (trisecondToggle)
 					{
-						//SetRenderViewport(gRenderer, &circleViewport);
-						//RenderTexture(gRenderer, characterFairyHopeful.getTexture());
 						SetRenderViewport(gRenderer, &radianViewport);
 						RenderTexture(gRenderer, characterFairyHopeful.getTexture());
-						//SetRenderViewport(gRenderer, &fullscreenViewport);
 					}
 
 					SetRenderViewport(gRenderer, NULL);
@@ -2332,100 +2331,21 @@ int main(int argc, char* argv[])
 						degrees,
 						NULL,
 						flipType);
-					//for (int i = 0; i <= GRID_SIZE; ++i)
-					//{
-					//	int xa1 = i * gWindow.getWidth() / GRID_SIZE;
-					//	if (i == GRID_SIZE) --xa1;
-					//	int xa2 = xa1;
-					//	int ya1 = 0;
-					//	int ya2 = gWindow.getHeight();
-					//	//SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
-					//	//RenderLine(gRenderer, xa1, ya1, xa2, ya2);
-					//	for (int j = 0; j <= GRID_SIZE; ++j)
-					//	{
-					//		int xb1 = 0;
-					//		int xb2 = gWindow.getWidth();
-					//		int yb1 = j * gWindow.getHeight() / GRID_SIZE;
-					//		if (j == GRID_SIZE) --yb1;
-					//		int yb2 = yb1;
-					//		//SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
-					//		//RenderLine(gRenderer, xb1, yb1, xb2, yb2);
-					//		xb1 = 0;
-					//		xb2 = gWindow.getWidth();
-					//		yb1 = (j * gWindow.getHeight() * 0.25f / GRID_SIZE) + (gWindow.getHeight() * 0.625f);
-					//		//if (j == GRID_SIZE) --yb1;
-					//		yb2 = yb1;
-					//		//SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
-					//		//RenderLine(gRenderer, xb1, yb1, xb2, yb2);
-
-					//		/*if ((j * GRID_SIZE) + i == gridCounter)
-					//		{
-					//			middleViewport.x = i * gWindow.getWidth() / GRID_SIZE;
-					//			middleViewport.y = j * gWindow.getHeight() / GRID_SIZE;
-					//			middleViewport.w = gWindow.getWidth() / GRID_SIZE;
-					//			middleViewport.h = gWindow.getHeight() / GRID_SIZE;
-					//			SetRenderViewport(gRenderer, &middleViewport);
-					//			RenderTexture(gRenderer, gTexture);
-					//			SetRenderViewport(gRenderer, &fullscreenViewport);
-					//		}*/
-
-					//		//if ((j * GRID_SIZE) + i == gridCounter)
-					//		//{
-					//		float xPercent = (float)i / (float)GRID_SIZE;
-					//		float yPercent = (float)j / (float)GRID_SIZE;
-					//		float x1 = 0 + (gWindow.getWidth() * yPercent);
-					//		float x2 = gWindow.getWidth() - (x1 * 2.0f);
-					//		float y1 = 0;
-					//		float y2 = gWindow.getHeight() / 2;
-					//		//float height = (y1 - y2) / GRID_SIZE;
-					//		//float percent = 0.5f;
-					//		int x = (x1 + x2) * xPercent;
-					//		int y = (y1 + y2) * yPercent;
-					//		//std::cout << j << ": "  << y << std::endl;
-					//		middleViewport.x = x;
-					//		middleViewport.y = y;
-					//		middleViewport.w = gWindow.getWidth() / GRID_SIZE;
-					//		middleViewport.h = gWindow.getHeight() / GRID_SIZE;
-					//		SetRenderViewport(gRenderer, &middleViewport);
-					//		RenderTexture(gRenderer, gTexture);
-					//		SetRenderViewport(gRenderer, &fullscreenViewport);
-					//		//}
-
-					//	}
-					//}
-					//for (int i = 0; i <= GRID_SIZE; ++i)
-					//{
-					//	for (int j = 0; j <= GRID_SIZE; ++j)
-					//	{
-					//		// Rectangles go here.
-					//	}
-					//}
 					float normal = secondNormal;
-					SDL_Point flattish;
-					flattish.x = gWindow.getWidth() * 0.2f;
-					flattish.y = gWindow.getHeight() * 0.9f;
-					SDL_Point perspectivish;
-					perspectivish.x = gWindow.getWidth() * 0.001f;
-					perspectivish.y = gWindow.getHeight() * 0.001f;
 					float flippyNormal = trisecondNormal;
 					if (trisecondToggle)
 					{
 						flippyNormal = 1.0f - trisecondNormal;
 					}
-					SDL_Point interpolationish;
-					interpolationish.x = (flattish.x + perspectivish.x) * flippyNormal;
-					interpolationish.y = (flattish.y + perspectivish.y) * flippyNormal;
-					float centerX = mouseX;// gWindow.getWidth() * 0.5f;
-					float centerY = gWindow.getHeight() - mouseY;// gWindow.getHeight() * 0.5f;
-					//float centerX = interpolationish.x;
-					//float centerY = interpolationish.y;
+					float centerX = mouseX;
+					float centerY = gWindow.getHeight() - mouseY;
 					int horizonI = 0;
-					for (int i = GRID_SIZE - 1; i >= 0 ; --i)
+					for (int i = ROW_SIZE - 1; i >= 0 ; --i)
 					{
-						normal = (float)i / (float)GRID_SIZE;
+						normal = (float)i / (float)ROW_SIZE;
 						float x = (0 + centerX) * normal;
-						middleViewport.w = centerX / GRID_SIZE;
-						middleViewport.h = centerY / GRID_SIZE;
+						middleViewport.w = centerX / ROW_SIZE;
+						middleViewport.h = centerY / ROW_SIZE;
 						float y = 
 							gWindow.getHeight()
 							- middleViewport.h
@@ -2435,8 +2355,8 @@ int main(int argc, char* argv[])
 						SDL_Rect leftViewport = middleViewport;
 
 						x = gWindow.getWidth() - middleViewport.w - ((0 + centerX) * normal);
-						middleViewport.w = centerX / GRID_SIZE;
-						middleViewport.h = centerY / GRID_SIZE;
+						middleViewport.w = centerX / ROW_SIZE;
+						middleViewport.h = centerY / ROW_SIZE;
 						y = 
 							gWindow.getHeight()
 							- middleViewport.h
@@ -2445,12 +2365,12 @@ int main(int argc, char* argv[])
 						middleViewport.y = y;
 						SDL_Rect rightViewport = middleViewport;
 
-						for (int j = 0; j < GRID_SIZE; ++j)
+						for (int j = 0; j < ROW_SIZE; ++j)
 						{
 							float width = rightViewport.x + rightViewport.w - leftViewport.x;
-							float xStep = width / GRID_SIZE;
+							float xStep = width / ROW_SIZE;
 							x = leftViewport.x + (j * xStep);
-							middleViewport.w = width / GRID_SIZE;
+							middleViewport.w = width / ROW_SIZE;
 							middleViewport.h = middleViewport.w;
 							y = 
 								gWindow.getHeight()
@@ -2560,6 +2480,8 @@ int main(int argc, char* argv[])
 		close();
 	}
 
+	delete player;
+	delete[] tiles;
 	delete load;
 	delete myTimer;
 	delete clock;

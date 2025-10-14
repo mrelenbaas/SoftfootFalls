@@ -128,22 +128,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Character.cpp" />
     <ClCompile Include="Clock.cpp" />
     <ClCompile Include="Load.cpp" />
     <ClCompile Include="Node.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="Print.cpp" />
     <ClCompile Include="SDLInterface.cpp" />
     <ClCompile Include="SoftfootFalls.cpp" />
+    <ClCompile Include="Tile.cpp" />
     <ClCompile Include="Time.cpp" />
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Character.h" />
     <ClInclude Include="Clock.h" />
     <ClInclude Include="Load.h" />
     <ClInclude Include="Node.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="Print.h" />
     <ClInclude Include="SDLInterface.h" />
     <ClInclude Include="SoftfootFalls.h" />
+    <ClInclude Include="Tile.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Timer.h" />
   </ItemGroup>
