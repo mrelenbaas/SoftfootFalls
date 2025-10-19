@@ -13,27 +13,35 @@
 class LWindow
 {
 public:
-	LWindow();
-	bool Init(bool bCreateRenderer = true);
+	LWindow()
+		: window(nullptr)
+		, renderer(nullptr)
+		, mouseFocus(false)
+		, keyboardFocus(false)
+		, fullscreen(false)
+		, minimized(false)
+		, width(0)
+		, height(0) {}
+	bool Init();
 #ifdef __linux__
-	SDL_Renderer* createRenderer(); // TODO: Update this while in Linux.
+	SDL_Renderer* CreateRenderer(); // TODO: Update this while in Linux.
 #endif
 	SDL_Renderer* GetRenderer();
 	void HandleEvent(SDL_Event&);
 	void Free();
-	int GetWidth();
-	int GetHeight();
+	int GetWidth() const;
+	int GetHeight() const;
 	SDL_Window* GetWindow();
-	bool HasMouseFocus();
-	bool HasKeyboardFocus();
-	bool IsMinimized();
+	bool HasMouseFocus() const;
+	bool HasKeyboardFocus() const;
+	bool IsMinimized() const;
 private:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
-	int width;
-	int height;
 	bool mouseFocus;
 	bool keyboardFocus;
-	bool fullScreen;
+	bool fullscreen;
 	bool minimized;
+	int width;
+	int height;
 };

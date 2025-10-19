@@ -81,8 +81,8 @@ public:
 	void render(int x, int y, SDL_Rect* clip = NULL, double secondAngle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, Distance distance = { 0, 0 });
 #endif
 	void setAsRenderTarget();
-	int GetWidth();
-	int GetHeight();
+	int GetWidth() const;
+	int GetHeight() const;
 	Uint32* getPixels32();
 	Uint32 getPixel32(Uint32 x, Uint32 y);
 	Uint32 getPitch32();
@@ -110,8 +110,8 @@ public:
 	~Dot();
 	void HandleEvent(SDL_Event& e);
 	void move(double timestepX, double timestepY);
-	void setIJ(int*, int*, float*, float*);
-	void render();
+	void setIJ(int*, int*, float*, float*) const;
+	void render() const;
 	SDL_Rect getBox();
 private:
 	SDL_Rect mBox;
@@ -162,7 +162,6 @@ SDL_GameController* gGameController;
 #endif
 SDL_Joystick* gJoystick = NULL;
 SDL_Haptic* gJoyHaptic = NULL;
-//static int current_sine_sample = 0;
 LTexture gDotTexture;
 LTexture gBGTexture;
 const int HORIZON_SIZE = 8;
@@ -359,12 +358,12 @@ void LTexture::setAsRenderTarget()
 	SDL_SetRenderTarget(gRenderer, mTexture);
 }
 
-int LTexture::GetWidth()
+int LTexture::GetWidth() const
 {
 	return mWidth;
 }
 
-int LTexture::GetHeight()
+int LTexture::GetHeight() const
 {
 	return mHeight;
 }
@@ -562,7 +561,7 @@ void Dot::move(double timeStepX, double timeStepY)
 	}
 }
 
-void Dot::setIJ(int* i, int* j, float* normalI, float* normalJ)
+void Dot::setIJ(int* i, int* j, float* normalI, float* normalJ) const
 {
 	float width = (float)gWindow.GetWidth();
 	float height = (float)gWindow.GetHeight();
@@ -577,12 +576,10 @@ void Dot::setIJ(int* i, int* j, float* normalI, float* normalJ)
 	*normalJ = jNormal;
 }
 
-void Dot::render()
+void Dot::render() const
 {
 	Distance distance = { mBox.w * 5.0f, mBox.h * 5.0f };
-	//gDotTexture.render(mBox.x - (distance.width / 2), mBox.y + (distance.height / 2));
 	gBoxFront.render(mBox.x, mBox.y, NULL, 0.0, NULL, SDL_FLIP_NONE, distance);
-	//renderParticles();
 }
 
 SDL_Rect Dot::getBox()
@@ -597,38 +594,15 @@ SDL_Rect Dot::getBox()
 	return rect;
 }
 
-LWindow::LWindow()
-{
-	window = NULL;
-	renderer = NULL;
-	mouseFocus = false;
-	keyboardFocus = false;
-	fullScreen = false;
-	minimized = false;
-	width = 0;
-	height = 0;
-}
-
-bool LWindow::Init(bool bCreateRenderer)
+bool LWindow::Init()
 {
 #ifdef _WIN32
-	if (bCreateRenderer)
+	if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer))
 	{
-		if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer))
-		{
-			return false;
-		}
-		//SDL_SetRenderVSync(renderer, 1);
-		SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
+		return false;
 	}
-	else
-	{
-		window = SDL_CreateWindow("SDL_Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
-		if (window == NULL)
-		{
-			return false;
-		}
-	}
+	SDL_SetRenderVSync(renderer, 1);
+	//SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
 
 	mouseFocus = true;
 	keyboardFocus = true;
@@ -649,7 +623,7 @@ bool LWindow::Init(bool bCreateRenderer)
 }
 
 #ifdef __linux__
-SDL_Renderer* LWindow::createRenderer()
+SDL_Renderer* LWindow::CreateRenderer()
 {
 	return SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED /*| SDL_RENDERER_PRESENTVSYNC*/);
 }
@@ -746,14 +720,14 @@ void LWindow::HandleEvent(SDL_Event& event)
 		if (event.key.keysym.sym == SDLK_RETURN)
 #endif
 		{
-			if (fullScreen)
+			if (fullscreen)
 			{
 #ifdef _WIN32
 				SDL_SetWindowFullscreen(window, false);
 #elif __linux__
 				SDL_SetWindowFullscreen(window, 0);
 #endif
-				fullScreen = false;
+				fullscreen = false;
 			}
 			else
 			{
@@ -762,7 +736,7 @@ void LWindow::HandleEvent(SDL_Event& event)
 #elif __linux__
 				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 #endif
-				fullScreen = true;
+				fullscreen = true;
 				minimized = false;
 			}
 		}
@@ -788,12 +762,12 @@ void LWindow::Free()
 	height = 0;
 }
 
-int LWindow::GetWidth()
+int LWindow::GetWidth() const
 {
 	return width;
 }
 
-int LWindow::GetHeight()
+int LWindow::GetHeight() const
 {
 	return height;
 }
@@ -803,17 +777,17 @@ SDL_Window* LWindow::GetWindow()
 	return window;
 }
 
-bool LWindow::HasMouseFocus()
+bool LWindow::HasMouseFocus() const
 {
 	return mouseFocus;
 }
 
-bool LWindow::HasKeyboardFocus()
+bool LWindow::HasKeyboardFocus() const
 {
 	return keyboardFocus;
 }
 
-bool LWindow::IsMinimized()
+bool LWindow::IsMinimized() const
 {
 	return minimized;
 }
@@ -941,7 +915,7 @@ void LBitmapFont::renderText(int x, int y, std::string text)
 	if (mFontTexture.GetWidth() > 0)
 	{
 		int curX = x, curY = y;
-		for (std::__cxx11::basic_string<char>::size_type i = 0; i < text.length(); ++i)
+		for (char i = 0; i < text.length(); ++i)
 		{
 			if (text[i] == ' ')
 			{
@@ -1094,7 +1068,7 @@ bool Init()
 		}
 #endif
 		srand(SDL_GetTicks());
-		if (!gWindow.Init(true))
+		if (!gWindow.Init())
 		{
 			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 			success = false;
@@ -1108,7 +1082,7 @@ bool Init()
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #elif __linux__
 			//gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-			gRenderer = gWindow.createRenderer();
+			gRenderer = gWindow.CreateRenderer();
 			if (gRenderer == NULL)
 			{
 				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
@@ -1125,7 +1099,6 @@ bool Init()
 				}
 			}
 #endif
-			//gScreenSurface = SDL_GetWindowSurface(gWindow);
 			gScreenSurface = SDL_GetWindowSurface(gWindow.GetWindow());
 		}
 	}
@@ -1139,9 +1112,6 @@ bool loadMedia()
 
 	Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
-
-	//SDL_Color textColor = { 0, 0, 0, 0xFF };
-	//SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 
 	gTexture = loadTexture(load->Path("Whitebox_Square_1024x1024_000.png"), load, &success);
 	if (!(success = gModulatedTexture.loadFromFile(load->Path("Landscape_Moon_3300x2550.png")))) {}
@@ -1249,16 +1219,11 @@ bool loadMedia()
 	success = gGreenTexture.loadFromFile(load->Path("CharacterFairySmalling000_64x64.png"));
 	success = gBlueTexture.loadFromFile(load->Path("CharacterFairySmallbin000_64x64.png"));
 	success = gShimmerTexture.loadFromFile(load->Path("CharacterFairySmallton000_64x64.png"));
-	//mSurfacePixels = IMG_Load(path);
 	gRedTexture.setAlpha(192);
 	gGreenTexture.setAlpha(192);
 	gBlueTexture.setAlpha(192);
 	gShimmerTexture.setAlpha(192);
-	if (!gBitmapFont.buildFont(load->Path("font_000.png")))
-	{
-		SDL_Log("Failed to load bitmap font!\n");
-		success = false;
-	}
+	success = gBitmapFont.buildFont(load->Path("font_000.png"));
 
 	delete load;
 	return success;
@@ -1339,7 +1304,6 @@ void close()
 	}
 	else
 	{
-		//SDL_Log("Error: Unable to save file!\n", SDL_GetError());
 		printf("Error: Unable to save file! %s\n", SDL_GetError());
 	}
 	gRedTexture.Free();
@@ -1386,7 +1350,6 @@ int main()
 	Clock* clock = new Clock();
 	Timer* myTimer = new Timer(Timer::Print, 1);
 	Load* load = new Load(SDL_GetBasePath());
-	//const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 
 	if (!Init())
 	{
@@ -1402,7 +1365,6 @@ int main()
 		{
 			bool quit = false;
 			SDL_Event e;
-			//int frame = 0;
 			double degrees = 0;
 #ifdef _WIN32
 			SDL_FlipMode flipType = SDL_FLIP_NONE;
@@ -1411,24 +1373,12 @@ int main()
 #endif
 			int xDir = 0;
 			int yDir = 0;
-			//SDL_Color textColor = { 0, 0, 0, 255 };
-			//Uint64 startTime = 0;
 			int countedFrames = 0;
 			Dot dot;
 			int backgroundScrollingOffset = 0;
-			//int horizonScrollingOffset = 0;
 			std::string inputText = "Input";
 			int currentData = 0;
-			//SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 			double minuteAngle = 0;
-			//double hourAngle = 0;
-			//double halfDayAngle = 0;
-			//double fullDayAngle = 0;
-//#ifdef _WIN32
-//			SDL_FPoint screenCenter = { gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
-//#elif __linux__
-//			SDL_Point screenCenter = { gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
-//#endif
 			bool isDebug = false;
 			bool isInput = false;
 #ifdef _WIN32
@@ -1447,7 +1397,6 @@ int main()
 			long long fullDayDelta = 0L;
 			long long playerDelta = 0L;
 			bool trisecondToggle = false;
-			//bool playerToggle = false;
 			int gridCounter = 0;
 			int playerI = 0;
 			int playerJ = 0;
@@ -1475,7 +1424,6 @@ int main()
 				double hourLimit = 3'600'000'000'000;
 				double halfDayLimit = 43'200'000'000'000;
 				double fullDayLimit = 86'400'000'000'000;
-				//double playerLimit = secondLimit;
 				if (decisecondDelta > decisecondLimit)
 				{
 					decisecondDelta -= decisecondLimit;
@@ -1510,14 +1458,9 @@ int main()
 				{
 					fullDayDelta -= fullDayLimit;
 				}
-				//double decisecondNormal = (double)decisecondDelta / decisecondLimit;
 				double secondNormal = (double)secondDelta / secondLimit;
 				double trisecondNormal = (double)trisecondDelta / trisecondLimit;
 				double minuteNormal = (double)minuteDelta / minuteLimit;
-				//double hourNormal = (double)hourDelta / hourLimit;
-				//double halfDayNormal = (double)halfDayDelta / halfDayLimit;
-				//double fullDayNormal = (double)fullDayDelta / fullDayLimit;
-				//double playerNormal = (double)playerDelta / secondLimit;
 				previousTime = currentTime;
 
 				SDL_GetMouseState(&mouseX, &mouseY);
@@ -1640,7 +1583,6 @@ int main()
 								break;
 							}
 #ifdef _WIN32
-							PlaySound(L"C:/Users/belenbaa/Desktop/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav", NULL, SND_FILENAME | SND_ASYNC);
 #elif __linux__
 							system("aplay ~/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav");
 #endif
@@ -1655,7 +1597,6 @@ int main()
 							}
 							++playerI;
 							if (playerI >= ROW_SIZE) playerI = ROW_SIZE - 1;
-							//playerToggle = true;
 							break;
 						case SDLK_DOWN:
 						case KEY_S:
@@ -1667,7 +1608,6 @@ int main()
 							}
 							--playerI;
 							if (playerI < 0) playerI = 0;
-							//playerToggle = true;
 							break;
 						case SDLK_LEFT:
 						case KEY_A:
@@ -1675,7 +1615,6 @@ int main()
 							--gData[currentData];
 							--playerJ;
 							if (playerJ < 0) playerJ = 0;
-							//playerToggle = true;
 							degrees -= 60;
 							break;
 						case SDLK_RIGHT:
@@ -1684,7 +1623,6 @@ int main()
 							++gData[currentData];
 							++playerJ;
 							if (playerJ >= ROW_SIZE) playerJ = ROW_SIZE - 1;
-							//playerToggle = true;
 							degrees += 60;
 							break;
 						default:
@@ -1706,39 +1644,6 @@ int main()
 						{
 							inputText.pop_back();
 						}
-#ifdef _WIN32
-						else if (e.key.key == SDLK_C && SDL_GetModState() & SDL_KMOD_CTRL)
-#elif __linux__
-						else if (e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL)
-#endif
-						{
-							SDL_SetClipboardText(inputText.c_str());
-						}
-#ifdef _WIN32
-						else if (e.key.key == SDLK_V && SDL_GetModState() & SDL_KMOD_CTRL)
-#elif __linux__
-						else if (e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL)
-#endif
-						{
-							char* tempText = SDL_GetClipboardText();
-							inputText = tempText;
-							SDL_free(tempText);
-						}
-					}
-#ifdef _WIN32
-					else if (e.type == SDL_EVENT_TEXT_INPUT)
-#elif __linux__
-					else if (e.type == SDL_TEXTINPUT)
-#endif
-					{
-#ifdef _WIN32
-						if (!(SDL_GetModState() & SDL_KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
-#elif __linux__
-						if (!(SDL_GetModState() & KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
-#endif
-						{
-							inputText += e.text.text;
-						}
 					}
 					dot.HandleEvent(e);
 					gWindow.HandleEvent(e);
@@ -1746,13 +1651,6 @@ int main()
 				if (!gWindow.IsMinimized())
 				{
 					SDL_RenderClear(gRenderer);
-
-					//frame = 4 * secondNormal;
-//#ifdef _WIN32
-//					SDL_FRect* currentClip = &gWalkingSpriteClips[frame];
-//#elif __linux__
-//					SDL_Rect* currentClip = &gWalkingSpriteClips[frame];
-//#endif
 
 					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
 					if (xDir == 0 && yDir == 0)
@@ -1795,20 +1693,6 @@ int main()
 					}
 
 					minuteAngle = 360 * minuteNormal;
-					//hourAngle = 360 * hourNormal;
-					//halfDayAngle = 360 * halfDayNormal;
-					//fullDayAngle = 360 * fullDayNormal;
-
-//#ifdef _WIN32
-//					SDL_FRect fillRect = { gWindow.GetWidth() / 4, gWindow.GetHeight() / 4, gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
-//#elif __linux__
-//					SDL_Rect fillRect = { gWindow.GetWidth() / 4, gWindow.GetHeight() / 4, gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
-//#endif
-//#ifdef _WIN32
-//					SDL_FRect outlineRect = { gWindow.GetWidth() / 6, gWindow.GetHeight() / 6, gWindow.GetWidth() * 2 / 3, gWindow.GetHeight() * 2 / 3 };
-//#elif __linux__
-//					SDL_Rect outlineRect = { gWindow.GetWidth() / 6, gWindow.GetHeight() / 6, gWindow.GetWidth() * 2 / 3, gWindow.GetHeight() * 2 / 3 };
-//#endif
 
 					switch (gDirection)
 					{
@@ -1847,11 +1731,13 @@ int main()
 					case DIRECTION_TOTAL:
 						break;
 					}
-					SDL_Rect fullscreenViewport;
-					fullscreenViewport.x = 0;
-					fullscreenViewport.y = 0;
-					fullscreenViewport.w = gWindow.GetWidth();
-					fullscreenViewport.h = gWindow.GetHeight();
+					SDL_Rect fullscreenViewport =
+					{
+						fullscreenViewport.x = 0,
+						fullscreenViewport.y = 0,
+						fullscreenViewport.w = gWindow.GetWidth(),
+						fullscreenViewport.h = gWindow.GetHeight()
+					};
 					if (isDebug)
 					{
 						SetRenderViewport(gRenderer, &fullscreenViewport);
@@ -1861,18 +1747,15 @@ int main()
 					dot.move((double)gWindow.GetWidth() * 0.000025, (double)gWindow.GetHeight() * 0.000025);
 					dot.setIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ);
 
-					SDL_Rect middleViewport;
-					middleViewport.x = (gWindow.GetWidth() * 0.5f) - 100;
-					middleViewport.y = (gWindow.GetHeight() * 0.5f) - 100;
-					middleViewport.w = 200;
-					middleViewport.h = 200;
+					SDL_Rect middleViewport =
+					{
+						middleViewport.x = (gWindow.GetWidth() * 0.5f) - 100,
+						middleViewport.y = (gWindow.GetHeight() * 0.5f) - 100,
+						middleViewport.w = 200,
+						middleViewport.h = 200
+					};
 					SetRenderViewport(gRenderer, NULL);
 					float normal = secondNormal;
-					//float flippyNormal = trisecondNormal;
-					//if (trisecondToggle)
-					//{
-					//	flippyNormal = 1.0f - trisecondNormal;
-					//}
 					float centerX = mouseX;
 					if (centerX > gWindow.GetWidth() * 0.15f) centerX = gWindow.GetWidth() * 0.15f;
 					float centerY = gWindow.GetHeight() - mouseY;
@@ -1901,10 +1784,7 @@ int main()
 						middleViewport.x = x;
 						middleViewport.y = y;
 						SDL_Rect rightViewport = middleViewport;
-						//SDL_Rect topLeft = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 						SDL_Rect farLeft = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
-						//SDL_Rect farRight = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
-						SDL_Rect circleViewport = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 						for (int j = 0; j < ROW_SIZE; ++j)
 						{
 							float width = rightViewport.x + rightViewport.w - leftViewport.x;
@@ -1947,13 +1827,6 @@ int main()
 									flipType,
 									distance);
 							}
-							//if (i == 0 && j == 0)
-							//{
-							//	topLeft.x = middleViewport.x;
-							//	topLeft.y = middleViewport.y;
-							//	topLeft.w = middleViewport.w;
-							//	topLeft.h = middleViewport.h;
-							//}
 							if (j == 0)
 							{
 								farLeft.x = middleViewport.x;
@@ -1961,13 +1834,6 @@ int main()
 								farLeft.w = middleViewport.w;
 								farLeft.h = middleViewport.h;
 							}
-							//if (i == 0 && j == ROW_SIZE - 1)
-							//{
-							//	farRight.x = middleViewport.x;
-							//	farRight.y = middleViewport.y;
-							//	farRight.w = middleViewport.w;
-							//	farRight.h = middleViewport.h;
-							//}
 							if (i == 0 && j == ROW_SIZE - 1)
 							{
 								gIconCursor.render(
@@ -2018,20 +1884,16 @@ int main()
 								{
 									gBitmapFont.renderText(x, y, "");
 								}
-								//gBitmapFont.renderText(0, 0, std::to_string(gData[currentData]).c_str());
 								SetRenderViewport(gRenderer, &middleViewport);
 							}
-							if (playerI == i && playerJ == j)
-							{
-								//RenderTexture(gRenderer, gTexture);
-								//RenderTexture(gRenderer, gBox->getTexture());
-							}
 
-							SDL_Rect walkingSpriteViewport;
-							walkingSpriteViewport.x = farLeft.x + ((farLeft.w * ROW_SIZE) * dotNormalJ) - (farLeft.w / 3);
-							walkingSpriteViewport.y = farLeft.y - (farLeft.h * 0.5f);
-							walkingSpriteViewport.w = farLeft.w / 2;
-							walkingSpriteViewport.h = farLeft.h / 2;
+							SDL_Rect walkingSpriteViewport =
+							{
+								walkingSpriteViewport.x = farLeft.x + ((farLeft.w * ROW_SIZE) * dotNormalJ) - (farLeft.w / 3),
+								walkingSpriteViewport.y = farLeft.y - (farLeft.h * 0.5f),
+								walkingSpriteViewport.w = farLeft.w / 2,
+								walkingSpriteViewport.h = farLeft.h / 2
+							};
 							if (dotI == i)
 							{
 								beamViewport.x = walkingSpriteViewport.x;
@@ -2044,56 +1906,6 @@ int main()
 								RenderTexture(gRenderer, gBox->getTexture());
 								SetRenderViewport(gRenderer, &walkingSpriteViewport);
 							}
-							if (dotI == i && dotJ == j)
-							{
-								float xOffset = (walkingSpriteViewport.w * trisecondNormal);
-								if (trisecondToggle) xOffset = walkingSpriteViewport.w * (1.0f - trisecondNormal);
-
-								circleViewport.w = walkingSpriteViewport.w;
-								circleViewport.h = walkingSpriteViewport.h;
-								circleViewport.x = walkingSpriteViewport.x - (circleViewport.w / 2) + xOffset;
-								circleViewport.y = walkingSpriteViewport.y;
-
-								double radians = (360.0 * trisecondNormal) * (M_PI / 180.0);
-								double circleX = cos(radians) * (walkingSpriteViewport.w / 2);
-								double circleY = sin(radians) * (walkingSpriteViewport.h / 2);
-								if (trisecondToggle)
-								{
-									circleY = circleY * trisecondNormal;
-								}
-								else
-								{
-									circleY = circleY * (1.0f - trisecondNormal);
-								}
-								SDL_Rect radianViewport;
-								radianViewport.x = walkingSpriteViewport.x + (walkingSpriteViewport.w / 2) + circleX;
-								radianViewport.y = walkingSpriteViewport.y + (walkingSpriteViewport.h / 2) + circleY;
-								if (trisecondToggle)
-								{
-									radianViewport.w = 100 * trisecondNormal;
-									radianViewport.h = 100 * trisecondNormal;
-								}
-								else
-								{
-									radianViewport.w = 100 * (1.0f - trisecondNormal);
-									radianViewport.h = 100 * (1.0f - trisecondNormal);
-								}
-
-								if (!trisecondToggle)
-								{
-									SetRenderViewport(gRenderer, &radianViewport);
-									RenderTexture(gRenderer, characterFairyHopeful.getTexture());
-								}
-								SetRenderViewport(gRenderer, &middleViewport);
-								SDL_Rect bottomViewport = middleViewport;
-								bottomViewport.y += bottomViewport.h / 2;
-								SetRenderViewport(gRenderer, &bottomViewport);
-								if (trisecondToggle)
-								{
-									SetRenderViewport(gRenderer, &radianViewport);
-									RenderTexture(gRenderer, characterFairyHopeful.getTexture());
-								}
-							}
 						}
 					}
 
@@ -2103,7 +1915,6 @@ int main()
 						(int)beamViewport.x + ((int)beamViewport.w / 2.0f),
 						(int)beamViewport.y + ((int)beamViewport.h / 2.0f)
 					};
-					//SetRenderViewport(gRenderer, &fullscreenViewport);
 					Point linePoint =
 					{
 						(dot.getBox().x + beamPoint.x) / 2,
