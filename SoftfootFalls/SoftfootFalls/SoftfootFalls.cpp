@@ -38,33 +38,11 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-const int LEVEL_WIDTH = 1280;
-const int LEVEL_HEIGHT = 960;
-
-const int BUTTON_WIDTH = 300;
-const int BUTTON_HEIGHT = 200;
-const int TOTAL_BUTTONS = 4;
-
-const int SCREEN_FPS = 60;
-const int SCREEN_TICK_PER_FRAME = 1000 / SCREEN_FPS;
-
 const int JOYSTICK_DEAD_ZONE = 8000;
 #ifdef _WIN32
 const double M_PI = 3.14159265359;
 #endif
-
 const int TOTAL_DATA = 10;
-
-const int TOTAL_PARTICLES = 20;
-
-enum LButtonSprite
-{
-	BUTTON_SPRITE_MOUSE_OUT = 0,
-	BUTTON_SPRITE_MOUSE_OVER_MOTION = 1,
-	BUTTON_SPRITE_MOUSE_DOWN = 2,
-	BUTTON_SPRITE_MOUSE_UP = 3,
-	BUTTON_SPRITE_TOTAL = 4
-};
 
 enum KeyPressSurfaces
 {
@@ -122,18 +100,6 @@ private:
 	int mHeight;
 };
 
-class LButton
-{
-public:
-	LButton();
-	void setPosition(int x, int y);
-	void HandleEvent(SDL_Event* e);
-	void render();
-private:
-	SDL_Point mPosition;
-	LButtonSprite mCurrentSprite;
-};
-
 class Dot
 {
 public:
@@ -146,12 +112,11 @@ public:
 	void move(double timestepX, double timestepY);
 	void setIJ(int*, int*, float*, float*);
 	void render();
+	SDL_Rect getBox();
 private:
 	SDL_Rect mBox;
 	int mVelX, mVelY;
 };
-
-
 
 class LBitmapFont
 {
@@ -191,13 +156,6 @@ LTexture gIconCursor;
 LTexture gSun;
 LTexture gMoon;
 #ifdef _WIN32
-SDL_FRect gSpriteClips[BUTTON_SPRITE_TOTAL];
-#elif __linux__
-SDL_Rect gSpriteClips[BUTTON_SPRITE_TOTAL];
-#endif
-LTexture gButtonSpriteSheetTexture;
-LButton gButtons[TOTAL_BUTTONS];
-#ifdef _WIN32
 SDL_Gamepad* gGameController;
 #elif __linux__
 SDL_GameController* gGameController;
@@ -213,6 +171,7 @@ LTexture gBoxes[KEY_PRESS_SURFACE_TOTAL];
 LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
 LTexture gBoxFront;
 LTexture gPlayerHighlight;
+LTexture gPlayerBeam;
 LTexture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
 LTexture gRedTexture;
@@ -220,7 +179,6 @@ LTexture gGreenTexture;
 LTexture gBlueTexture;
 LTexture gShimmerTexture;
 LBitmapFont gBitmapFont;
-LTexture gTargetTexture;
 Directions gDirection = DIRECTION_UP;
 const int ROW_SIZE = 15;
 
@@ -504,89 +462,6 @@ void LTexture::copyRawPixels32(void* pixels)
 	}
 }
 
-LButton::LButton()
-{
-	mPosition.x = 0;
-	mPosition.y = 0;
-	mCurrentSprite = BUTTON_SPRITE_MOUSE_OUT;
-}
-
-void LButton::setPosition(int x, int y)
-{
-	mPosition.x = x;
-	mPosition.y = y;
-}
-
-void LButton::HandleEvent(SDL_Event* e)
-{
-#ifdef _WIN32
-	if (e->type == SDL_EVENT_MOUSE_MOTION || e->type == SDL_EVENT_MOUSE_BUTTON_DOWN || e->type == SDL_EVENT_MOUSE_BUTTON_UP)
-#elif __linix__
-	if (event->type == SDL_MOUSEMOTION || event->type == SDL_MOUSEBUTTONDOWN || event->type == SDL_MOUSEBUTTONUP)
-#endif
-	{
-#ifdef _WIN32
-		float x, y;
-#elif __linux__
-		int x, y;
-#endif
-		SDL_GetMouseState(&x, &y);
-		bool inside = true;
-		if (x < mPosition.x)
-		{
-			inside = false;
-		}
-		else if (x > mPosition.x + BUTTON_WIDTH)
-		{
-			inside = false;
-		}
-		else if (y < mPosition.y)
-		{
-			inside = false;
-		}
-		else if (y > mPosition.y + BUTTON_HEIGHT)
-		{
-			inside = false;
-		}
-		if (!inside)
-		{
-			mCurrentSprite = BUTTON_SPRITE_MOUSE_OUT;
-		}
-		else
-		{
-			switch (e->type)
-			{
-#ifdef _WIN32
-			case SDL_EVENT_MOUSE_MOTION:
-#elif __linux__
-			case SDL_MOUSEMOTION:
-#endif
-				mCurrentSprite = BUTTON_SPRITE_MOUSE_OVER_MOTION;
-				break;
-#ifdef _WIN32
-			case SDL_EVENT_MOUSE_BUTTON_DOWN:
-#elif __linux__
-			case SDL_MOUSEBUTTONDOWN:
-#endif
-				mCurrentSprite = BUTTON_SPRITE_MOUSE_DOWN;
-				break;
-#ifdef _WIN32
-			case SDL_EVENT_MOUSE_BUTTON_UP:
-#elif __linux__
-			case SDL_MOUSEBUTTONUP:
-#endif
-				mCurrentSprite = BUTTON_SPRITE_MOUSE_UP;
-				break;
-			}
-		}
-	}
-}
-
-void LButton::render()
-{
-	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
-}
-
 Dot::Dot()
 {
 	mBox.x = 0;
@@ -710,14 +585,26 @@ void Dot::render()
 	//renderParticles();
 }
 
+SDL_Rect Dot::getBox()
+{
+	SDL_Rect rect =
+	{
+		mBox.x,
+		mBox.y,
+		mBox.w,
+		mBox.h
+	};
+	return rect;
+}
+
 LWindow::LWindow()
 {
 	window = NULL;
 	renderer = NULL;
-	mMouseFocus = false;
-	mKeyboardFocus = false;
-	mFullScreen = false;
-	mMinimized = false;
+	mouseFocus = false;
+	keyboardFocus = false;
+	fullScreen = false;
+	minimized = false;
 	width = 0;
 	height = 0;
 }
@@ -743,8 +630,8 @@ bool LWindow::Init(bool bCreateRenderer)
 		}
 	}
 
-	mMouseFocus = true;
-	mKeyboardFocus = true;
+	mouseFocus = true;
+	keyboardFocus = true;
 	width = SCREEN_WIDTH;
 	height = SCREEN_HEIGHT;
 	return true;
@@ -752,8 +639,8 @@ bool LWindow::Init(bool bCreateRenderer)
 	window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (window != NULL)
 	{
-		mMouseFocus = true;
-		mKeyboardFocus = true;
+		mouseFocus = true;
+		keyboardFocus = true;
 		width = SCREEN_WIDTH;
 		height = SCREEN_HEIGHT;
 	}
@@ -800,7 +687,7 @@ void LWindow::HandleEvent(SDL_Event& event)
 #elif __linux__
 	case SDL_WINDOWEVENT_ENTER:
 #endif
-		mMouseFocus = true;
+		mouseFocus = true;
 		updateCaption = true;
 		break;
 #ifdef _WIN32
@@ -808,7 +695,7 @@ void LWindow::HandleEvent(SDL_Event& event)
 #elif __linux__
 	case SDL_WINDOWEVENT_LEAVE:
 #endif
-		mMouseFocus = false;
+		mouseFocus = false;
 		updateCaption = true;
 		break;
 #ifdef _WIN32
@@ -816,7 +703,7 @@ void LWindow::HandleEvent(SDL_Event& event)
 #elif __linux__
 	case SDL_WINDOWEVENT_FOCUS_GAINED:
 #endif
-		mKeyboardFocus = true;
+		keyboardFocus = true;
 		updateCaption = true;
 		break;
 #ifdef _WIN32
@@ -824,7 +711,7 @@ void LWindow::HandleEvent(SDL_Event& event)
 #elif __linux__
 	case SDL_WINDOWEVENT_FOCUS_LOST:
 #endif
-		mKeyboardFocus = false;
+		keyboardFocus = false;
 		updateCaption = true;
 		break;
 #ifdef _WIN32
@@ -832,21 +719,21 @@ void LWindow::HandleEvent(SDL_Event& event)
 #elif __linux__
 	case SDL_WINDOWEVENT_MINIMIZED:
 #endif
-		mMinimized = true;
+		minimized = true;
 		break;
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_MAXIMIZED:
 #elif __linux__
 	case SDL_WINDOWEVENT_MAXIMIZED:
 #endif
-		mMinimized = false;
+		minimized = false;
 		break;
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_RESTORED:
 #elif __linux__
 	case SDL_WINDOWEVENT_RESTORED:
 #endif
-		mMinimized = false;
+		minimized = false;
 		break;
 #ifdef _WIN32
 	case SDL_EVENT_KEY_DOWN:
@@ -859,14 +746,14 @@ void LWindow::HandleEvent(SDL_Event& event)
 		if (event.key.keysym.sym == SDLK_RETURN)
 #endif
 		{
-			if (mFullScreen)
+			if (fullScreen)
 			{
 #ifdef _WIN32
 				SDL_SetWindowFullscreen(window, false);
 #elif __linux__
 				SDL_SetWindowFullscreen(window, 0);
 #endif
-				mFullScreen = false;
+				fullScreen = false;
 			}
 			else
 			{
@@ -875,8 +762,8 @@ void LWindow::HandleEvent(SDL_Event& event)
 #elif __linux__
 				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 #endif
-				mFullScreen = true;
-				mMinimized = false;
+				fullScreen = true;
+				minimized = false;
 			}
 		}
 		break;
@@ -884,7 +771,7 @@ void LWindow::HandleEvent(SDL_Event& event)
 	if (updateCaption)
 	{
 		std::stringstream caption;
-		caption << "SDL Tutorial - MouseFocus:" << ((mMouseFocus) ? "On" : "Off") << " KeyboardFocus:" << ((mKeyboardFocus) ? "On" : "Off");
+		caption << "SDL Tutorial - MouseFocus:" << ((mouseFocus) ? "On" : "Off") << " KeyboardFocus:" << ((keyboardFocus) ? "On" : "Off");
 		SDL_SetWindowTitle(window, caption.str().c_str());
 	}
 }
@@ -895,8 +782,8 @@ void LWindow::Free()
 	{
 		SDL_DestroyWindow(window);
 	}
-	mMouseFocus = false;
-	mKeyboardFocus = false;
+	mouseFocus = false;
+	keyboardFocus = false;
 	width = 0;
 	height = 0;
 }
@@ -918,17 +805,17 @@ SDL_Window* LWindow::GetWindow()
 
 bool LWindow::HasMouseFocus()
 {
-	return mMouseFocus;
+	return mouseFocus;
 }
 
 bool LWindow::HasKeyboardFocus()
 {
-	return mKeyboardFocus;
+	return keyboardFocus;
 }
 
 bool LWindow::IsMinimized()
 {
-	return mMinimized;
+	return minimized;
 }
 
 LBitmapFont::LBitmapFont()
@@ -1339,21 +1226,6 @@ bool loadMedia()
 		SDL_RWclose(file);
 #endif
 	}
-	if (!(success = gButtonSpriteSheetTexture.loadFromFile(load->Path("button.png")))) {}
-	else
-	{
-		for (int i = 0; i < BUTTON_SPRITE_TOTAL; ++i)
-		{
-			gSpriteClips[i].x = 0;
-			gSpriteClips[i].y = i * 200;
-			gSpriteClips[i].w = BUTTON_WIDTH;
-			gSpriteClips[i].h = BUTTON_HEIGHT;
-		}
-		gButtons[0].setPosition(0, 0);
-		gButtons[1].setPosition(gWindow.GetWidth() - BUTTON_WIDTH, 0);
-		gButtons[2].setPosition(0, gWindow.GetHeight() - BUTTON_HEIGHT);
-		gButtons[3].setPosition(gWindow.GetWidth() - BUTTON_WIDTH, gWindow.GetHeight() - BUTTON_HEIGHT);
-	}
 
 	success = gDotTexture.loadFromFile(load->Path("CharacterFairySmallwig000_64x64.png"));
 	success = gBGTexture.loadFromFile(load->Path("bg.png"));
@@ -1371,6 +1243,7 @@ bool loadMedia()
 	success = gBoxes[KEY_PRESS_SURFACE_RIGHT].loadFromFile(load->Path("BoxRight.png"));
 	success = gBoxFront.loadFromFile(load->Path("BoxFront.png"));
 	success = gPlayerHighlight.loadFromFile(load->Path("PlayerHighlight_000_1024x1024.png"));
+	success = gPlayerBeam.loadFromFile(load->Path("PlayerBeam_000_2048x2048.png"));
 	success = characterFairyHopeful.loadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png"));
 	success = gRedTexture.loadFromFile(load->Path("CharacterFairySmallcol000_64x64.png"));
 	success = gGreenTexture.loadFromFile(load->Path("CharacterFairySmalling000_64x64.png"));
@@ -1384,11 +1257,6 @@ bool loadMedia()
 	if (!gBitmapFont.buildFont(load->Path("font_000.png")))
 	{
 		SDL_Log("Failed to load bitmap font!\n");
-		success = false;
-	}
-	if (!gTargetTexture.createBlank(gWindow.GetWidth(), gWindow.GetHeight(), SDL_TEXTUREACCESS_TARGET))
-	{
-		SDL_Log("Failed to create target texture!\n");
 		success = false;
 	}
 
@@ -1407,7 +1275,6 @@ void close()
 	gIconCursor.Free();
 	gSun.Free();
 	gMoon.Free();
-	gButtonSpriteSheetTexture.Free();
 	if (gGameController != NULL)
 	{
 #ifdef _WIN32
@@ -1447,6 +1314,7 @@ void close()
 	}
 	gBoxFront.Free();
 	gPlayerHighlight.Free();
+	gPlayerBeam.Free();
 	characterFairyHopeful.Free();
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "w+b");
@@ -1478,7 +1346,6 @@ void close()
 	gBlueTexture.Free();
 	gShimmerTexture.Free();
 	gBitmapFont.Free();
-	gTargetTexture.Free();
 
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
@@ -1587,6 +1454,8 @@ int main(int argc, char* argv[])
 			int dotJ = 0;
 			float dotNormalI = 0.0f;
 			float dotNormalJ = 0.0f;
+			SDL_Rect defaultRect = { -1, -1, -1, -1 };
+			SDL_Rect beamViewport = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -1868,10 +1737,6 @@ int main(int argc, char* argv[])
 							inputText += e.text.text;
 						}
 					}
-					for (int i = 0; i < TOTAL_BUTTONS; ++i)
-					{
-						gButtons[i].HandleEvent(&e);
-					}
 					dot.HandleEvent(e);
 					gWindow.HandleEvent(e);
 				}
@@ -2006,7 +1871,6 @@ int main(int argc, char* argv[])
 					float centerY = gWindow.GetHeight() - mouseY;
 					if (centerY > gWindow.GetHeight() * 0.5f) centerY = gWindow.GetHeight() * 0.5f;
 					int horizonI = 0;
-					SDL_Rect defaultRect = { -1, -1, -1, -1 };
 					for (int i = ROW_SIZE - 1; i >= 0 ; --i)
 					{
 						normal = (float)i / (float)ROW_SIZE;
@@ -2033,6 +1897,7 @@ int main(int argc, char* argv[])
 						SDL_Rect topLeft = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 						SDL_Rect farLeft = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 						SDL_Rect farRight = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
+						SDL_Rect circleViewport = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 						for (int j = 0; j < ROW_SIZE; ++j)
 						{
 							float width = rightViewport.x + rightViewport.w - leftViewport.x;
@@ -2162,16 +2027,21 @@ int main(int argc, char* argv[])
 							walkingSpriteViewport.h = farLeft.h / 2;
 							if (dotI == i)
 							{
+								beamViewport.x = walkingSpriteViewport.x;
+								beamViewport.y = walkingSpriteViewport.y + walkingSpriteViewport.h;
+								beamViewport.w = walkingSpriteViewport.w;
+								beamViewport.h = walkingSpriteViewport.h;
+								SetRenderViewport(gRenderer, &beamViewport);
+								RenderTexture(gRenderer, gPlayerBeam.getTexture());
 								SetRenderViewport(gRenderer, &walkingSpriteViewport);
 								RenderTexture(gRenderer, gBox->getTexture());
 								SetRenderViewport(gRenderer, &walkingSpriteViewport);
 							}
 							if (dotI == i && dotJ == j)
 							{
-
-								SDL_Rect circleViewport;
 								float xOffset = (walkingSpriteViewport.w * trisecondNormal);
 								if (trisecondToggle) xOffset = walkingSpriteViewport.w * (1.0f - trisecondNormal);
+
 								circleViewport.w = walkingSpriteViewport.w;
 								circleViewport.h = walkingSpriteViewport.h;
 								circleViewport.x = walkingSpriteViewport.x - (circleViewport.w / 2) + xOffset;
@@ -2220,37 +2090,39 @@ int main(int argc, char* argv[])
 						}
 					}
 
+
+					Point beamPoint =
+					{
+						beamViewport.x + (beamViewport.w / 2),
+						beamViewport.y + (beamViewport.h / 2)
+					};
+					//SetRenderViewport(gRenderer, &fullscreenViewport);
+					Point linePoint =
+					{
+						(dot.getBox().x + beamPoint.x) / 2,
+						(dot.getBox().y + beamPoint.y) / 2
+					};
+					SDL_Rect lineViewport =
+					{
+						linePoint.x,
+						linePoint.y,
+						100,
+						100
+					};
+					SetRenderViewport(gRenderer, &lineViewport);
+					RenderTexture(gRenderer, characterFairyHopeful.getTexture());
 					SetRenderViewport(gRenderer, &fullscreenViewport);
+					RenderLine(
+						gRenderer,
+						dot.getBox().x + (dot.getBox().w * 2.5f),
+						dot.getBox().y + (dot.getBox().h * 2.5f),
+						beamPoint.x,
+						beamPoint.y);
 					dot.render();
 					SetRenderViewport(gRenderer, NULL);
 
 					if (isDebug)
 					{
-						for (int i = 0; i < TOTAL_BUTTONS; ++i)
-						{
-							gButtons[i].render();
-						}
-						gTargetTexture.setAsRenderTarget();
-						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
-						SDL_RenderClear(gRenderer);
-						fillRect = { (float)gWindow.GetWidth() / 4, (float)gWindow.GetHeight() / 4, (float)gWindow.GetWidth() / 2, (float)gWindow.GetHeight() / 2 };
-						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
-						SDL_RenderFillRect(gRenderer, &fillRect);
-						outlineRect = { (float)gWindow.GetWidth() / 6, (float)gWindow.GetHeight() / 6, (float)gWindow.GetWidth() * 2 / 3, (float)gWindow.GetHeight() * 2 / 3 };
-						SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
-						RenderRect(gRenderer, &outlineRect);
-						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
-						RenderLine(gRenderer, 0, gWindow.GetHeight() / 2, gWindow.GetWidth(), gWindow.GetHeight() / 2);
-						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
-						for (int i = 0; i < gWindow.GetHeight(); i += 4)
-						{
-							RenderPoint(gRenderer, gWindow.GetWidth() / 2, i);
-						}
-						SDL_SetRenderTarget(gRenderer, NULL);
-						gTargetTexture.render(-gWindow.GetWidth() * 0.25f, -gWindow.GetHeight() * 0.25f, NULL, fullDayAngle, &screenCenter);
-						gTargetTexture.render(-gWindow.GetWidth() * 0.25f, -gWindow.GetHeight() * 0.25f, NULL, halfDayAngle, &screenCenter);
-						gTargetTexture.render(-gWindow.GetWidth() * 0.25f, -gWindow.GetHeight() * 0.25f, NULL, hourAngle, &screenCenter);
-						gTargetTexture.render(-gWindow.GetWidth() * 0.25f, -gWindow.GetHeight() * 0.25f, NULL, minuteAngle, &screenCenter);
 						gBitmapFont.renderText(0, 0, std::to_string(gData[currentData]).c_str());
 						RenderLine(gRenderer, mouseX, mouseY, 0, 0);
 						RenderLine(gRenderer, mouseX, mouseY, gWindow.GetWidth(), 0);
@@ -2260,12 +2132,6 @@ int main(int argc, char* argv[])
 					SDL_RenderPresent(gRenderer);
 				}
 				++countedFrames;
-
-				//int frameTicks = capTimer.getTicks();
-				//if (frameTicks < SCREEN_TICK_PER_FRAME)
-				//{
-				//	SDL_Delay(SCREEN_TICK_PER_FRAME - frameTicks);
-				//}
 			}
 		}
 		close();

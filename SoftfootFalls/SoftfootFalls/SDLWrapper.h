@@ -32,8 +32,8 @@ private:
 	SDL_Renderer* renderer;
 	int width;
 	int height;
-	bool mMouseFocus;
-	bool mKeyboardFocus;
-	bool mFullScreen;
-	bool mMinimized;
+	bool mouseFocus;
+	bool keyboardFocus;
+	bool fullScreen;
+	bool minimized;
 };
