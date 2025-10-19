@@ -606,13 +606,13 @@ void Dot::HandleEvent(SDL_Event& e)
 #ifdef _WIN32
 	if (e.type == SDL_EVENT_KEY_DOWN && e.key.repeat == 0)
 #elif __linux__
-	if (event.type == SDL_KEYDOWN && event.key.repeat == 0)
+	if (e.type == SDL_KEYDOWN && e.key.repeat == 0)
 #endif
 	{
 #ifdef _WIN32
 		switch (e.key.key)
 #elif __linux__
-		switch (event.key.keysym.sym)
+		switch (e.key.keysym.sym)
 #endif
 		{
 		case SDLK_UP:
@@ -632,13 +632,13 @@ void Dot::HandleEvent(SDL_Event& e)
 #ifdef _WIN32
 	else if (e.type == SDL_EVENT_KEY_UP && e.key.repeat == 0)
 #elif __linux__
-	else if (event.type == SDL_KEYUP && event.key.repeat == 0)
+	else if (e.type == SDL_KEYUP && e.key.repeat == 0)
 #endif
 	{
 #ifdef _WIN32
 		switch (e.key.key)
 #elif __linux__
-		switch (event.key.keysym.sym)
+		switch (e.key.keysym.sym)
 #endif
 		{
 		case SDLK_UP:
@@ -754,8 +754,8 @@ bool LWindow::Init(bool bCreateRenderer)
 	{
 		mMouseFocus = true;
 		mKeyboardFocus = true;
-		mWidth = SCREEN_WIDTH;
-		mHeight = SCREEN_HEIGHT;
+		width = SCREEN_WIDTH;
+		height = SCREEN_HEIGHT;
 	}
 	return window != NULL;
 #endif
@@ -1658,7 +1658,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)
 #elif __linux__
-					else if (event.type == SDL_JOYBUTTONDOWN)
+					else if (e.type == SDL_JOYBUTTONDOWN)
 #endif
 					{
 						if (gGameController != NULL)
@@ -1687,7 +1687,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_AXIS_MOTION)
 #elif __linux__
-					else if (event.type == SDL_JOYAXISMOTION)
+					else if (e.type == SDL_JOYAXISMOTION)
 #endif
 					{
 						//if (event.jaxis.which == 0)
@@ -1730,7 +1730,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 						switch (e.key.key)
 #elif __linux__
-						switch (event.key.keysym.sym)
+						switch (e.key.keysym.sym)
 #endif
 						{
 						case SDLK_HOME:
@@ -1742,7 +1742,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 						switch (e.key.key)
 #elif __linux__
-						switch (event.key.keysym.sym)
+						switch (e.key.keysym.sym)
 #endif
 						{
 						case SDLK_HOME:
@@ -1823,13 +1823,13 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					if (e.type == SDL_EVENT_KEY_DOWN)
 #elif __linux__
-					if (event.type == SDL_KEYDOWN)
+					if (e.type == SDL_KEYDOWN)
 #endif
 					{
 #ifdef _WIN32
 						if (e.key.key == SDLK_BACKSPACE && inputText.length() > 0)
 #elif __linux__
-						if (event.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0)
+						if (e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0)
 #endif
 						{
 							inputText.pop_back();
@@ -1837,7 +1837,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 						else if (e.key.key == SDLK_C && SDL_GetModState() & SDL_KMOD_CTRL)
 #elif __linux__
-						else if (event.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL)
+						else if (e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL)
 #endif
 						{
 							SDL_SetClipboardText(inputText.c_str());
@@ -1845,7 +1845,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 						else if (e.key.key == SDLK_V && SDL_GetModState() & SDL_KMOD_CTRL)
 #elif __linux__
-						else if (event.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL)
+						else if (e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL)
 #endif
 						{
 							char* tempText = SDL_GetClipboardText();
@@ -1856,13 +1856,13 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_TEXT_INPUT)
 #elif __linux__
-					else if (event.type == SDL_TEXTINPUT)
+					else if (e.type == SDL_TEXTINPUT)
 #endif
 					{
 #ifdef _WIN32
 						if (!(SDL_GetModState() & SDL_KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
 #elif __linux__
-						if (!(SDL_GetModState() & KMOD_CTRL && (event.text.text[0] == 'c' || event.text.text[0] == 'C' || event.text.text[0] == 'v' || event.text.text[0] == 'V')))
+						if (!(SDL_GetModState() & KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
 #endif
 						{
 							inputText += e.text.text;
