@@ -11,11 +11,12 @@
 #include <fstream>
 #include <cmath>
 
+#include "SoftfootFalls.h"
+
 #include "Print.h"
 #include "Time.h"
 #include "Clock.h"
 #include "Timer.h"
-#include "SoftfootFalls.h"
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
@@ -28,11 +29,10 @@
 #include <cstdlib>
 #endif
 #include "SDLInterface.h"
-#include "Load.h"
+#include "SDLWrapper.h"
 
-#include "Tile.h"
-#include "Character.h"
-#include "Player.h"
+#include "Load.h"
+#include "Container.h"
 
 
 const int SCREEN_WIDTH = 640;
@@ -93,18 +93,18 @@ public:
 	bool loadPixelsFromFile(const char* path);
 	bool loadFromPixels();
 	bool createBlank(int width, int height, SDL_TextureAccess access);
-	void free();
+	void Free();
 	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 	void setBlendMode(SDL_BlendMode blending);
 	void setAlpha(Uint8 alpha);
 #ifdef _WIN32
-	void render(int x, int y, SDL_FRect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE);
+	void render(int x, int y, SDL_FRect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE, Distance distance = {0, 0});
 #elif __linux__
-	void render(int x, int y, SDL_Rect* clip = NULL, double secondAngle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
+	void render(int x, int y, SDL_Rect* clip = NULL, double secondAngle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, Distance distance = { 0, 0 });
 #endif
 	void setAsRenderTarget();
-	int getWidth();
-	int getHeight();
+	int GetWidth();
+	int GetHeight();
 	Uint32* getPixels32();
 	Uint32 getPixel32(Uint32 x, Uint32 y);
 	Uint32 getPitch32();
@@ -127,41 +127,11 @@ class LButton
 public:
 	LButton();
 	void setPosition(int x, int y);
-	void handleEvent(SDL_Event* e);
+	void HandleEvent(SDL_Event* e);
 	void render();
 private:
 	SDL_Point mPosition;
 	LButtonSprite mCurrentSprite;
-};
-
-class LTimer
-{
-public:
-	LTimer();
-	void start();
-	void stop();
-	void pause();
-	void unpause();
-	Uint64 getTicks();
-	bool isStarted();
-	bool isPaused();
-private:
-	Uint64 mStartTicks;
-	Uint64 mPausedTicks;
-	bool mPaused;
-	bool mStarted;
-};
-
-class Particle
-{
-public:
-	Particle(int x, int y);
-	void render();
-	bool isDead();
-private:
-	int mPosX, mPosY;
-	int mFrame;
-	LTexture* mTexture;
 };
 
 class Dot
@@ -172,51 +142,23 @@ public:
 	static const int DOT_VEL = 100;
 	Dot();
 	~Dot();
-	void handleEvent(SDL_Event& e);
-	void move(float timestep);
-	void setIJ(int*, int*);
+	void HandleEvent(SDL_Event& e);
+	void move(double timestepX, double timestepY);
+	void setIJ(int*, int*, float*, float*);
 	void render();
 private:
-	Particle* particles[TOTAL_PARTICLES];
-	void renderParticles();
 	SDL_Rect mBox;
 	int mVelX, mVelY;
 };
 
-class LWindow
-{
-public:
-	LWindow();
-	bool init(bool bCreateRenderer = true);
-#ifdef __linux__
-	SDL_Renderer* createRenderer();
-#endif
-	SDL_Renderer* getRenderer();
-	void handleEvent(SDL_Event& e);
-	void free();
-	int getWidth();
-	int getHeight();
-	SDL_Window* getWindow();
-	bool hasMouseFocus();
-	bool hasKeyboardFocus();
-	bool isMinimized();
-private:
-	SDL_Window* mWindow;
-	SDL_Renderer* mRenderer;
-	int mWidth;
-	int mHeight;
-	bool mMouseFocus;
-	bool mKeyboardFocus;
-	bool mFullScreen;
-	bool mMinimized;
-};
+
 
 class LBitmapFont
 {
 public:
 	LBitmapFont();
 	bool buildFont(std::string path);
-	void free();
+	void Free();
 	void renderText(int x, int y, std::string text);
 private:
 	LTexture mFontTexture;
@@ -228,7 +170,7 @@ private:
 	int mNewLine, mSpace;
 };
 
-bool init();
+bool Init();
 bool loadMedia();
 void close();
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
@@ -269,6 +211,8 @@ const int HORIZON_SIZE = 8;
 LTexture gHorizons[HORIZON_SIZE];
 LTexture gBoxes[KEY_PRESS_SURFACE_TOTAL];
 LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
+LTexture gBoxFront;
+LTexture gPlayerHighlight;
 LTexture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
 LTexture gRedTexture;
@@ -278,7 +222,7 @@ LTexture gShimmerTexture;
 LBitmapFont gBitmapFont;
 LTexture gTargetTexture;
 Directions gDirection = DIRECTION_UP;
-const int ROW_SIZE = 24;
+const int ROW_SIZE = 15;
 
 
 LTexture::LTexture()
@@ -291,7 +235,7 @@ LTexture::LTexture()
 
 LTexture::~LTexture()
 {
-	free();
+	Free();
 }
 
 bool LTexture::loadFromFile(const char* path)
@@ -312,7 +256,7 @@ bool LTexture::loadFromFile(const char* path)
 
 bool LTexture::loadPixelsFromFile(const char* path)
 {
-	free();
+	Free();
 	mSurfacePixels = IMG_Load(path);
 	if (mSurfacePixels == NULL)
 	{
@@ -361,7 +305,7 @@ bool LTexture::loadFromPixels()
 
 bool LTexture::createBlank(int width, int height, SDL_TextureAccess access)
 {
-	free();
+	Free();
 	mTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_RGBA8888, access, width, height);
 	if (mTexture == NULL)
 	{
@@ -382,7 +326,7 @@ bool LTexture::createBlank(int width, int height, SDL_TextureAccess access)
 	return mTexture != NULL;
 }
 
-void LTexture::free()
+void LTexture::Free()
 {
 	if (mTexture != NULL)
 	{
@@ -418,13 +362,25 @@ void LTexture::setAlpha(Uint8 alpha)
 }
 
 #ifdef _WIN32
-void LTexture::render(int x, int y, SDL_FRect* clip, double angle, SDL_FPoint* center, SDL_FlipMode flip)
+void LTexture::render(int x, int y, SDL_FRect* clip, double angle, SDL_FPoint* center, SDL_FlipMode flip, Distance distance)
 #elif __linux__
-void LTexture::render(int x, int y, SDL_Rect* clip, double secondAngle, SDL_Point* center, SDL_RendererFlip flip)
+void LTexture::render(int x, int y, SDL_Rect* clip, double secondAngle, SDL_Point* center, SDL_RendererFlip flip, Distance distance)
 #endif
 {
+	float width = 0.0f;
+	float height = 0.0f;
+	if (distance.width == 0.0f && distance.height == 0.0f)
+	{
+		width = mWidth;
+		height = mHeight;
+	}
+	else
+	{
+		width = distance.width;
+		height = distance.height;
+	}
 #ifdef _WIN32
-	SDL_FRect renderQuad = { (float)x, (float)y, (float)mWidth, (float)mHeight };
+	SDL_FRect renderQuad = { (float)x, (float)y, width, height };
 #elif __linux__
 	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
 #endif
@@ -445,12 +401,12 @@ void LTexture::setAsRenderTarget()
 	SDL_SetRenderTarget(gRenderer, mTexture);
 }
 
-int LTexture::getWidth()
+int LTexture::GetWidth()
 {
 	return mWidth;
 }
 
-int LTexture::getHeight()
+int LTexture::GetHeight()
 {
 	return mHeight;
 }
@@ -561,12 +517,12 @@ void LButton::setPosition(int x, int y)
 	mPosition.y = y;
 }
 
-void LButton::handleEvent(SDL_Event* e)
+void LButton::HandleEvent(SDL_Event* e)
 {
 #ifdef _WIN32
 	if (e->type == SDL_EVENT_MOUSE_MOTION || e->type == SDL_EVENT_MOUSE_BUTTON_DOWN || e->type == SDL_EVENT_MOUSE_BUTTON_UP)
 #elif __linix__
-	if (e->type == SDL_MOUSEMOTION || e->type == SDL_MOUSEBUTTONDOWN || e->type == SDL_MOUSEBUTTONUP)
+	if (event->type == SDL_MOUSEMOTION || event->type == SDL_MOUSEBUTTONDOWN || event->type == SDL_MOUSEBUTTONUP)
 #endif
 	{
 #ifdef _WIN32
@@ -631,34 +587,6 @@ void LButton::render()
 	gButtonSpriteSheetTexture.render(mPosition.x, mPosition.y, &gSpriteClips[mCurrentSprite]);
 }
 
-Particle::Particle(int x, int y)
-{
-	mPosX = x - 5 + (rand() % 25);
-	mPosY = y - 5 + (rand() % 25);
-	mFrame = rand() % 5;
-	switch (rand() % 3)
-	{
-	case 0: mTexture = &gRedTexture; break;
-	case 1: mTexture = &gGreenTexture; break;
-	case 2: mTexture = &gBlueTexture; break;
-	}
-}
-
-void Particle::render()
-{
-	mTexture->render(mPosX, mPosY);
-	if (mFrame % 2 == 0)
-	{
-		gShimmerTexture.render(mPosX, mPosY);
-	}
-	mFrame++;
-}
-
-bool Particle::isDead()
-{
-	return mFrame > 10;
-}
-
 Dot::Dot()
 {
 	mBox.x = 0;
@@ -667,32 +595,24 @@ Dot::Dot()
 	mBox.h = DOT_HEIGHT;
 	mVelX = 0;
 	mVelY = 0;
-	for (int i = 0; i < TOTAL_PARTICLES; ++i)
-	{
-		particles[i] = new Particle(mBox.x, mBox.y);
-	}
 }
 
 Dot::~Dot()
 {
-	for (int i = 0; i < TOTAL_PARTICLES; ++i)
-	{
-		delete particles[i];
-	}
 }
 
-void Dot::handleEvent(SDL_Event& e)
+void Dot::HandleEvent(SDL_Event& e)
 {
 #ifdef _WIN32
 	if (e.type == SDL_EVENT_KEY_DOWN && e.key.repeat == 0)
 #elif __linux__
-	if (e.type == SDL_KEYDOWN && e.key.repeat == 0)
+	if (event.type == SDL_KEYDOWN && event.key.repeat == 0)
 #endif
 	{
 #ifdef _WIN32
 		switch (e.key.key)
 #elif __linux__
-		switch (e.key.keysym.sym)
+		switch (event.key.keysym.sym)
 #endif
 		{
 		case SDLK_UP:
@@ -712,13 +632,13 @@ void Dot::handleEvent(SDL_Event& e)
 #ifdef _WIN32
 	else if (e.type == SDL_EVENT_KEY_UP && e.key.repeat == 0)
 #elif __linux__
-	else if (e.type == SDL_KEYUP && e.key.repeat == 0)
+	else if (event.type == SDL_KEYUP && event.key.repeat == 0)
 #endif
 	{
 #ifdef _WIN32
 		switch (e.key.key)
 #elif __linux__
-		switch (e.key.keysym.sym)
+		switch (event.key.keysym.sym)
 #endif
 		{
 		case SDLK_UP:
@@ -737,162 +657,87 @@ void Dot::handleEvent(SDL_Event& e)
 	}
 }
 
-void Dot::move(float timeStep)
+void Dot::move(double timeStepX, double timeStepY)
 {
-	mBox.x += mVelX * timeStep;
-	if (mBox.x < 0)
+	double potentialX = mBox.x + (mVelX * timeStepX);
+	if (potentialX < 0)
 	{
 		mBox.x = 0;
 	}
-	if (mBox.x + DOT_WIDTH > gWindow.getWidth())
+	else if (potentialX > gWindow.GetWidth() - (mBox.w * 4.0))
 	{
-		mBox.x = gWindow.getWidth() - (DOT_WIDTH * 4.0f);
+		mBox.x = gWindow.GetWidth() - (mBox.w * 4);
 	}
-	mBox.y += mVelY * timeStep;
-	if (mBox.y < 0)
+	else
+	{
+		mBox.x = potentialX;
+	}
+	double potentialY = mBox.y + (mVelY * timeStepY);
+	if (potentialY < 0)
 	{
 		mBox.y = 0;
 	}
-	if (mBox.y + DOT_HEIGHT > gWindow.getHeight())
+	else if (potentialY > gWindow.GetHeight() - (mBox.h * 4.0))
 	{
-		mBox.y = gWindow.getHeight() - (DOT_HEIGHT * 4.0f);
+		mBox.y = gWindow.GetHeight() - (mBox.h * 4.0);
+	}
+	else
+	{
+		mBox.y = potentialY;
 	}
 }
 
-void Dot::setIJ(int* i, int* j)
+void Dot::setIJ(int* i, int* j, float* normalI, float* normalJ)
 {
-	float width = (float)gWindow.getWidth();
-	float height = (float)gWindow.getHeight();
+	float width = (float)gWindow.GetWidth();
+	float height = (float)gWindow.GetHeight();
 	float x = (float)mBox.x;
 	float y = (float)mBox.y;
 	float jNormal = x / width;
 	float iNormal = y / height;
 	*i = ROW_SIZE - (ROW_SIZE * iNormal);
+	if (*i == ROW_SIZE) *i = ROW_SIZE - 1;
 	*j = ROW_SIZE * jNormal;
-	//std::cout << x << " / " << width << " = " << iNormal << " = " << ii << std::endl;
+	*normalI = iNormal;
+	*normalJ = jNormal;
 }
 
 void Dot::render()
 {
-	gDotTexture.render(mBox.x, mBox.y);
-	renderParticles();
-}
-
-void Dot::renderParticles()
-{
-	for (int i = 0; i < TOTAL_PARTICLES; ++i)
-	{
-		if (particles[i]->isDead())
-		{
-			delete particles[i];
-			particles[i] = new Particle(mBox.x, mBox.y);
-		}
-	}
-	for (int i = 0; i < TOTAL_PARTICLES; ++i)
-	{
-		particles[i]->render();
-	}
-}
-
-LTimer::LTimer()
-{
-	mStartTicks = 0;
-	mPausedTicks = 0;
-	mPaused = false;
-	mStarted = false;
-}
-
-void LTimer::start()
-{
-	mStarted = true;
-	mPaused = false;
-	mStartTicks = SDL_GetTicks();
-	mPausedTicks = 0;
-}
-
-void LTimer::stop()
-{
-	mStarted = false;
-	mPaused = false;
-	mStartTicks = 0;
-	mPausedTicks = 0;
-}
-
-void LTimer::pause()
-{
-	if (mStarted && !mPaused)
-	{
-		mPaused = true;
-		mPausedTicks = SDL_GetTicks() - mStartTicks;
-		mStartTicks = 0;
-	}
-}
-
-void LTimer::unpause()
-{
-	if (mStarted && mPaused)
-	{
-		mPaused = false;
-		mStartTicks = SDL_GetTicks() - mPausedTicks;
-		mPausedTicks = 0;
-	}
-}
-
-Uint64 LTimer::getTicks()
-{
-	Uint64 time = 0;
-	if (mStarted)
-	{
-		if (mPaused)
-		{
-			time = mPausedTicks;
-		}
-		else
-		{
-			time = SDL_GetTicks() - mStartTicks;
-		}
-	}
-	return time;
-}
-
-bool LTimer::isStarted()
-{
-	return mStarted;
-}
-
-bool LTimer::isPaused()
-{
-	return mPaused && mStarted;
+	Distance distance = { mBox.w * 5.0f, mBox.h * 5.0f };
+	//gDotTexture.render(mBox.x - (distance.width / 2), mBox.y + (distance.height / 2));
+	gBoxFront.render(mBox.x, mBox.y, NULL, 0.0, NULL, SDL_FLIP_NONE, distance);
+	//renderParticles();
 }
 
 LWindow::LWindow()
 {
-	mWindow = NULL;
-	mRenderer = NULL;
+	window = NULL;
+	renderer = NULL;
 	mMouseFocus = false;
 	mKeyboardFocus = false;
 	mFullScreen = false;
 	mMinimized = false;
-	mWidth = 0;
-	mHeight = 0;
+	width = 0;
+	height = 0;
 }
 
-bool LWindow::init(bool bCreateRenderer)
+bool LWindow::Init(bool bCreateRenderer)
 {
 #ifdef _WIN32
 	if (bCreateRenderer)
 	{
-		if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE, &mWindow, &mRenderer))
+		if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer))
 		{
 			return false;
 		}
-		//SDL_SetRenderVSync(mRenderer, 1);
+		//SDL_SetRenderVSync(renderer, 1);
 		SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
 	}
 	else
 	{
-		mWindow = SDL_CreateWindow("SDL_Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
-		if (mWindow == NULL)
+		window = SDL_CreateWindow("SDL_Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
+		if (window == NULL)
 		{
 			return false;
 		}
@@ -900,47 +745,47 @@ bool LWindow::init(bool bCreateRenderer)
 
 	mMouseFocus = true;
 	mKeyboardFocus = true;
-	mWidth = SCREEN_WIDTH;
-	mHeight = SCREEN_HEIGHT;
+	width = SCREEN_WIDTH;
+	height = SCREEN_HEIGHT;
 	return true;
 #elif __linux__
-	mWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-	if (mWindow != NULL)
+	window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	if (window != NULL)
 	{
 		mMouseFocus = true;
 		mKeyboardFocus = true;
 		mWidth = SCREEN_WIDTH;
 		mHeight = SCREEN_HEIGHT;
 	}
-	return mWindow != NULL;
+	return window != NULL;
 #endif
 }
 
 #ifdef __linux__
 SDL_Renderer* LWindow::createRenderer()
 {
-	return SDL_CreateRenderer(mWindow, -1, SDL_RENDERER_ACCELERATED /*| SDL_RENDERER_PRESENTVSYNC*/);
+	return SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED /*| SDL_RENDERER_PRESENTVSYNC*/);
 }
 #endif
 
-SDL_Renderer* LWindow::getRenderer()
+SDL_Renderer* LWindow::GetRenderer()
 {
-	return mRenderer;
+	return renderer;
 }
 
-void LWindow::handleEvent(SDL_Event& e)
+void LWindow::HandleEvent(SDL_Event& event)
 {
 	bool updateCaption = false;
 
-	switch (e.type)
+	switch (event.type)
 	{
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_RESIZED:
 #elif __linux__
 	case SDL_WINDOWEVENT_SIZE_CHANGED:
 #endif
-		mWidth = e.window.data1;
-		mHeight = e.window.data2;
+		width = event.window.data1;
+		height = event.window.data2;
 		SDL_RenderPresent(gRenderer);
 		break;
 #ifdef _WIN32
@@ -1009,26 +854,26 @@ void LWindow::handleEvent(SDL_Event& e)
 	case SDL_KEYDOWN:
 #endif
 #ifdef _WIN32
-		if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_RETURN)
+		if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_RETURN)
 #elif __linux__
-		if (e.key.keysym.sym == SDLK_RETURN)
+		if (event.key.keysym.sym == SDLK_RETURN)
 #endif
 		{
 			if (mFullScreen)
 			{
 #ifdef _WIN32
-				SDL_SetWindowFullscreen(mWindow, false);
+				SDL_SetWindowFullscreen(window, false);
 #elif __linux__
-				SDL_SetWindowFullscreen(mWindow, 0);
+				SDL_SetWindowFullscreen(window, 0);
 #endif
 				mFullScreen = false;
 			}
 			else
 			{
 #ifdef _WIN32
-				SDL_SetWindowFullscreen(mWindow, true);
+				SDL_SetWindowFullscreen(window, true);
 #elif __linux__
-				SDL_SetWindowFullscreen(mWindow, SDL_WINDOW_FULLSCREEN_DESKTOP);
+				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 #endif
 				mFullScreen = true;
 				mMinimized = false;
@@ -1040,48 +885,48 @@ void LWindow::handleEvent(SDL_Event& e)
 	{
 		std::stringstream caption;
 		caption << "SDL Tutorial - MouseFocus:" << ((mMouseFocus) ? "On" : "Off") << " KeyboardFocus:" << ((mKeyboardFocus) ? "On" : "Off");
-		SDL_SetWindowTitle(mWindow, caption.str().c_str());
+		SDL_SetWindowTitle(window, caption.str().c_str());
 	}
 }
 
-void LWindow::free()
+void LWindow::Free()
 {
-	if (mWindow != NULL)
+	if (window != NULL)
 	{
-		SDL_DestroyWindow(mWindow);
+		SDL_DestroyWindow(window);
 	}
 	mMouseFocus = false;
 	mKeyboardFocus = false;
-	mWidth = 0;
-	mHeight = 0;
+	width = 0;
+	height = 0;
 }
 
-int LWindow::getWidth()
+int LWindow::GetWidth()
 {
-	return mWidth;
+	return width;
 }
 
-int LWindow::getHeight()
+int LWindow::GetHeight()
 {
-	return mHeight;
+	return height;
 }
 
-SDL_Window* LWindow::getWindow()
+SDL_Window* LWindow::GetWindow()
 {
-	return mWindow;
+	return window;
 }
 
-bool LWindow::hasMouseFocus()
+bool LWindow::HasMouseFocus()
 {
 	return mMouseFocus;
 }
 
-bool LWindow::hasKeyboardFocus()
+bool LWindow::HasKeyboardFocus()
 {
 	return mKeyboardFocus;
 }
 
-bool LWindow::isMinimized()
+bool LWindow::IsMinimized()
 {
 	return mMinimized;
 }
@@ -1094,7 +939,7 @@ LBitmapFont::LBitmapFont()
 
 bool LBitmapFont::buildFont(std::string path)
 {
-	free();
+	Free();
 	bool success = true;
 	if (!mFontTexture.loadPixelsFromFile(path.c_str()))
 	{
@@ -1104,8 +949,8 @@ bool LBitmapFont::buildFont(std::string path)
 	else
 	{
 		Uint32 bgColor = mFontTexture.getPixel32(0, 0);
-		int cellW = mFontTexture.getWidth() / 16;
-		int cellH = mFontTexture.getHeight() / 16;
+		int cellW = mFontTexture.GetWidth() / 16;
+		int cellH = mFontTexture.GetHeight() / 16;
 		int top = cellH;
 		int baseA = cellH;
 		int currentChar = 0;
@@ -1199,14 +1044,14 @@ bool LBitmapFont::buildFont(std::string path)
 	return success;
 }
 
-void LBitmapFont::free()
+void LBitmapFont::Free()
 {
-	mFontTexture.free();
+	mFontTexture.Free();
 }
 
 void LBitmapFont::renderText(int x, int y, std::string text)
 {
-	if (mFontTexture.getWidth() > 0)
+	if (mFontTexture.GetWidth() > 0)
 	{
 		int curX = x, curY = y;
 		for (int i = 0; i < text.length(); ++i)
@@ -1230,7 +1075,7 @@ void LBitmapFont::renderText(int x, int y, std::string text)
 	}
 }
 
-bool init()
+bool Init()
 {
 	bool success = true;
 
@@ -1362,7 +1207,7 @@ bool init()
 		}
 #endif
 		srand(SDL_GetTicks());
-		if (!gWindow.init(true))
+		if (!gWindow.Init(true))
 		{
 			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 			success = false;
@@ -1370,7 +1215,7 @@ bool init()
 		else
 		{
 #ifdef _WIN32
-			gRenderer = gWindow.getRenderer();
+			gRenderer = gWindow.GetRenderer();
 			//SDL_SetRenderVSync(gRenderer, 1);
 			SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -1394,7 +1239,7 @@ bool init()
 			}
 #endif
 			//gScreenSurface = SDL_GetWindowSurface(gWindow);
-			gScreenSurface = SDL_GetWindowSurface(gWindow.getWindow());
+			gScreenSurface = SDL_GetWindowSurface(gWindow.GetWindow());
 		}
 	}
 
@@ -1412,20 +1257,12 @@ bool loadMedia()
 	SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 
 	gTexture = loadTexture(load->Path("Whitebox_Square_1024x1024_000.png"), load, &success);
-	if (!gModulatedTexture.loadFromFile(load->Path("Landscape_Moon_3300x2550.png")))
-	{
-		SDL_Log("Failed to load front texture!\n");
-		success = false;
-	}
+	if (!(success = gModulatedTexture.loadFromFile(load->Path("Landscape_Moon_3300x2550.png")))) {}
 	else
 	{
 		gModulatedTexture.setBlendMode(SDL_BLENDMODE_BLEND);
 	}
-	if (!gWalkingSpriteSheetTexture.loadFromFile(load->Path("foo.png")))
-	{
-		SDL_Log("Failed to load walking animation texture!\n");
-		success = false;
-	}
+	if (!(success = gWalkingSpriteSheetTexture.loadFromFile(load->Path("Player_1024x1024.png")))) {}
 	else
 	{
 		gWalkingSpriteClips[0].x = 0;
@@ -1445,21 +1282,9 @@ bool loadMedia()
 		gWalkingSpriteClips[3].w = 64;
 		gWalkingSpriteClips[3].h = 205;
 	}
-	if (!gIconCursor.loadFromFile(load->Path("IconCursor.png")))
-	{
-		SDL_Log("Failed to load arrow texture!\n");
-		success = false;
-	}
-	if (!gSun.loadFromFile(load->Path("CharacterFairySun_000_256x256.png")))
-	{
-		SDL_Log("Failed to load CharacterFairySun_000_256x256 texture!\n");
-		success = false;
-	}
-	if (!gMoon.loadFromFile(load->Path("CharacterFairyMoon_000_256x256.png")))
-	{
-		SDL_Log("Failed to load CharacterFairyMoon_000_256x256 texture!\n");
-		success = false;
-	}
+	success = gIconCursor.loadFromFile(load->Path("IconCursor.png"));
+	success = gSun.loadFromFile(load->Path("CharacterFairySun_000_256x256.png"));
+	success = gMoon.loadFromFile(load->Path("CharacterFairyMoon_000_256x256.png"));
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "r+b");
 #elif __linux__
@@ -1514,11 +1339,7 @@ bool loadMedia()
 		SDL_RWclose(file);
 #endif
 	}
-	if (!gButtonSpriteSheetTexture.loadFromFile(load->Path("button.png")))
-	{
-		SDL_Log("Failed to load button sprite texture!\n");
-		success = false;
-	}
+	if (!(success = gButtonSpriteSheetTexture.loadFromFile(load->Path("button.png")))) {}
 	else
 	{
 		for (int i = 0; i < BUTTON_SPRITE_TOTAL; ++i)
@@ -1529,106 +1350,33 @@ bool loadMedia()
 			gSpriteClips[i].h = BUTTON_HEIGHT;
 		}
 		gButtons[0].setPosition(0, 0);
-		gButtons[1].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, 0);
-		gButtons[2].setPosition(0, SCREEN_HEIGHT - BUTTON_HEIGHT);
-		gButtons[3].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT);
+		gButtons[1].setPosition(gWindow.GetWidth() - BUTTON_WIDTH, 0);
+		gButtons[2].setPosition(0, gWindow.GetHeight() - BUTTON_HEIGHT);
+		gButtons[3].setPosition(gWindow.GetWidth() - BUTTON_WIDTH, gWindow.GetHeight() - BUTTON_HEIGHT);
 	}
 
-	if (!gDotTexture.loadFromFile(load->Path("CharacterFairySmallwig000_64x64.png")))
-	{
-		SDL_Log("Failed to load dot texture!\n");
-		success = false;
-	}
-	if (!gBGTexture.loadFromFile(load->Path("bg.png")))
-	{
-		SDL_Log("Failed to load background texture~\n");
-		success = false;
-	}
-	if (!gHorizons[0].loadFromFile(load->Path("Horizon000.png")))
-	{
-		SDL_Log("Failed to load background texture~\n");
-		success = false;
-	}
-	if (!gHorizons[1].loadFromFile(load->Path("Horizon001.png")))
-	{
-		SDL_Log("Failed to load background texture~\n");
-		success = false;
-	}
-	if (!gHorizons[2].loadFromFile(load->Path("Horizon002.png")))
-	{
-		SDL_Log("Failed to load background texture~\n");
-		success = false;
-	}
-	if (!gHorizons[3].loadFromFile(load->Path("Horizon003.png")))
-	{
-		SDL_Log("Failed to load background texture~\n");
-		success = false;
-	}
-	if (!gHorizons[4].loadFromFile(load->Path("Horizon004.png")))
-	{
-		SDL_Log("Failed to load background texture~\n");
-		success = false;
-	}
-	if (!gHorizons[5].loadFromFile(load->Path("Horizon005.png")))
-	{
-		SDL_Log("Failed to load background texture~\n");
-		success = false;
-	}
-	if (!gHorizons[6].loadFromFile(load->Path("Horizon006.png")))
-	{
-		SDL_Log("Failed to load background texture~\n");
-		success = false;
-	}
-	if (!gHorizons[7].loadFromFile(load->Path("Horizon007.png")))
-	{
-		SDL_Log("Failed to load background texture~\n");
-		success = false;
-	}
-	if (!gBoxes[KEY_PRESS_SURFACE_UP].loadFromFile(load->Path("BoxUp.png")))
-	{
-		SDL_Log("Failed to load BoxUp texture~\n");
-		success = false;
-	}
-	if (!gBoxes[KEY_PRESS_SURFACE_DOWN].loadFromFile(load->Path("BoxDown.png")))
-	{
-		SDL_Log("Failed to load BoxDown texture~\n");
-		success = false;
-	}
-	if (!gBoxes[KEY_PRESS_SURFACE_LEFT].loadFromFile(load->Path("BoxLeft.png")))
-	{
-		SDL_Log("Failed to load BoxLeft texture~\n");
-		success = false;
-	}
-	if (!gBoxes[KEY_PRESS_SURFACE_RIGHT].loadFromFile(load->Path("BoxRight.png")))
-	{
-		SDL_Log("Failed to load BoxRight texture~\n");
-		success = false;
-	}
-	if (!characterFairyHopeful.loadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png")))
-	{
-		SDL_Log("Failed to load CharacterFairyHopeful_000_256x256 texture~\n");
-		success = false;
-	}
-	if (!gRedTexture.loadFromFile(load->Path("CharacterFairySmallcol000_64x64.png")))
-	{
-		SDL_Log("Failed to load red texture!\n");
-		success = false;
-	}
-	if (!gGreenTexture.loadFromFile(load->Path("CharacterFairySmalling000_64x64.png")))
-	{
-		SDL_Log("Failed to load green texture!\n");
-		success = false;
-	}
-	if (!gBlueTexture.loadFromFile(load->Path("CharacterFairySmallbin000_64x64.png")))
-	{
-		SDL_Log("Failed to load blue texture!\n");
-		success = false;
-	}
-	if (!gShimmerTexture.loadFromFile(load->Path("CharacterFairySmallton000_64x64.png")))
-	{
-		SDL_Log("Failed to load shimmer texture!\n");
-		success = false;
-	}
+	success = gDotTexture.loadFromFile(load->Path("CharacterFairySmallwig000_64x64.png"));
+	success = gBGTexture.loadFromFile(load->Path("bg.png"));
+	success = gHorizons[0].loadFromFile(load->Path("Horizon000.png"));
+	success = gHorizons[1].loadFromFile(load->Path("Horizon001.png"));
+	success = gHorizons[2].loadFromFile(load->Path("Horizon002.png"));
+	success = gHorizons[3].loadFromFile(load->Path("Horizon003.png"));
+	success = gHorizons[4].loadFromFile(load->Path("Horizon004.png"));
+	success = gHorizons[5].loadFromFile(load->Path("Horizon005.png"));
+	success = gHorizons[6].loadFromFile(load->Path("Horizon006.png"));
+	success = gHorizons[7].loadFromFile(load->Path("Horizon007.png"));
+	success = gBoxes[KEY_PRESS_SURFACE_UP].loadFromFile(load->Path("BoxUp.png"));
+	success = gBoxes[KEY_PRESS_SURFACE_DOWN].loadFromFile(load->Path("BoxDown.png"));
+	success = gBoxes[KEY_PRESS_SURFACE_LEFT].loadFromFile(load->Path("BoxLeft.png"));
+	success = gBoxes[KEY_PRESS_SURFACE_RIGHT].loadFromFile(load->Path("BoxRight.png"));
+	success = gBoxFront.loadFromFile(load->Path("BoxFront.png"));
+	success = gPlayerHighlight.loadFromFile(load->Path("PlayerHighlight_000_1024x1024.png"));
+	success = characterFairyHopeful.loadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png"));
+	success = gRedTexture.loadFromFile(load->Path("CharacterFairySmallcol000_64x64.png"));
+	success = gGreenTexture.loadFromFile(load->Path("CharacterFairySmalling000_64x64.png"));
+	success = gBlueTexture.loadFromFile(load->Path("CharacterFairySmallbin000_64x64.png"));
+	success = gShimmerTexture.loadFromFile(load->Path("CharacterFairySmallton000_64x64.png"));
+	//mSurfacePixels = IMG_Load(path);
 	gRedTexture.setAlpha(192);
 	gGreenTexture.setAlpha(192);
 	gBlueTexture.setAlpha(192);
@@ -1638,7 +1386,7 @@ bool loadMedia()
 		SDL_Log("Failed to load bitmap font!\n");
 		success = false;
 	}
-	if (!gTargetTexture.createBlank(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_TEXTUREACCESS_TARGET))
+	if (!gTargetTexture.createBlank(gWindow.GetWidth(), gWindow.GetHeight(), SDL_TEXTUREACCESS_TARGET))
 	{
 		SDL_Log("Failed to create target texture!\n");
 		success = false;
@@ -1654,12 +1402,12 @@ void close()
 
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
-	gModulatedTexture.free();
-	gWalkingSpriteSheetTexture.free();
-	gIconCursor.free();
-	gSun.free();
-	gMoon.free();
-	gButtonSpriteSheetTexture.free();
+	gModulatedTexture.Free();
+	gWalkingSpriteSheetTexture.Free();
+	gIconCursor.Free();
+	gSun.Free();
+	gMoon.Free();
+	gButtonSpriteSheetTexture.Free();
 	if (gGameController != NULL)
 	{
 #ifdef _WIN32
@@ -1687,17 +1435,19 @@ void close()
 	gGameController = NULL;
 	gJoystick = NULL;
 	gJoyHaptic = NULL;
-	gDotTexture.free();
-	gBGTexture.free();
+	gDotTexture.Free();
+	gBGTexture.Free();
 	for (int i = 0; i < HORIZON_SIZE; ++i)
 	{
-		gHorizons[i].free();
+		gHorizons[i].Free();
 	}
 	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i)
 	{
-		gBoxes[i].free();
+		gBoxes[i].Free();
 	}
-	characterFairyHopeful.free();
+	gBoxFront.Free();
+	gPlayerHighlight.Free();
+	characterFairyHopeful.Free();
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "w+b");
 #elif __linux__
@@ -1723,16 +1473,16 @@ void close()
 	{
 		SDL_Log("Error: Unable to save file!\n", SDL_GetError());
 	}
-	gRedTexture.free();
-	gGreenTexture.free();
-	gBlueTexture.free();
-	gShimmerTexture.free();
-	gBitmapFont.free();
-	gTargetTexture.free();
+	gRedTexture.Free();
+	gGreenTexture.Free();
+	gBlueTexture.Free();
+	gShimmerTexture.Free();
+	gBitmapFont.Free();
+	gTargetTexture.Free();
 
 	delete load;
 	SDL_DestroyRenderer(gRenderer);
-	gWindow.free();
+	gWindow.Free();
 	SDL_Quit();
 }
 
@@ -1769,10 +1519,8 @@ int main(int argc, char* argv[])
 	Timer* myTimer = new Timer(Timer::Print, 1);
 	Load* load = new Load(SDL_GetBasePath());
 	const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
-	Tile** tiles = new Tile*[GRID_SIZE];
-	Tile* player = new Tile;
 
-	if (!init())
+	if (!Init())
 	{
 		SDL_Log("Failed to initialize!\n");
 	}
@@ -1797,42 +1545,24 @@ int main(int argc, char* argv[])
 			int yDir = 0;
 			SDL_Color textColor = { 0, 0, 0, 255 };
 			Uint64 startTime = 0;
-			LTimer fpsTimer;
-			LTimer capTimer;
 			int countedFrames = 0;
-			fpsTimer.start();
 			Dot dot;
-#ifdef _WIN32
-			SDL_FRect fwall;
-#elif __linux__
-			SDL_Rect fwall;
-#endif
-			SDL_Rect wall;
-			wall.x = 300;
-			wall.y = 40;
-			wall.w = 40;
-			wall.h = 400;
 			int backgroundScrollingOffset = 0;
 			int horizonScrollingOffset = 0;
 			std::string inputText = "Input";
 			int currentData = 0;
 			SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
-#ifdef _WIN32
-			SDL_StartTextInput(gWindow.getWindow());
-#elif __linux__
-			SDL_StartTextInput();
-#endif
 			double minuteAngle = 0;
 			double hourAngle = 0;
 			double halfDayAngle = 0;
 			double fullDayAngle = 0;
 #ifdef _WIN32
-			SDL_FPoint screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+			SDL_FPoint screenCenter = { gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
 #elif __linux__
-			SDL_Point screenCenter = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+			SDL_Point screenCenter = { gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
 #endif
 			bool isDebug = false;
-			bool isDebugReleased = false;
+			bool isInput = false;
 #ifdef _WIN32
 			float mouseX, mouseY;
 #elif __linux__
@@ -1855,6 +1585,8 @@ int main(int argc, char* argv[])
 			int playerJ = 0;
 			int dotI = 0;
 			int dotJ = 0;
+			float dotNormalI = 0.0f;
+			float dotNormalJ = 0.0f;
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -1920,14 +1652,13 @@ int main(int argc, char* argv[])
 
 				SDL_GetMouseState(&mouseX, &mouseY);
 				myTimer->Update();
-				capTimer.start();
 				while (SDL_PollEvent(&e) != 0)
 				{
 					if (IsWindowQuit(e)) quit = true;
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)
 #elif __linux__
-					else if (e.type == SDL_JOYBUTTONDOWN)
+					else if (event.type == SDL_JOYBUTTONDOWN)
 #endif
 					{
 						if (gGameController != NULL)
@@ -1956,10 +1687,10 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_AXIS_MOTION)
 #elif __linux__
-					else if (e.type == SDL_JOYAXISMOTION)
+					else if (event.type == SDL_JOYAXISMOTION)
 #endif
 					{
-						//if (e.jaxis.which == 0)
+						//if (event.jaxis.which == 0)
 						//{
 						if (e.jaxis.axis == 0)
 						{
@@ -1999,7 +1730,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 						switch (e.key.key)
 #elif __linux__
-						switch (e.key.keysym.sym)
+						switch (event.key.keysym.sym)
 #endif
 						{
 						case SDLK_HOME:
@@ -2011,11 +1742,14 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 						switch (e.key.key)
 #elif __linux__
-						switch (e.key.keysym.sym)
+						switch (event.key.keysym.sym)
 #endif
 						{
 						case SDLK_HOME:
 							isDebug = !isDebug;
+							if (isInput) StopTextInput(gWindow.GetWindow());
+							else StartTextInput(gWindow.GetWindow());
+							isInput = !isInput;
 							break;
 						case SDLK_END:
 							switch (gDirection)
@@ -2089,13 +1823,13 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					if (e.type == SDL_EVENT_KEY_DOWN)
 #elif __linux__
-					if (e.type == SDL_KEYDOWN)
+					if (event.type == SDL_KEYDOWN)
 #endif
 					{
 #ifdef _WIN32
 						if (e.key.key == SDLK_BACKSPACE && inputText.length() > 0)
 #elif __linux__
-						if (e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0)
+						if (event.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0)
 #endif
 						{
 							inputText.pop_back();
@@ -2103,7 +1837,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 						else if (e.key.key == SDLK_C && SDL_GetModState() & SDL_KMOD_CTRL)
 #elif __linux__
-						else if (e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL)
+						else if (event.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL)
 #endif
 						{
 							SDL_SetClipboardText(inputText.c_str());
@@ -2111,7 +1845,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 						else if (e.key.key == SDLK_V && SDL_GetModState() & SDL_KMOD_CTRL)
 #elif __linux__
-						else if (e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL)
+						else if (event.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL)
 #endif
 						{
 							char* tempText = SDL_GetClipboardText();
@@ -2122,13 +1856,13 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_TEXT_INPUT)
 #elif __linux__
-					else if (e.type == SDL_TEXTINPUT)
+					else if (event.type == SDL_TEXTINPUT)
 #endif
 					{
 #ifdef _WIN32
 						if (!(SDL_GetModState() & SDL_KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
 #elif __linux__
-						if (!(SDL_GetModState() & KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V')))
+						if (!(SDL_GetModState() & KMOD_CTRL && (event.text.text[0] == 'c' || event.text.text[0] == 'C' || event.text.text[0] == 'v' || event.text.text[0] == 'V')))
 #endif
 						{
 							inputText += e.text.text;
@@ -2136,12 +1870,12 @@ int main(int argc, char* argv[])
 					}
 					for (int i = 0; i < TOTAL_BUTTONS; ++i)
 					{
-						gButtons[i].handleEvent(&e);
+						gButtons[i].HandleEvent(&e);
 					}
-					dot.handleEvent(e);
-					gWindow.handleEvent(e);
+					dot.HandleEvent(e);
+					gWindow.HandleEvent(e);
 				}
-				if (!gWindow.isMinimized())
+				if (!gWindow.IsMinimized())
 				{
 					SDL_RenderClear(gRenderer);
 
@@ -2161,29 +1895,29 @@ int main(int argc, char* argv[])
 					switch (gDirection)
 					{
 					case DIRECTION_UP:
-						backgroundScrollingOffset = -gBGTexture.getHeight() * minuteNormal;
-						if (backgroundScrollingOffset < -gBGTexture.getHeight())
+						backgroundScrollingOffset = -gBGTexture.GetHeight() * minuteNormal;
+						if (backgroundScrollingOffset < -gBGTexture.GetHeight())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
 					case DIRECTION_DOWN:
-						backgroundScrollingOffset = gBGTexture.getHeight() * minuteNormal;
-						if (backgroundScrollingOffset > gBGTexture.getHeight())
+						backgroundScrollingOffset = gBGTexture.GetHeight() * minuteNormal;
+						if (backgroundScrollingOffset > gBGTexture.GetHeight())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
 					case DIRECTION_LEFT:
-						backgroundScrollingOffset = -gBGTexture.getWidth() * minuteNormal;
-						if (backgroundScrollingOffset < -gBGTexture.getWidth())
+						backgroundScrollingOffset = -gBGTexture.GetWidth() * minuteNormal;
+						if (backgroundScrollingOffset < -gBGTexture.GetWidth())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
 					case DIRECTION_RIGHT:
-						backgroundScrollingOffset = gBGTexture.getWidth() * minuteNormal;
-						if (backgroundScrollingOffset > gBGTexture.getWidth())
+						backgroundScrollingOffset = gBGTexture.GetWidth() * minuteNormal;
+						if (backgroundScrollingOffset > gBGTexture.GetWidth())
 						{
 							backgroundScrollingOffset = 0;
 						}
@@ -2196,146 +1930,71 @@ int main(int argc, char* argv[])
 					fullDayAngle = 360 * fullDayNormal;
 
 #ifdef _WIN32
-					SDL_FRect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+					SDL_FRect fillRect = { gWindow.GetWidth() / 4, gWindow.GetHeight() / 4, gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
 #elif __linux__
-					SDL_Rect fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+					SDL_Rect fillRect = { gWindow.GetWidth() / 4, gWindow.GetHeight() / 4, gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
 #endif
 #ifdef _WIN32
-					SDL_FRect outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
+					SDL_FRect outlineRect = { gWindow.GetWidth() / 6, gWindow.GetHeight() / 6, gWindow.GetWidth() * 2 / 3, gWindow.GetHeight() * 2 / 3 };
 #elif __linux__
-					SDL_Rect outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
+					SDL_Rect outlineRect = { gWindow.GetWidth() / 6, gWindow.GetHeight() / 6, gWindow.GetWidth() * 2 / 3, gWindow.GetHeight() * 2 / 3 };
 #endif
 
 					switch (gDirection)
 					{
 					case DIRECTION_UP:
 						gBGTexture.render(0, backgroundScrollingOffset);
-						gBGTexture.render(0, backgroundScrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(0, backgroundScrollingOffset + (gBGTexture.getHeight() * 2));
-						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset);
-						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset + (gBGTexture.getHeight() * 2));
+						gBGTexture.render(0, backgroundScrollingOffset + gBGTexture.GetHeight());
+						gBGTexture.render(0, backgroundScrollingOffset + (gBGTexture.GetHeight() * 2));
+						gBGTexture.render(gBGTexture.GetWidth(), backgroundScrollingOffset);
+						gBGTexture.render(gBGTexture.GetWidth(), backgroundScrollingOffset + gBGTexture.GetHeight());
+						gBGTexture.render(gBGTexture.GetWidth(), backgroundScrollingOffset + (gBGTexture.GetHeight() * 2));
 						break;
 					case DIRECTION_DOWN:
 						gBGTexture.render(0, backgroundScrollingOffset);
-						gBGTexture.render(0, backgroundScrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(0, backgroundScrollingOffset - gBGTexture.getHeight());
-						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset);
-						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset + gBGTexture.getHeight());
-						gBGTexture.render(gBGTexture.getWidth(), backgroundScrollingOffset - gBGTexture.getHeight());
+						gBGTexture.render(0, backgroundScrollingOffset + gBGTexture.GetHeight());
+						gBGTexture.render(0, backgroundScrollingOffset - gBGTexture.GetHeight());
+						gBGTexture.render(gBGTexture.GetWidth(), backgroundScrollingOffset);
+						gBGTexture.render(gBGTexture.GetWidth(), backgroundScrollingOffset + gBGTexture.GetHeight());
+						gBGTexture.render(gBGTexture.GetWidth(), backgroundScrollingOffset - gBGTexture.GetHeight());
 						break;
 					case DIRECTION_LEFT:
 						gBGTexture.render(backgroundScrollingOffset, 0);
-						gBGTexture.render(backgroundScrollingOffset + gBGTexture.getWidth(), 0);
-						gBGTexture.render(backgroundScrollingOffset + (gBGTexture.getWidth() * 2), 0);
-						gBGTexture.render(backgroundScrollingOffset, gBGTexture.getHeight());
-						gBGTexture.render(backgroundScrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
-						gBGTexture.render(backgroundScrollingOffset + (gBGTexture.getWidth() * 2), gBGTexture.getHeight());
+						gBGTexture.render(backgroundScrollingOffset + gBGTexture.GetWidth(), 0);
+						gBGTexture.render(backgroundScrollingOffset + (gBGTexture.GetWidth() * 2), 0);
+						gBGTexture.render(backgroundScrollingOffset, gBGTexture.GetHeight());
+						gBGTexture.render(backgroundScrollingOffset + gBGTexture.GetWidth(), gBGTexture.GetHeight());
+						gBGTexture.render(backgroundScrollingOffset + (gBGTexture.GetWidth() * 2), gBGTexture.GetHeight());
 						break;
 					case DIRECTION_RIGHT:
 						gBGTexture.render(backgroundScrollingOffset, 0);
-						gBGTexture.render(backgroundScrollingOffset + gBGTexture.getWidth(), 0);
-						gBGTexture.render(backgroundScrollingOffset - gBGTexture.getWidth(), 0);
-						gBGTexture.render(backgroundScrollingOffset, gBGTexture.getHeight());
-						gBGTexture.render(backgroundScrollingOffset + gBGTexture.getWidth(), gBGTexture.getHeight());
-						gBGTexture.render(backgroundScrollingOffset - gBGTexture.getWidth(), gBGTexture.getHeight());
+						gBGTexture.render(backgroundScrollingOffset + gBGTexture.GetWidth(), 0);
+						gBGTexture.render(backgroundScrollingOffset - gBGTexture.GetWidth(), 0);
+						gBGTexture.render(backgroundScrollingOffset, gBGTexture.GetHeight());
+						gBGTexture.render(backgroundScrollingOffset + gBGTexture.GetWidth(), gBGTexture.GetHeight());
+						gBGTexture.render(backgroundScrollingOffset - gBGTexture.GetWidth(), gBGTexture.GetHeight());
 						break;
 					}
 					SDL_Rect fullscreenViewport;
 					fullscreenViewport.x = 0;
 					fullscreenViewport.y = 0;
-					fullscreenViewport.w = gWindow.getWidth();
-					fullscreenViewport.h = gWindow.getHeight();
+					fullscreenViewport.w = gWindow.GetWidth();
+					fullscreenViewport.h = gWindow.GetHeight();
 					if (isDebug)
 					{
 						SetRenderViewport(gRenderer, &fullscreenViewport);
 						gModulatedTexture.render(0, 0);
 						RenderTexture(gRenderer, gModulatedTexture.getTexture());
 					}
-					dot.move(0.01f);
-					dot.setIJ(&dotI, &dotJ);
+					dot.move((double)gWindow.GetWidth() * 0.000025, (double)gWindow.GetHeight() * 0.000025);
+					dot.setIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ);
 
 					SDL_Rect middleViewport;
-					middleViewport.x = (gWindow.getWidth() * 0.5f) - 100;
-					middleViewport.y = (gWindow.getHeight() * 0.5f) - 100;
+					middleViewport.x = (gWindow.GetWidth() * 0.5f) - 100;
+					middleViewport.y = (gWindow.GetHeight() * 0.5f) - 100;
 					middleViewport.w = 200;
 					middleViewport.h = 200;
-					SDL_Rect circleViewport;
-					float xOffset = (middleViewport.w * trisecondNormal);
-					if (trisecondToggle) xOffset = middleViewport.w * (1.0f - trisecondNormal);
-					circleViewport.w = middleViewport.w;
-					circleViewport.h = middleViewport.h;
-					circleViewport.x = middleViewport.x - (circleViewport.w / 2) + xOffset;
-					circleViewport.y = middleViewport.y;
-
-					double radians = (360.0 * trisecondNormal) * (M_PI / 180.0);
-					double circleX = cos(radians) * (middleViewport.w / 2);
-					double circleY = sin(radians) * (middleViewport.h / 2);
-					if (trisecondToggle)
-					{
-						circleY = circleY * trisecondNormal;
-					}
-					else
-					{
-						circleY = circleY * (1.0f - trisecondNormal);
-					}
-					SDL_Rect radianViewport;
-					radianViewport.x = middleViewport.x + (middleViewport.w / 2) + circleX;
-					radianViewport.y = middleViewport.y + (middleViewport.h / 2) + circleY;
-					if (trisecondToggle)
-					{
-						radianViewport.w = 100 * trisecondNormal;
-						radianViewport.h = 100 * trisecondNormal;
-					}
-					else
-					{
-						radianViewport.w = 100 * (1.0f - trisecondNormal);
-						radianViewport.h = 100 * (1.0f - trisecondNormal);
-					}
-
-					if (!trisecondToggle)
-					{
-						SetRenderViewport(gRenderer, &radianViewport);
-						RenderTexture(gRenderer, characterFairyHopeful.getTexture());
-					}
-					SetRenderViewport(gRenderer, &middleViewport);
-					gWalkingSpriteSheetTexture.render(
-						(middleViewport.w - currentClip->w) / 2,
-						(middleViewport.h - currentClip->h) / 2,
-						currentClip);
-					SDL_Rect bottomViewport = middleViewport;
-					bottomViewport.y += bottomViewport.h / 2;
-					SetRenderViewport(gRenderer, &bottomViewport);
-					RenderTexture(gRenderer, gBox->getTexture());
-					if (trisecondToggle)
-					{
-						SetRenderViewport(gRenderer, &radianViewport);
-						RenderTexture(gRenderer, characterFairyHopeful.getTexture());
-					}
-
 					SetRenderViewport(gRenderer, NULL);
-					gSun.render(
-						0,
-						0,
-						NULL,
-						-minuteAngle);
-					gMoon.render(
-						gWindow.getWidth() - gMoon.getWidth(),
-						0,
-						NULL,
-						minuteAngle);
-					gIconCursor.render(
-						0,
-						gWindow.getHeight() - gIconCursor.getHeight(),
-						NULL,
-						joystickAngle);
-					gIconCursor.render(
-						gWindow.getWidth() - gIconCursor.getWidth(),
-						gWindow.getHeight() - gIconCursor.getHeight(),
-						NULL,
-						degrees,
-						NULL,
-						flipType);
 					float normal = secondNormal;
 					float flippyNormal = trisecondNormal;
 					if (trisecondToggle)
@@ -2343,8 +2002,11 @@ int main(int argc, char* argv[])
 						flippyNormal = 1.0f - trisecondNormal;
 					}
 					float centerX = mouseX;
-					float centerY = gWindow.getHeight() - mouseY;
+					if (centerX > gWindow.GetWidth() * 0.15f) centerX = gWindow.GetWidth() * 0.15f;
+					float centerY = gWindow.GetHeight() - mouseY;
+					if (centerY > gWindow.GetHeight() * 0.5f) centerY = gWindow.GetHeight() * 0.5f;
 					int horizonI = 0;
+					SDL_Rect defaultRect = { -1, -1, -1, -1 };
 					for (int i = ROW_SIZE - 1; i >= 0 ; --i)
 					{
 						normal = (float)i / (float)ROW_SIZE;
@@ -2352,24 +2014,25 @@ int main(int argc, char* argv[])
 						middleViewport.w = centerX / ROW_SIZE;
 						middleViewport.h = centerY / ROW_SIZE;
 						float y = 
-							gWindow.getHeight()
+							gWindow.GetHeight()
 							- middleViewport.h
 							- ((0 + centerY) * normal);
 						middleViewport.x = x;
 						middleViewport.y = y;
 						SDL_Rect leftViewport = middleViewport;
-
-						x = gWindow.getWidth() - middleViewport.w - ((0 + centerX) * normal);
+						x = gWindow.GetWidth() - middleViewport.w - ((0 + centerX) * normal);
 						middleViewport.w = centerX / ROW_SIZE;
 						middleViewport.h = centerY / ROW_SIZE;
 						y = 
-							gWindow.getHeight()
+							gWindow.GetHeight()
 							- middleViewport.h
 							- ((0 + centerY) * normal);
 						middleViewport.x = x;
 						middleViewport.y = y;
 						SDL_Rect rightViewport = middleViewport;
-
+						SDL_Rect topLeft = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
+						SDL_Rect farLeft = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
+						SDL_Rect farRight = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 						for (int j = 0; j < ROW_SIZE; ++j)
 						{
 							float width = rightViewport.x + rightViewport.w - leftViewport.x;
@@ -2378,7 +2041,7 @@ int main(int argc, char* argv[])
 							middleViewport.w = width / ROW_SIZE;
 							middleViewport.h = middleViewport.w;
 							y = 
-								gWindow.getHeight()
+								gWindow.GetHeight()
 								- middleViewport.h
 								- ((0 + centerY) * normal);
 							middleViewport.x = x;
@@ -2396,34 +2059,170 @@ int main(int argc, char* argv[])
 							{
 								horizonI = 0;
 							}
-							//std::cout << dotI << ", " << dotJ << std::endl;
 							if (dotI == i && dotJ == j)
 							{
-								//gWalkingSpriteSheetTexture.render(
-								//	(middleViewport.w - currentClip->w) / 2,
-								//	(middleViewport.h - currentClip->h) / 2,
-								//	currentClip);
-								//RenderTexture(gRenderer, gSun.getTexture());
-								RenderTexture(gRenderer, gTexture);
-								RenderTexture(gRenderer, gBox->getTexture());
+								RenderTexture(gRenderer, gPlayerHighlight.getTexture());
+							}
+							Distance distance = { middleViewport.w, middleViewport.h };
+							if (i == 0 && j == 0)
+							{
+								gIconCursor.render(
+									0,
+									0,
+									NULL,
+									joystickAngle,
+									NULL,
+									flipType,
+									distance);
+							}
+							if (i == 0 && j == 0)
+							{
+								topLeft.x = middleViewport.x;
+								topLeft.y = middleViewport.y;
+								topLeft.w = middleViewport.w;
+								topLeft.h = middleViewport.h;
+							}
+							if (j == 0)
+							{
+								farLeft.x = middleViewport.x;
+								farLeft.y = middleViewport.y;
+								farLeft.w = middleViewport.w;
+								farLeft.h = middleViewport.h;
+							}
+							if (i == 0 && j == ROW_SIZE - 1)
+							{
+								farRight.x = middleViewport.x;
+								farRight.y = middleViewport.y;
+								farRight.w = middleViewport.w;
+								farRight.h = middleViewport.h;
+							}
+							if (i == 0 && j == ROW_SIZE - 1)
+							{
+								gIconCursor.render(
+									0,
+									0,
+									NULL,
+									degrees,
+									NULL,
+									flipType,
+									distance);
+							}
+							if (i == ROW_SIZE - 1 && j == 0)
+							{
+								gSun.render(
+									0,
+									0,
+									NULL,
+									-minuteAngle,
+									NULL,
+									SDL_FLIP_NONE,
+									distance);
+							}
+							if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1)
+							{
+								gMoon.render(
+									0,
+									0,
+									NULL,
+									minuteAngle,
+									NULL,
+									SDL_FLIP_NONE,
+									distance);
+							}
+							if (i == ROW_SIZE - 1 && j == 0)
+							{
+								SetRenderViewport(gRenderer, NULL);
+								int x = 0;
+								int y = middleViewport.y - (middleViewport.h * 2.0f);
+								if (y < 0)
+								{
+									y = 0;
+								}
+								if (inputText != "")
+								{
+									gBitmapFont.renderText(x, y, inputText.c_str());
+								}
+								else
+								{
+									gBitmapFont.renderText(x, y, "");
+								}
+								//gBitmapFont.renderText(0, 0, std::to_string(gData[currentData]).c_str());
 								SetRenderViewport(gRenderer, &middleViewport);
 							}
 							if (playerI == i && playerJ == j)
 							{
-								RenderTexture(gRenderer, gTexture);
+								//RenderTexture(gRenderer, gTexture);
+								//RenderTexture(gRenderer, gBox->getTexture());
+							}
+
+							SDL_Rect walkingSpriteViewport;
+							walkingSpriteViewport.x = farLeft.x + ((farLeft.w * ROW_SIZE) * dotNormalJ) - (farLeft.w / 3);
+							walkingSpriteViewport.y = farLeft.y - (farLeft.h * 0.5f);
+							walkingSpriteViewport.w = farLeft.w / 2;
+							walkingSpriteViewport.h = farLeft.h / 2;
+							if (dotI == i)
+							{
+								SetRenderViewport(gRenderer, &walkingSpriteViewport);
 								RenderTexture(gRenderer, gBox->getTexture());
+								SetRenderViewport(gRenderer, &walkingSpriteViewport);
+							}
+							if (dotI == i && dotJ == j)
+							{
+
+								SDL_Rect circleViewport;
+								float xOffset = (walkingSpriteViewport.w * trisecondNormal);
+								if (trisecondToggle) xOffset = walkingSpriteViewport.w * (1.0f - trisecondNormal);
+								circleViewport.w = walkingSpriteViewport.w;
+								circleViewport.h = walkingSpriteViewport.h;
+								circleViewport.x = walkingSpriteViewport.x - (circleViewport.w / 2) + xOffset;
+								circleViewport.y = walkingSpriteViewport.y;
+
+								double radians = (360.0 * trisecondNormal) * (M_PI / 180.0);
+								double circleX = cos(radians) * (walkingSpriteViewport.w / 2);
+								double circleY = sin(radians) * (walkingSpriteViewport.h / 2);
+								if (trisecondToggle)
+								{
+									circleY = circleY * trisecondNormal;
+								}
+								else
+								{
+									circleY = circleY * (1.0f - trisecondNormal);
+								}
+								SDL_Rect radianViewport;
+								radianViewport.x = walkingSpriteViewport.x + (walkingSpriteViewport.w / 2) + circleX;
+								radianViewport.y = walkingSpriteViewport.y + (walkingSpriteViewport.h / 2) + circleY;
+								if (trisecondToggle)
+								{
+									radianViewport.w = 100 * trisecondNormal;
+									radianViewport.h = 100 * trisecondNormal;
+								}
+								else
+								{
+									radianViewport.w = 100 * (1.0f - trisecondNormal);
+									radianViewport.h = 100 * (1.0f - trisecondNormal);
+								}
+
+								if (!trisecondToggle)
+								{
+									SetRenderViewport(gRenderer, &radianViewport);
+									RenderTexture(gRenderer, characterFairyHopeful.getTexture());
+								}
 								SetRenderViewport(gRenderer, &middleViewport);
+								SDL_Rect bottomViewport = middleViewport;
+								bottomViewport.y += bottomViewport.h / 2;
+								SetRenderViewport(gRenderer, &bottomViewport);
+								if (trisecondToggle)
+								{
+									SetRenderViewport(gRenderer, &radianViewport);
+									RenderTexture(gRenderer, characterFairyHopeful.getTexture());
+								}
 							}
 						}
 					}
 
 					SetRenderViewport(gRenderer, &fullscreenViewport);
-					SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, 0, 0);
-					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, gWindow.getWidth(), 0);
-					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, 0, gWindow.getHeight());
-					RenderLine(gRenderer, centerX, gWindow.getHeight() - centerY, gWindow.getWidth(), gWindow.getHeight());
 					dot.render();
+					SetRenderViewport(gRenderer, NULL);
 
 					if (isDebug)
 					{
@@ -2434,37 +2233,29 @@ int main(int argc, char* argv[])
 						gTargetTexture.setAsRenderTarget();
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
 						SDL_RenderClear(gRenderer);
-						fillRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+						fillRect = { (float)gWindow.GetWidth() / 4, (float)gWindow.GetHeight() / 4, (float)gWindow.GetWidth() / 2, (float)gWindow.GetHeight() / 2 };
 						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0x00, 0x00, 0xFF);
 						SDL_RenderFillRect(gRenderer, &fillRect);
-						outlineRect = { SCREEN_WIDTH / 6, SCREEN_HEIGHT / 6, SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT * 2 / 3 };
+						outlineRect = { (float)gWindow.GetWidth() / 6, (float)gWindow.GetHeight() / 6, (float)gWindow.GetWidth() * 2 / 3, (float)gWindow.GetHeight() * 2 / 3 };
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
 						RenderRect(gRenderer, &outlineRect);
 						SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0xFF, 0xFF);
-						RenderLine(gRenderer, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+						RenderLine(gRenderer, 0, gWindow.GetHeight() / 2, gWindow.GetWidth(), gWindow.GetHeight() / 2);
 						SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0x00, 0xFF);
-						for (int i = 0; i < SCREEN_HEIGHT; i += 4)
+						for (int i = 0; i < gWindow.GetHeight(); i += 4)
 						{
-							RenderPoint(gRenderer, SCREEN_WIDTH / 2, i);
+							RenderPoint(gRenderer, gWindow.GetWidth() / 2, i);
 						}
 						SDL_SetRenderTarget(gRenderer, NULL);
-						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, fullDayAngle, &screenCenter);
-						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, halfDayAngle, &screenCenter);
-						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, hourAngle, &screenCenter);
-						gTargetTexture.render(-SCREEN_WIDTH * 0.25f, -SCREEN_HEIGHT * 0.25f, NULL, minuteAngle, &screenCenter);
-						if (inputText != "")
-						{
-							gBitmapFont.renderText(0, gWindow.getHeight() - 128, inputText.c_str());
-						}
-						else
-						{
-							gBitmapFont.renderText(0, gWindow.getHeight() - 128, "");
-						}
+						gTargetTexture.render(-gWindow.GetWidth() * 0.25f, -gWindow.GetHeight() * 0.25f, NULL, fullDayAngle, &screenCenter);
+						gTargetTexture.render(-gWindow.GetWidth() * 0.25f, -gWindow.GetHeight() * 0.25f, NULL, halfDayAngle, &screenCenter);
+						gTargetTexture.render(-gWindow.GetWidth() * 0.25f, -gWindow.GetHeight() * 0.25f, NULL, hourAngle, &screenCenter);
+						gTargetTexture.render(-gWindow.GetWidth() * 0.25f, -gWindow.GetHeight() * 0.25f, NULL, minuteAngle, &screenCenter);
 						gBitmapFont.renderText(0, 0, std::to_string(gData[currentData]).c_str());
 						RenderLine(gRenderer, mouseX, mouseY, 0, 0);
-						RenderLine(gRenderer, mouseX, mouseY, gWindow.getWidth(), 0);
-						RenderLine(gRenderer, mouseX, mouseY, 0, gWindow.getHeight());
-						RenderLine(gRenderer, mouseX, mouseY, gWindow.getWidth(), gWindow.getHeight());
+						RenderLine(gRenderer, mouseX, mouseY, gWindow.GetWidth(), 0);
+						RenderLine(gRenderer, mouseX, mouseY, 0, gWindow.GetHeight());
+						RenderLine(gRenderer, mouseX, mouseY, gWindow.GetWidth(), gWindow.GetHeight());
 					}
 					SDL_RenderPresent(gRenderer);
 				}
@@ -2476,17 +2267,10 @@ int main(int argc, char* argv[])
 				//	SDL_Delay(SCREEN_TICK_PER_FRAME - frameTicks);
 				//}
 			}
-#ifdef _WIN32
-			SDL_StopTextInput(gWindow.getWindow());
-#elif __linux__
-			SDL_StopTextInput();
-#endif
 		}
 		close();
 	}
 
-	delete player;
-	delete[] tiles;
 	delete load;
 	delete myTimer;
 	delete clock;

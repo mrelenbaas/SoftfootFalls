@@ -21,11 +21,11 @@
     <Filter Include="Header Files\Data Structures">
       <UniqueIdentifier>{5c0fb8f2-af6f-46bd-bbc9-3bbe78bf9bd8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\SDL Interface">
-      <UniqueIdentifier>{5c8aed32-6883-4851-b5ce-c07a9ef836bd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\SDL Interface">
+    <Filter Include="Source Files\SDL">
       <UniqueIdentifier>{5f8ff196-7d95-414f-96fe-abc820fb69b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\SDL">
+      <UniqueIdentifier>{5c8aed32-6883-4851-b5ce-c07a9ef836bd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -51,16 +51,13 @@
       <Filter>Source Files\Data Structures</Filter>
     </ClCompile>
     <ClCompile Include="SDLInterface.cpp">
-      <Filter>Source Files\SDL Interface</Filter>
+      <Filter>Source Files\SDL</Filter>
     </ClCompile>
-    <ClCompile Include="Player.cpp">
+    <ClCompile Include="Container.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Tile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Character.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="SDLWrapper.cpp">
+      <Filter>Source Files\SDL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -86,16 +83,13 @@
       <Filter>Header Files\Data Structures</Filter>
     </ClInclude>
     <ClInclude Include="SDLInterface.h">
-      <Filter>Header Files\SDL Interface</Filter>
+      <Filter>Header Files\SDL</Filter>
     </ClInclude>
-    <ClInclude Include="Player.h">
+    <ClInclude Include="Container.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Tile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Character.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="SDLWrapper.h">
+      <Filter>Header Files\SDL</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
