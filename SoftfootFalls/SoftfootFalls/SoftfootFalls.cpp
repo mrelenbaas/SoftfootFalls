@@ -136,8 +136,8 @@ private:
 };
 
 bool Init();
-bool loadMedia();
-void close();
+bool loadMedia(Load*);
+void close(Load*);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 
 LWindow gWindow;
@@ -1106,11 +1106,11 @@ bool Init()
 	return success;
 }
 
-bool loadMedia()
+bool loadMedia(Load* load)
 {
 	using namespace std;
 
-	Load* load = new Load(SDL_GetBasePath());
+	//Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
 
 	gTexture = loadTexture(load->Path("Whitebox_Square_1024x1024_000.png"), load, &success);
@@ -1225,13 +1225,13 @@ bool loadMedia()
 	gShimmerTexture.setAlpha(192);
 	success = gBitmapFont.buildFont(load->Path("font_000.png"));
 
-	delete load;
+	//delete load;
 	return success;
 }
 
-void close()
+void close(Load* load)
 {
-	Load* load = new Load(SDL_GetBasePath());
+	//Load* load = new Load(SDL_GetBasePath());
 
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
@@ -1312,7 +1312,7 @@ void close()
 	gShimmerTexture.Free();
 	gBitmapFont.Free();
 
-	delete load;
+	//delete load;
 	SDL_DestroyRenderer(gRenderer);
 	gWindow.Free();
 	SDL_Quit();
@@ -1357,7 +1357,7 @@ int main()
 	}
 	else
 	{
-		if (!loadMedia())
+		if (!loadMedia(load))
 		{
 			SDL_Log("Failed to load media!\n");
 		}
@@ -1952,7 +1952,7 @@ int main()
 				++countedFrames;
 			}
 		}
-		close();
+		close(load);
 	}
 
 	delete load;
