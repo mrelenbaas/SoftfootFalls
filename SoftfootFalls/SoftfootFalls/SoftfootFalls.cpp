@@ -162,7 +162,7 @@ SDL_GameController* gGameController;
 #endif
 SDL_Joystick* gJoystick = NULL;
 SDL_Haptic* gJoyHaptic = NULL;
-static int current_sine_sample = 0;
+//static int current_sine_sample = 0;
 LTexture gDotTexture;
 LTexture gBGTexture;
 const int HORIZON_SIZE = 8;
@@ -941,7 +941,7 @@ void LBitmapFont::renderText(int x, int y, std::string text)
 	if (mFontTexture.GetWidth() > 0)
 	{
 		int curX = x, curY = y;
-		for (int i = 0; i < text.length(); ++i)
+		for (std::__cxx11::basic_string<char>::size_type i = 0; i < text.length(); ++i)
 		{
 			if (text[i] == ' ')
 			{
@@ -1140,8 +1140,8 @@ bool loadMedia()
 	Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
 
-	SDL_Color textColor = { 0, 0, 0, 0xFF };
-	SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+	//SDL_Color textColor = { 0, 0, 0, 0xFF };
+	//SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 
 	gTexture = loadTexture(load->Path("Whitebox_Square_1024x1024_000.png"), load, &success);
 	if (!(success = gModulatedTexture.loadFromFile(load->Path("Landscape_Moon_3300x2550.png")))) {}
@@ -1339,7 +1339,8 @@ void close()
 	}
 	else
 	{
-		SDL_Log("Error: Unable to save file!\n", SDL_GetError());
+		//SDL_Log("Error: Unable to save file!\n", SDL_GetError());
+		printf("Error: Unable to save file! %s\n", SDL_GetError());
 	}
 	gRedTexture.Free();
 	gGreenTexture.Free();
@@ -1380,12 +1381,12 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
 	return newTexture;
 }
 
-int main(int argc, char* argv[])
+int main()
 {
 	Clock* clock = new Clock();
 	Timer* myTimer = new Timer(Timer::Print, 1);
 	Load* load = new Load(SDL_GetBasePath());
-	const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
+	//const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 
 	if (!Init())
 	{
@@ -1401,7 +1402,7 @@ int main(int argc, char* argv[])
 		{
 			bool quit = false;
 			SDL_Event e;
-			int frame = 0;
+			//int frame = 0;
 			double degrees = 0;
 #ifdef _WIN32
 			SDL_FlipMode flipType = SDL_FLIP_NONE;
@@ -1410,24 +1411,24 @@ int main(int argc, char* argv[])
 #endif
 			int xDir = 0;
 			int yDir = 0;
-			SDL_Color textColor = { 0, 0, 0, 255 };
-			Uint64 startTime = 0;
+			//SDL_Color textColor = { 0, 0, 0, 255 };
+			//Uint64 startTime = 0;
 			int countedFrames = 0;
 			Dot dot;
 			int backgroundScrollingOffset = 0;
-			int horizonScrollingOffset = 0;
+			//int horizonScrollingOffset = 0;
 			std::string inputText = "Input";
 			int currentData = 0;
-			SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
+			//SDL_Color highlightColor = { 0xFF, 0, 0, 0xFF };
 			double minuteAngle = 0;
-			double hourAngle = 0;
-			double halfDayAngle = 0;
-			double fullDayAngle = 0;
-#ifdef _WIN32
-			SDL_FPoint screenCenter = { gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
-#elif __linux__
-			SDL_Point screenCenter = { gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
-#endif
+			//double hourAngle = 0;
+			//double halfDayAngle = 0;
+			//double fullDayAngle = 0;
+//#ifdef _WIN32
+//			SDL_FPoint screenCenter = { gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
+//#elif __linux__
+//			SDL_Point screenCenter = { gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
+//#endif
 			bool isDebug = false;
 			bool isInput = false;
 #ifdef _WIN32
@@ -1446,7 +1447,7 @@ int main(int argc, char* argv[])
 			long long fullDayDelta = 0L;
 			long long playerDelta = 0L;
 			bool trisecondToggle = false;
-			bool playerToggle = false;
+			//bool playerToggle = false;
 			int gridCounter = 0;
 			int playerI = 0;
 			int playerJ = 0;
@@ -1474,7 +1475,7 @@ int main(int argc, char* argv[])
 				double hourLimit = 3'600'000'000'000;
 				double halfDayLimit = 43'200'000'000'000;
 				double fullDayLimit = 86'400'000'000'000;
-				double playerLimit = secondLimit;
+				//double playerLimit = secondLimit;
 				if (decisecondDelta > decisecondLimit)
 				{
 					decisecondDelta -= decisecondLimit;
@@ -1509,14 +1510,14 @@ int main(int argc, char* argv[])
 				{
 					fullDayDelta -= fullDayLimit;
 				}
-				double decisecondNormal = (double)decisecondDelta / decisecondLimit;
+				//double decisecondNormal = (double)decisecondDelta / decisecondLimit;
 				double secondNormal = (double)secondDelta / secondLimit;
 				double trisecondNormal = (double)trisecondDelta / trisecondLimit;
 				double minuteNormal = (double)minuteDelta / minuteLimit;
-				double hourNormal = (double)hourDelta / hourLimit;
-				double halfDayNormal = (double)halfDayDelta / halfDayLimit;
-				double fullDayNormal = (double)fullDayDelta / fullDayLimit;
-				double playerNormal = (double)playerDelta / secondLimit;
+				//double hourNormal = (double)hourDelta / hourLimit;
+				//double halfDayNormal = (double)halfDayDelta / halfDayLimit;
+				//double fullDayNormal = (double)fullDayDelta / fullDayLimit;
+				//double playerNormal = (double)playerDelta / secondLimit;
 				previousTime = currentTime;
 
 				SDL_GetMouseState(&mouseX, &mouseY);
@@ -1635,6 +1636,8 @@ int main(int argc, char* argv[])
 							case DIRECTION_RIGHT:
 								gDirection = DIRECTION_UP;
 								break;
+							case DIRECTION_TOTAL:
+								break;
 							}
 #ifdef _WIN32
 							PlaySound(L"C:/Users/belenbaa/Desktop/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav", NULL, SND_FILENAME | SND_ASYNC);
@@ -1652,7 +1655,7 @@ int main(int argc, char* argv[])
 							}
 							++playerI;
 							if (playerI >= ROW_SIZE) playerI = ROW_SIZE - 1;
-							playerToggle = true;
+							//playerToggle = true;
 							break;
 						case SDLK_DOWN:
 						case KEY_S:
@@ -1664,7 +1667,7 @@ int main(int argc, char* argv[])
 							}
 							--playerI;
 							if (playerI < 0) playerI = 0;
-							playerToggle = true;
+							//playerToggle = true;
 							break;
 						case SDLK_LEFT:
 						case KEY_A:
@@ -1672,7 +1675,7 @@ int main(int argc, char* argv[])
 							--gData[currentData];
 							--playerJ;
 							if (playerJ < 0) playerJ = 0;
-							playerToggle = true;
+							//playerToggle = true;
 							degrees -= 60;
 							break;
 						case SDLK_RIGHT:
@@ -1681,7 +1684,7 @@ int main(int argc, char* argv[])
 							++gData[currentData];
 							++playerJ;
 							if (playerJ >= ROW_SIZE) playerJ = ROW_SIZE - 1;
-							playerToggle = true;
+							//playerToggle = true;
 							degrees += 60;
 							break;
 						default:
@@ -1744,12 +1747,12 @@ int main(int argc, char* argv[])
 				{
 					SDL_RenderClear(gRenderer);
 
-					frame = 4 * secondNormal;
-#ifdef _WIN32
-					SDL_FRect* currentClip = &gWalkingSpriteClips[frame];
-#elif __linux__
-					SDL_Rect* currentClip = &gWalkingSpriteClips[frame];
-#endif
+					//frame = 4 * secondNormal;
+//#ifdef _WIN32
+//					SDL_FRect* currentClip = &gWalkingSpriteClips[frame];
+//#elif __linux__
+//					SDL_Rect* currentClip = &gWalkingSpriteClips[frame];
+//#endif
 
 					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
 					if (xDir == 0 && yDir == 0)
@@ -1787,23 +1790,25 @@ int main(int argc, char* argv[])
 							backgroundScrollingOffset = 0;
 						}
 						break;
+					case DIRECTION_TOTAL:
+						break;
 					}
 
 					minuteAngle = 360 * minuteNormal;
-					hourAngle = 360 * hourNormal;
-					halfDayAngle = 360 * halfDayNormal;
-					fullDayAngle = 360 * fullDayNormal;
+					//hourAngle = 360 * hourNormal;
+					//halfDayAngle = 360 * halfDayNormal;
+					//fullDayAngle = 360 * fullDayNormal;
 
-#ifdef _WIN32
-					SDL_FRect fillRect = { gWindow.GetWidth() / 4, gWindow.GetHeight() / 4, gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
-#elif __linux__
-					SDL_Rect fillRect = { gWindow.GetWidth() / 4, gWindow.GetHeight() / 4, gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
-#endif
-#ifdef _WIN32
-					SDL_FRect outlineRect = { gWindow.GetWidth() / 6, gWindow.GetHeight() / 6, gWindow.GetWidth() * 2 / 3, gWindow.GetHeight() * 2 / 3 };
-#elif __linux__
-					SDL_Rect outlineRect = { gWindow.GetWidth() / 6, gWindow.GetHeight() / 6, gWindow.GetWidth() * 2 / 3, gWindow.GetHeight() * 2 / 3 };
-#endif
+//#ifdef _WIN32
+//					SDL_FRect fillRect = { gWindow.GetWidth() / 4, gWindow.GetHeight() / 4, gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
+//#elif __linux__
+//					SDL_Rect fillRect = { gWindow.GetWidth() / 4, gWindow.GetHeight() / 4, gWindow.GetWidth() / 2, gWindow.GetHeight() / 2 };
+//#endif
+//#ifdef _WIN32
+//					SDL_FRect outlineRect = { gWindow.GetWidth() / 6, gWindow.GetHeight() / 6, gWindow.GetWidth() * 2 / 3, gWindow.GetHeight() * 2 / 3 };
+//#elif __linux__
+//					SDL_Rect outlineRect = { gWindow.GetWidth() / 6, gWindow.GetHeight() / 6, gWindow.GetWidth() * 2 / 3, gWindow.GetHeight() * 2 / 3 };
+//#endif
 
 					switch (gDirection)
 					{
@@ -1839,6 +1844,8 @@ int main(int argc, char* argv[])
 						gBGTexture.render(backgroundScrollingOffset + gBGTexture.GetWidth(), gBGTexture.GetHeight());
 						gBGTexture.render(backgroundScrollingOffset - gBGTexture.GetWidth(), gBGTexture.GetHeight());
 						break;
+					case DIRECTION_TOTAL:
+						break;
 					}
 					SDL_Rect fullscreenViewport;
 					fullscreenViewport.x = 0;
@@ -1861,11 +1868,11 @@ int main(int argc, char* argv[])
 					middleViewport.h = 200;
 					SetRenderViewport(gRenderer, NULL);
 					float normal = secondNormal;
-					float flippyNormal = trisecondNormal;
-					if (trisecondToggle)
-					{
-						flippyNormal = 1.0f - trisecondNormal;
-					}
+					//float flippyNormal = trisecondNormal;
+					//if (trisecondToggle)
+					//{
+					//	flippyNormal = 1.0f - trisecondNormal;
+					//}
 					float centerX = mouseX;
 					if (centerX > gWindow.GetWidth() * 0.15f) centerX = gWindow.GetWidth() * 0.15f;
 					float centerY = gWindow.GetHeight() - mouseY;
@@ -1894,9 +1901,9 @@ int main(int argc, char* argv[])
 						middleViewport.x = x;
 						middleViewport.y = y;
 						SDL_Rect rightViewport = middleViewport;
-						SDL_Rect topLeft = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
+						//SDL_Rect topLeft = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 						SDL_Rect farLeft = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
-						SDL_Rect farRight = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
+						//SDL_Rect farRight = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 						SDL_Rect circleViewport = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 						for (int j = 0; j < ROW_SIZE; ++j)
 						{
@@ -1928,7 +1935,7 @@ int main(int argc, char* argv[])
 							{
 								RenderTexture(gRenderer, gPlayerHighlight.getTexture());
 							}
-							Distance distance = { middleViewport.w, middleViewport.h };
+							Distance distance = { (float)middleViewport.w, (float)middleViewport.h };
 							if (i == 0 && j == 0)
 							{
 								gIconCursor.render(
@@ -1940,13 +1947,13 @@ int main(int argc, char* argv[])
 									flipType,
 									distance);
 							}
-							if (i == 0 && j == 0)
-							{
-								topLeft.x = middleViewport.x;
-								topLeft.y = middleViewport.y;
-								topLeft.w = middleViewport.w;
-								topLeft.h = middleViewport.h;
-							}
+							//if (i == 0 && j == 0)
+							//{
+							//	topLeft.x = middleViewport.x;
+							//	topLeft.y = middleViewport.y;
+							//	topLeft.w = middleViewport.w;
+							//	topLeft.h = middleViewport.h;
+							//}
 							if (j == 0)
 							{
 								farLeft.x = middleViewport.x;
@@ -1954,13 +1961,13 @@ int main(int argc, char* argv[])
 								farLeft.w = middleViewport.w;
 								farLeft.h = middleViewport.h;
 							}
-							if (i == 0 && j == ROW_SIZE - 1)
-							{
-								farRight.x = middleViewport.x;
-								farRight.y = middleViewport.y;
-								farRight.w = middleViewport.w;
-								farRight.h = middleViewport.h;
-							}
+							//if (i == 0 && j == ROW_SIZE - 1)
+							//{
+							//	farRight.x = middleViewport.x;
+							//	farRight.y = middleViewport.y;
+							//	farRight.w = middleViewport.w;
+							//	farRight.h = middleViewport.h;
+							//}
 							if (i == 0 && j == ROW_SIZE - 1)
 							{
 								gIconCursor.render(
@@ -2093,8 +2100,8 @@ int main(int argc, char* argv[])
 
 					Point beamPoint =
 					{
-						beamViewport.x + (beamViewport.w / 2),
-						beamViewport.y + (beamViewport.h / 2)
+						(int)beamViewport.x + ((int)beamViewport.w / 2.0f),
+						(int)beamViewport.y + ((int)beamViewport.h / 2.0f)
 					};
 					//SetRenderViewport(gRenderer, &fullscreenViewport);
 					Point linePoint =
@@ -2104,8 +2111,8 @@ int main(int argc, char* argv[])
 					};
 					SDL_Rect lineViewport =
 					{
-						linePoint.x,
-						linePoint.y,
+						(int)linePoint.x,
+						(int)linePoint.y,
 						100,
 						100
 					};
