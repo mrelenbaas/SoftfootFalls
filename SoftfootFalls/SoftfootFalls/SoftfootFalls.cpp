@@ -484,13 +484,13 @@ bool LWindow::Init()
 	height = gWindow.GetHeight();
 	return true;
 #elif __linux__
-	window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, gWindow.GetWidth(), gWindow.GetHeight(), SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (window != NULL)
 	{
 		mouseFocus = true;
 		keyboardFocus = true;
-		width = SCREEN_WIDTH;
-		height = SCREEN_HEIGHT;
+		width = gWindow.GetWidth();
+		height = gWindow.GetHeight();
 	}
 	return window != NULL;
 #endif
@@ -1165,6 +1165,13 @@ int main()
 				myTimer->Update();
 				while (SDL_PollEvent(&e) != 0)
 				{
+					if (e.type == SDL_WINDOWEVENT) {
+						if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+							gWindow.SetWidth(e.window.data1);
+							gWindow.SetHeight(e.window.data2);
+						}
+					}
+				  
 					if (IsWindowQuit(e)) quit = true;
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)

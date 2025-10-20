@@ -36,6 +36,8 @@ public:
 	void Free();
 	int GetWidth() const;
 	int GetHeight() const;
+	void SetWidth(int);
+	void SetHeight(int);
 	SDL_Window* GetWindow();
 	bool HasMouseFocus() const;
 	bool HasKeyboardFocus() const;

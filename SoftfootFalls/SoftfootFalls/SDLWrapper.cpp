@@ -10,7 +10,7 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_RESIZED:
 #elif __linux__
-	case SDL_WINDOWEVENT_SIZE_CHANGED:
+	case SDL_WINDOWEVENT_RESIZED:
 #endif
 		width = event.window.data1;
 		height = event.window.data2;
@@ -138,6 +138,16 @@ int LWindow::GetWidth() const
 int LWindow::GetHeight() const
 {
 	return height;
+}
+
+void LWindow::SetWidth(int width)
+{
+	(*this).width = width;
+}
+
+void LWindow::SetHeight(int height)
+{
+	(*this).height = height;
 }
 
 SDL_Window* LWindow::GetWindow()
