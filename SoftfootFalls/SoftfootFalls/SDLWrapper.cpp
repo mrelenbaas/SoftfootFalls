@@ -1,1 +1,161 @@
 #include "SDLWrapper.h"
+
+
+void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
+{
+	bool updateCaption = false;
+
+	switch (event.type)
+	{
+#ifdef _WIN32
+	case SDL_EVENT_WINDOW_RESIZED:
+#elif __linux__
+	case SDL_WINDOWEVENT_SIZE_CHANGED:
+#endif
+		width = event.window.data1;
+		height = event.window.data2;
+		printf("WINDOW SIZE HAS CHANGED > width: %i, height: %i\n", width, height);
+		//SDL_RenderPresent(renderer);
+		break;
+//#ifdef _WIN32
+//	case SDL_EVENT_WINDOW_EXPOSED:
+//#elif __linux__
+//	case SDL_WINDOWEVENT_EXPOSED:
+//#endif
+//		SDL_RenderPresent(renderer);
+//		break;
+#ifdef _WIN32
+	case SDL_EVENT_WINDOW_MOUSE_ENTER:
+#elif __linux__
+	case SDL_WINDOWEVENT_ENTER:
+#endif
+		mouseFocus = true;
+		updateCaption = true;
+		break;
+#ifdef _WIN32
+	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+#elif __linux__
+	case SDL_WINDOWEVENT_LEAVE:
+#endif
+		mouseFocus = false;
+		updateCaption = true;
+		break;
+#ifdef _WIN32
+	case SDL_EVENT_WINDOW_FOCUS_GAINED:
+#elif __linux__
+	case SDL_WINDOWEVENT_FOCUS_GAINED:
+#endif
+		keyboardFocus = true;
+		updateCaption = true;
+		break;
+#ifdef _WIN32
+	case SDL_EVENT_WINDOW_FOCUS_LOST:
+#elif __linux__
+	case SDL_WINDOWEVENT_FOCUS_LOST:
+#endif
+		keyboardFocus = false;
+		updateCaption = true;
+		break;
+#ifdef _WIN32
+	case SDL_EVENT_WINDOW_MINIMIZED:
+#elif __linux__
+	case SDL_WINDOWEVENT_MINIMIZED:
+#endif
+		minimized = true;
+		break;
+#ifdef _WIN32
+	case SDL_EVENT_WINDOW_MAXIMIZED:
+#elif __linux__
+	case SDL_WINDOWEVENT_MAXIMIZED:
+#endif
+		minimized = false;
+		break;
+#ifdef _WIN32
+	case SDL_EVENT_WINDOW_RESTORED:
+#elif __linux__
+	case SDL_WINDOWEVENT_RESTORED:
+#endif
+		minimized = false;
+		break;
+#ifdef _WIN32
+	case SDL_EVENT_KEY_DOWN:
+#elif __linux__
+	case SDL_KEYDOWN:
+#endif
+#ifdef _WIN32
+		if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_RETURN)
+#elif __linux__
+		if (event.key.keysym.sym == SDLK_RETURN)
+#endif
+		{
+			if (fullscreen)
+			{
+#ifdef _WIN32
+				SDL_SetWindowFullscreen(window, false);
+#elif __linux__
+				SDL_SetWindowFullscreen(window, 0);
+#endif
+				fullscreen = false;
+			}
+			else
+			{
+#ifdef _WIN32
+				SDL_SetWindowFullscreen(window, true);
+#elif __linux__
+				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+#endif
+				fullscreen = true;
+				minimized = false;
+			}
+		}
+		break;
+	}
+	if (updateCaption)
+	{
+		std::stringstream caption;
+		caption << "SDL Tutorial - MouseFocus:" << ((mouseFocus) ? "On" : "Off") << " KeyboardFocus:" << ((keyboardFocus) ? "On" : "Off");
+		SDL_SetWindowTitle(window, caption.str().c_str());
+	}
+}
+
+void LWindow::Free()
+{
+	if (window != NULL)
+	{
+		SDL_DestroyWindow(window);
+	}
+	mouseFocus = false;
+	keyboardFocus = false;
+	width = 0;
+	height = 0;
+}
+
+int LWindow::GetWidth() const
+{
+	return width;
+}
+
+int LWindow::GetHeight() const
+{
+	return height;
+}
+
+SDL_Window* LWindow::GetWindow()
+{
+	return window;
+}
+
+bool LWindow::HasMouseFocus() const
+{
+	return mouseFocus;
+}
+
+bool LWindow::HasKeyboardFocus() const
+{
+	return keyboardFocus;
+}
+
+bool LWindow::IsMinimized() const
+{
+	return minimized;
+}

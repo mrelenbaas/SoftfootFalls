@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <iostream>
+#include <string>
+#include <sstream>
+
 #ifdef _WIN32
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_image.h>
@@ -20,14 +25,14 @@ public:
 		, keyboardFocus(false)
 		, fullscreen(false)
 		, minimized(false)
-		, width(0)
-		, height(0) {}
+		, width(640)
+		, height(480) {}
 	bool Init();
 #ifdef __linux__
-	SDL_Renderer* CreateRenderer(); // TODO: Update this while in Linux.
+	SDL_Renderer* CreateRenderer();
 #endif
 	SDL_Renderer* GetRenderer();
-	void HandleEvent(SDL_Event&);
+	void HandleEvent(SDL_Renderer*, SDL_Event&);
 	void Free();
 	int GetWidth() const;
 	int GetHeight() const;

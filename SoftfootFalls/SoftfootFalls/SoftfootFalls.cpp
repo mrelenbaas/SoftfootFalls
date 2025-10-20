@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <iostream>
-#include <stdio.h>
 #include <thread>
 #include <chrono>
 #include <functional>
@@ -35,9 +34,6 @@
 #include "Container.h"
 
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
 const int JOYSTICK_DEAD_ZONE = 8000;
 #ifdef _WIN32
 const double M_PI = 3.14159265359;
@@ -70,9 +66,7 @@ public:
 	bool loadFromFile(const char* path);
 	bool loadPixelsFromFile(const char* path);
 	bool loadFromPixels();
-	bool createBlank(int width, int height, SDL_TextureAccess access);
 	void Free();
-	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 	void setBlendMode(SDL_BlendMode blending);
 	void setAlpha(Uint8 alpha);
 #ifdef _WIN32
@@ -80,16 +74,10 @@ public:
 #elif __linux__
 	void render(int x, int y, SDL_Rect* clip = NULL, double secondAngle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, Distance distance = { 0, 0 });
 #endif
-	void setAsRenderTarget();
 	int GetWidth() const;
 	int GetHeight() const;
-	Uint32* getPixels32();
 	Uint32 getPixel32(Uint32 x, Uint32 y);
 	Uint32 getPitch32();
-	Uint32 mapRGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
-	void copyRawPixels32(void* pixels);
-	bool lockTexture();
-	bool unlockTexture();
 	SDL_Texture* getTexture();
 private:
 	SDL_Texture* mTexture;
@@ -173,10 +161,6 @@ LTexture gPlayerHighlight;
 LTexture gPlayerBeam;
 LTexture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
-LTexture gRedTexture;
-LTexture gGreenTexture;
-LTexture gBlueTexture;
-LTexture gShimmerTexture;
 LBitmapFont gBitmapFont;
 Directions gDirection = DIRECTION_UP;
 const int ROW_SIZE = 15;
@@ -260,29 +244,6 @@ bool LTexture::loadFromPixels()
 	return mTexture != NULL;
 }
 
-bool LTexture::createBlank(int width, int height, SDL_TextureAccess access)
-{
-	Free();
-	mTexture = SDL_CreateTexture(gRenderer, SDL_PIXELFORMAT_RGBA8888, access, width, height);
-	if (mTexture == NULL)
-	{
-		SDL_Log("Unable to create streamable blank texture! SDL Error: %s\n", SDL_GetError());
-	}
-	else
-	{
-		mWidth = width;
-		mHeight = height;
-#ifdef __linux__
-		SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND);
-		SDL_SetRenderTarget(gRenderer, mTexture);
-		SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0x00);
-		SDL_RenderClear(gRenderer);
-		SDL_SetRenderTarget(gRenderer, NULL);
-#endif
-	}
-	return mTexture != NULL;
-}
-
 void LTexture::Free()
 {
 	if (mTexture != NULL)
@@ -303,19 +264,9 @@ void LTexture::Free()
 	}
 }
 
-void LTexture::setColor(Uint8 red, Uint8 green, Uint8 blue)
-{
-	SDL_SetTextureColorMod(mTexture, red, green, blue);
-}
-
 void LTexture::setBlendMode(SDL_BlendMode blending)
 {
 	SDL_SetTextureBlendMode(mTexture, blending);
-}
-
-void LTexture::setAlpha(Uint8 alpha)
-{
-	SDL_SetTextureAlphaMod(mTexture, alpha);
 }
 
 #ifdef _WIN32
@@ -353,11 +304,6 @@ void LTexture::render(int x, int y, SDL_Rect* clip, double secondAngle, SDL_Poin
 #endif
 }
 
-void LTexture::setAsRenderTarget()
-{
-	SDL_SetRenderTarget(gRenderer, mTexture);
-}
-
 int LTexture::GetWidth() const
 {
 	return mWidth;
@@ -366,16 +312,6 @@ int LTexture::GetWidth() const
 int LTexture::GetHeight() const
 {
 	return mHeight;
-}
-
-Uint32* LTexture::getPixels32()
-{
-	Uint32* pixels = NULL;
-	if (mSurfacePixels != NULL)
-	{
-		pixels = static_cast<Uint32*>(mSurfacePixels->pixels);
-	}
-	return pixels;
 }
 
 Uint32 LTexture::getPixel32(Uint32 x, Uint32 y)
@@ -394,71 +330,9 @@ Uint32 LTexture::getPitch32()
 	return pitch;
 }
 
-Uint32 LTexture::mapRGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
-{
-	Uint32 pixel = 0;
-	if (mSurfacePixels != NULL)
-	{
-#ifdef _WIN32
-		pixel = SDL_MapSurfaceRGBA(mSurfacePixels, r, g, b, a);
-#elif __linux__
-		pixel = SDL_MapRGBA(mSurfacePixels->format, r, g, b, a);
-#endif
-	}
-	return pixel;
-}
-
-bool LTexture::lockTexture()
-{
-	bool success = true;
-	if (mRawPixels != NULL)
-	{
-		SDL_Log("Texture is already locked!\n");
-		success = false;
-	}
-	else
-	{
-#ifdef _WIN32
-		if (!SDL_LockTexture(mTexture, NULL, &mRawPixels, &mRawPitch))
-#elif __linux__
-		if (SDL_LockTexture(mTexture, NULL, &mRawPixels, &mRawPitch) != 0)
-#endif
-		{
-			SDL_Log("Unable to lock texture! %s\n", SDL_GetError());
-			success = false;
-		}
-	}
-	return success;
-}
-
-bool LTexture::unlockTexture()
-{
-	bool success = true;
-	if (mRawPixels == NULL)
-	{
-		SDL_Log("Texture is not locked!\n");
-		success = false;
-	}
-	else
-	{
-		SDL_UnlockTexture(mTexture);
-		mRawPixels = NULL;
-		mRawPitch = 0;
-	}
-	return success;
-}
-
 SDL_Texture* LTexture::getTexture()
 {
 	return mTexture;
-}
-
-void LTexture::copyRawPixels32(void* pixels)
-{
-	if (mRawPixels != NULL)
-	{
-		memcpy(mRawPixels, pixels, mRawPitch * mHeight);
-	}
 }
 
 Dot::Dot()
@@ -597,7 +471,7 @@ SDL_Rect Dot::getBox()
 bool LWindow::Init()
 {
 #ifdef _WIN32
-	if (!SDL_CreateWindowAndRenderer("SDL Tutorial", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer))
+	if (!SDL_CreateWindowAndRenderer("SDL Tutorial", gWindow.GetWidth(), gWindow.GetHeight(), SDL_WINDOW_RESIZABLE, &window, &renderer))
 	{
 		return false;
 	}
@@ -606,8 +480,8 @@ bool LWindow::Init()
 
 	mouseFocus = true;
 	keyboardFocus = true;
-	width = SCREEN_WIDTH;
-	height = SCREEN_HEIGHT;
+	width = gWindow.GetWidth();
+	height = gWindow.GetHeight();
 	return true;
 #elif __linux__
 	window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
@@ -632,164 +506,6 @@ SDL_Renderer* LWindow::CreateRenderer()
 SDL_Renderer* LWindow::GetRenderer()
 {
 	return renderer;
-}
-
-void LWindow::HandleEvent(SDL_Event& event)
-{
-	bool updateCaption = false;
-
-	switch (event.type)
-	{
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_RESIZED:
-#elif __linux__
-	case SDL_WINDOWEVENT_SIZE_CHANGED:
-#endif
-		width = event.window.data1;
-		height = event.window.data2;
-		SDL_RenderPresent(gRenderer);
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_EXPOSED:
-#elif __linux__
-	case SDL_WINDOWEVENT_EXPOSED:
-#endif
-		SDL_RenderPresent(gRenderer);
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_MOUSE_ENTER:
-#elif __linux__
-	case SDL_WINDOWEVENT_ENTER:
-#endif
-		mouseFocus = true;
-		updateCaption = true;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
-#elif __linux__
-	case SDL_WINDOWEVENT_LEAVE:
-#endif
-		mouseFocus = false;
-		updateCaption = true;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_FOCUS_GAINED:
-#elif __linux__
-	case SDL_WINDOWEVENT_FOCUS_GAINED:
-#endif
-		keyboardFocus = true;
-		updateCaption = true;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_FOCUS_LOST:
-#elif __linux__
-	case SDL_WINDOWEVENT_FOCUS_LOST:
-#endif
-		keyboardFocus = false;
-		updateCaption = true;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_MINIMIZED:
-#elif __linux__
-	case SDL_WINDOWEVENT_MINIMIZED:
-#endif
-		minimized = true;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_MAXIMIZED:
-#elif __linux__
-	case SDL_WINDOWEVENT_MAXIMIZED:
-#endif
-		minimized = false;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_RESTORED:
-#elif __linux__
-	case SDL_WINDOWEVENT_RESTORED:
-#endif
-		minimized = false;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_KEY_DOWN:
-#elif __linux__
-	case SDL_KEYDOWN:
-#endif
-#ifdef _WIN32
-		if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_RETURN)
-#elif __linux__
-		if (event.key.keysym.sym == SDLK_RETURN)
-#endif
-		{
-			if (fullscreen)
-			{
-#ifdef _WIN32
-				SDL_SetWindowFullscreen(window, false);
-#elif __linux__
-				SDL_SetWindowFullscreen(window, 0);
-#endif
-				fullscreen = false;
-			}
-			else
-			{
-#ifdef _WIN32
-				SDL_SetWindowFullscreen(window, true);
-#elif __linux__
-				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-#endif
-				fullscreen = true;
-				minimized = false;
-			}
-		}
-		break;
-	}
-	if (updateCaption)
-	{
-		std::stringstream caption;
-		caption << "SDL Tutorial - MouseFocus:" << ((mouseFocus) ? "On" : "Off") << " KeyboardFocus:" << ((keyboardFocus) ? "On" : "Off");
-		SDL_SetWindowTitle(window, caption.str().c_str());
-	}
-}
-
-void LWindow::Free()
-{
-	if (window != NULL)
-	{
-		SDL_DestroyWindow(window);
-	}
-	mouseFocus = false;
-	keyboardFocus = false;
-	width = 0;
-	height = 0;
-}
-
-int LWindow::GetWidth() const
-{
-	return width;
-}
-
-int LWindow::GetHeight() const
-{
-	return height;
-}
-
-SDL_Window* LWindow::GetWindow()
-{
-	return window;
-}
-
-bool LWindow::HasMouseFocus() const
-{
-	return mouseFocus;
-}
-
-bool LWindow::HasKeyboardFocus() const
-{
-	return keyboardFocus;
-}
-
-bool LWindow::IsMinimized() const
-{
-	return minimized;
 }
 
 LBitmapFont::LBitmapFont()
@@ -1110,7 +826,6 @@ bool loadMedia(Load* load)
 {
 	using namespace std;
 
-	//Load* load = new Load(SDL_GetBasePath());
 	bool success = true;
 
 	gTexture = loadTexture(load->Path("Whitebox_Square_1024x1024_000.png"), load, &success);
@@ -1215,24 +930,12 @@ bool loadMedia(Load* load)
 	success = gPlayerHighlight.loadFromFile(load->Path("PlayerHighlight_000_1024x1024.png"));
 	success = gPlayerBeam.loadFromFile(load->Path("PlayerBeam_000_2048x2048.png"));
 	success = characterFairyHopeful.loadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png"));
-	success = gRedTexture.loadFromFile(load->Path("CharacterFairySmallcol000_64x64.png"));
-	success = gGreenTexture.loadFromFile(load->Path("CharacterFairySmalling000_64x64.png"));
-	success = gBlueTexture.loadFromFile(load->Path("CharacterFairySmallbin000_64x64.png"));
-	success = gShimmerTexture.loadFromFile(load->Path("CharacterFairySmallton000_64x64.png"));
-	gRedTexture.setAlpha(192);
-	gGreenTexture.setAlpha(192);
-	gBlueTexture.setAlpha(192);
-	gShimmerTexture.setAlpha(192);
 	success = gBitmapFont.buildFont(load->Path("font_000.png"));
-
-	//delete load;
 	return success;
 }
 
 void close(Load* load)
 {
-	//Load* load = new Load(SDL_GetBasePath());
-
 	SDL_DestroyTexture(gTexture);
 	gTexture = NULL;
 	gModulatedTexture.Free();
@@ -1306,13 +1009,8 @@ void close(Load* load)
 	{
 		printf("Error: Unable to save file! %s\n", SDL_GetError());
 	}
-	gRedTexture.Free();
-	gGreenTexture.Free();
-	gBlueTexture.Free();
-	gShimmerTexture.Free();
 	gBitmapFont.Free();
 
-	//delete load;
 	SDL_DestroyRenderer(gRenderer);
 	gWindow.Free();
 	SDL_Quit();
@@ -1646,7 +1344,7 @@ int main()
 						}
 					}
 					dot.HandleEvent(e);
-					gWindow.HandleEvent(e);
+					gWindow.HandleEvent(gRenderer, e);
 				}
 				if (!gWindow.IsMinimized())
 				{
@@ -1738,12 +1436,12 @@ int main()
 						fullscreenViewport.w = gWindow.GetWidth(),
 						fullscreenViewport.h = gWindow.GetHeight()
 					};
-					if (isDebug)
-					{
+					//if (isDebug)
+					//{
 						SetRenderViewport(gRenderer, &fullscreenViewport);
 						gModulatedTexture.render(0, 0);
 						RenderTexture(gRenderer, gModulatedTexture.getTexture());
-					}
+					//}
 					dot.move((double)gWindow.GetWidth() * 0.000025, (double)gWindow.GetHeight() * 0.000025);
 					dot.setIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ);
 
