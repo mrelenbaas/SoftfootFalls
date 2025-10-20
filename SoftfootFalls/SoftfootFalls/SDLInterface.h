@@ -67,14 +67,6 @@ void StopTextInput(SDL_Window*);
 
 void RenderLine(SDL_Renderer*, float, float, float, float);
 
-void RenderPoint(SDL_Renderer*, float, float);
-
-#ifdef _WIN32
-void RenderRect(SDL_Renderer*, SDL_FRect* rect);
-#elif __linux__
-void RenderRect(SDL_Renderer*, SDL_Rect* rect);
-#endif
-
 void RenderTexture(SDL_Renderer*, SDL_Texture*);
 
 void SetRenderViewport(SDL_Renderer*, SDL_Rect*);

@@ -3,34 +3,21 @@
 
 void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 {
-	bool updateCaption = false;
-
 	switch (event.type)
 	{
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_RESIZED:
-#elif __linux__
-	case SDL_WINDOWEVENT_RESIZED:
 #endif
 		width = event.window.data1;
 		height = event.window.data2;
-		printf("WINDOW SIZE HAS CHANGED > width: %i, height: %i\n", width, height);
-		//SDL_RenderPresent(renderer);
+		printf("TODO, WINDOWS: THIS IS IN 2 DIFFERENT FILES width: %i, height: %i\n", width, height);
 		break;
-//#ifdef _WIN32
-//	case SDL_EVENT_WINDOW_EXPOSED:
-//#elif __linux__
-//	case SDL_WINDOWEVENT_EXPOSED:
-//#endif
-//		SDL_RenderPresent(renderer);
-//		break;
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_MOUSE_ENTER:
 #elif __linux__
 	case SDL_WINDOWEVENT_ENTER:
 #endif
 		mouseFocus = true;
-		updateCaption = true;
 		break;
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
@@ -38,7 +25,6 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 	case SDL_WINDOWEVENT_LEAVE:
 #endif
 		mouseFocus = false;
-		updateCaption = true;
 		break;
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_FOCUS_GAINED:
@@ -46,7 +32,6 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 	case SDL_WINDOWEVENT_FOCUS_GAINED:
 #endif
 		keyboardFocus = true;
-		updateCaption = true;
 		break;
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_FOCUS_LOST:
@@ -54,7 +39,6 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 	case SDL_WINDOWEVENT_FOCUS_LOST:
 #endif
 		keyboardFocus = false;
-		updateCaption = true;
 		break;
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_MINIMIZED:
@@ -83,7 +67,7 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 	case SDL_KEYDOWN:
 #endif
 #ifdef _WIN32
-		if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_RETURN)
+		if (event.key.key == SDLK_RETURN)
 #elif __linux__
 		if (event.key.keysym.sym == SDLK_RETURN)
 #endif
@@ -110,20 +94,11 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 		}
 		break;
 	}
-	if (updateCaption)
-	{
-		std::stringstream caption;
-		caption << "SDL Tutorial - MouseFocus:" << ((mouseFocus) ? "On" : "Off") << " KeyboardFocus:" << ((keyboardFocus) ? "On" : "Off");
-		SDL_SetWindowTitle(window, caption.str().c_str());
-	}
 }
 
 void LWindow::Free()
 {
-	if (window != NULL)
-	{
-		SDL_DestroyWindow(window);
-	}
+	if (window != NULL) SDL_DestroyWindow(window);
 	mouseFocus = false;
 	keyboardFocus = false;
 	width = 0;

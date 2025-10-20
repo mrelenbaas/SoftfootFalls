@@ -49,28 +49,6 @@ void RenderLine(SDL_Renderer* renderer, float x, float y, float w, float h)
 #endif
 }
 
-void RenderPoint(SDL_Renderer* renderer, float x, float y)
-{
-#ifdef _WIN32
-	SDL_RenderPoint(renderer, x, y);
-#elif __linux__
-	SDL_RenderDrawPoint(renderer, x, y);
-#endif
-}
-
-#if _WIN32
-void RenderRect(SDL_Renderer* renderer, SDL_FRect* rect)
-#elif __linux__
-void RenderRect(SDL_Renderer* renderer, SDL_Rect* rect)
-#endif
-{
-#if _WIN32
-	SDL_RenderRect(renderer, rect);
-#elif __linux__
-	SDL_RenderDrawRect(renderer, rect);
-#endif
-}
-
 void RenderTexture(SDL_Renderer* renderer, SDL_Texture* texture)
 {
 #ifdef _WIN32

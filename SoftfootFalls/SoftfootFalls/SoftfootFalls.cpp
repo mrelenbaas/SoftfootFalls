@@ -68,7 +68,6 @@ public:
 	bool loadFromPixels();
 	void Free();
 	void setBlendMode(SDL_BlendMode blending);
-	void setAlpha(Uint8 alpha);
 #ifdef _WIN32
 	void render(int x, int y, SDL_FRect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE, Distance distance = {0, 0});
 #elif __linux__
@@ -351,11 +350,7 @@ Dot::~Dot()
 
 void Dot::HandleEvent(SDL_Event& e)
 {
-#ifdef _WIN32
-	if (e.type == SDL_EVENT_KEY_DOWN && e.key.repeat == 0)
-#elif __linux__
-	if (e.type == SDL_KEYDOWN && e.key.repeat == 0)
-#endif
+	if (e.type == KEY_PRESSED && e.key.repeat == 0)
 	{
 #ifdef _WIN32
 		switch (e.key.key)
@@ -377,11 +372,7 @@ void Dot::HandleEvent(SDL_Event& e)
 			break;
 		}
 	}
-#ifdef _WIN32
-	else if (e.type == SDL_EVENT_KEY_UP && e.key.repeat == 0)
-#elif __linux__
-	else if (e.type == SDL_KEYUP && e.key.repeat == 0)
-#endif
+	else if (e.type == KEY_RELEASED && e.key.repeat == 0)
 	{
 #ifdef _WIN32
 		switch (e.key.key)
@@ -470,8 +461,9 @@ SDL_Rect Dot::getBox()
 
 bool LWindow::Init()
 {
+	const char* title = "SoftfootFalls";
 #ifdef _WIN32
-	if (!SDL_CreateWindowAndRenderer("SDL Tutorial", gWindow.GetWidth(), gWindow.GetHeight(), SDL_WINDOW_RESIZABLE, &window, &renderer))
+	if (!SDL_CreateWindowAndRenderer(title, gWindow.GetWidth(), gWindow.GetHeight(), SDL_WINDOW_RESIZABLE, &window, &renderer))
 	{
 		return false;
 	}
@@ -484,7 +476,7 @@ bool LWindow::Init()
 	height = gWindow.GetHeight();
 	return true;
 #elif __linux__
-	window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, gWindow.GetWidth(), gWindow.GetHeight(), SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, gWindow.GetWidth(), gWindow.GetHeight(), SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (window != NULL)
 	{
 		mouseFocus = true;
@@ -1165,12 +1157,15 @@ int main()
 				myTimer->Update();
 				while (SDL_PollEvent(&e) != 0)
 				{
+#ifdef __linux__
 					if (e.type == SDL_WINDOWEVENT) {
 						if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
 							gWindow.SetWidth(e.window.data1);
 							gWindow.SetHeight(e.window.data2);
+							printf("TODO, LINUX: THIS IS IN 2 DIFFERENT FILES width: %i, height: %i\n", gWindow.GetWidth(), gWindow.GetHeight());
 						}
 					}
+#endif
 				  
 					if (IsWindowQuit(e)) quit = true;
 #ifdef _WIN32
@@ -1338,7 +1333,7 @@ int main()
 #ifdef _WIN32
 					if (e.type == SDL_EVENT_KEY_DOWN)
 #elif __linux__
-					if (e.type == SDL_KEYDOWN)
+					if (e.type == KEY_PRESSED)
 #endif
 					{
 #ifdef _WIN32
@@ -1443,12 +1438,9 @@ int main()
 						fullscreenViewport.w = gWindow.GetWidth(),
 						fullscreenViewport.h = gWindow.GetHeight()
 					};
-					//if (isDebug)
-					//{
-						SetRenderViewport(gRenderer, &fullscreenViewport);
-						gModulatedTexture.render(0, 0);
-						RenderTexture(gRenderer, gModulatedTexture.getTexture());
-					//}
+					SetRenderViewport(gRenderer, &fullscreenViewport);
+					gModulatedTexture.render(0, 0);
+					RenderTexture(gRenderer, gModulatedTexture.getTexture());
 					dot.move((double)gWindow.GetWidth() * 0.000025, (double)gWindow.GetHeight() * 0.000025);
 					dot.setIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ);
 
@@ -1613,7 +1605,6 @@ int main()
 							}
 						}
 					}
-
 
 					Point beamPoint =
 					{
