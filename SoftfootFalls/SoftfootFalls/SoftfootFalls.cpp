@@ -768,8 +768,8 @@ bool Init()
 			//SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #elif __linux__
-			//gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-			gRenderer = gWindow.CreateRenderer();
+			gRenderer = SDL_CreateRenderer(gWindow.GetWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+			//gRenderer = gWindow.CreateRenderer();
 			if (gRenderer == NULL)
 			{
 				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
