@@ -156,6 +156,7 @@ LTexture gPlayerHighlight;
 LTexture gPalaceHighlight;
 LTexture gCharacterTownspersonMoonboy;
 LTexture gCharacterTownspersonMoonboyHands;
+LTexture gCharacterMonsterMouth;
 LTexture gPlayerBeam;
 LTexture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
@@ -887,6 +888,7 @@ bool loadMedia(Load* load)
 	success = gPalaceHighlight.loadFromFile(load->Path("PalaceHighlight_000_2048x2048.png"));
 	success = gCharacterTownspersonMoonboy.loadFromFile(load->Path("CharacterTownspersonMoonboy_000_1024x1024.png"));
 	success = gCharacterTownspersonMoonboyHands.loadFromFile(load->Path("CharacterTownspersonMoonboy_Hands_000_1024x1024.png"));
+	success = gCharacterMonsterMouth.loadFromFile(load->Path("CharacterMonsterMouth_000_1024x1024.png"));
 	success = gPlayerBeam.loadFromFile(load->Path("PlayerBeam_000_2048x2048.png"));
 	success = characterFairyHopeful.loadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png"));
 	success = gBitmapFont.buildFont(load->Path("font_000.png"));
@@ -948,6 +950,7 @@ void close(Load* load)
 	gPalaceHighlight.Free();
 	gCharacterTownspersonMoonboy.Free();
 	gCharacterTownspersonMoonboyHands.Free();
+	gCharacterMonsterMouth.Free();
 	gPlayerBeam.Free();
 	characterFairyHopeful.Free();
 #ifdef _WIN32
@@ -1387,18 +1390,21 @@ int main(int argc, char* argv[])
 						fullscreenViewport.w = gWindow.GetWidth(),
 						fullscreenViewport.h = gWindow.GetHeight()
 					};
-					int directionModifier = 0;
+					int horizontalModifier = 0;
+					int verticalModifier = 0;
 					if (twelvesecondToggle)
 					{
-						directionModifier = (gWindow.GetWidth() + fullscreenViewport.w) * twelvesecondNormal;
+						horizontalModifier = (gWindow.GetWidth() + fullscreenViewport.w) * twelvesecondNormal;
+						verticalModifier = (gWindow.GetHeight() + fullscreenViewport.h) * twelvesecondNormal;
 					}
 					else
 					{
-						directionModifier = (gWindow.GetWidth() + fullscreenViewport.w) * (1.0f - twelvesecondNormal);
+						horizontalModifier = (gWindow.GetWidth() + fullscreenViewport.w) * (1.0f - twelvesecondNormal);
+						verticalModifier = (gWindow.GetHeight() + fullscreenViewport.h) * (1.0f - twelvesecondNormal);
 					}
 					SDL_Rect characterViewport =
 					{
-						characterViewport.x = fullscreenViewport.x - fullscreenViewport.w + directionModifier,
+						characterViewport.x = fullscreenViewport.x - fullscreenViewport.w + horizontalModifier,
 						characterViewport.y = fullscreenViewport.y - (fullscreenViewport.h / 2),
 						characterViewport.w = fullscreenViewport.w,
 						characterViewport.h = fullscreenViewport.h
@@ -1550,14 +1556,6 @@ int main(int argc, char* argv[])
 								{
 									y = 0;
 								}
-								if (inputText != "")
-								{
-									gBitmapFont.renderText(x, y, inputText.c_str());
-								}
-								else
-								{
-									gBitmapFont.renderText(x, y, "");
-								}
 								SetRenderViewport(gRenderer, &middleViewport);
 							}
 
@@ -1602,6 +1600,15 @@ int main(int argc, char* argv[])
 					};
 					SetRenderViewport(gRenderer, &lineViewport);
 					RenderTexture(gRenderer, characterFairyHopeful.getTexture());
+					SDL_Rect monsterViewport =
+					{
+						monsterViewport.x = fullscreenViewport.x,
+						monsterViewport.y = fullscreenViewport.y - fullscreenViewport.h + verticalModifier,
+						monsterViewport.w = fullscreenViewport.w,
+						monsterViewport.h = fullscreenViewport.h
+					};
+					SetRenderViewport(gRenderer, &monsterViewport);
+					RenderTexture(gRenderer, gCharacterMonsterMouth.getTexture());
 					SetRenderViewport(gRenderer, &fullscreenViewport);
 					RenderLine(
 						gRenderer,
@@ -1620,7 +1627,6 @@ int main(int argc, char* argv[])
 					SetRenderViewport(gRenderer, &palaceHighlightViewport);
 					RenderTexture(gRenderer, gPalaceHighlight.getTexture());
 					SetRenderViewport(gRenderer, NULL);
-
 
 					if (isDebug)
 					{
