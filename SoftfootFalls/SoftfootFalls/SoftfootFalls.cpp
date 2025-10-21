@@ -1,17 +1,3 @@
-#include <stdio.h>
-#include <iostream>
-#include <thread>
-#include <chrono>
-#include <functional>
-#include <string>
-#include <sstream>
-#include <cmath>
-#include <vector>
-#include <fstream>
-#include <cmath>
-#include <iostream>
-#include <string>
-
 #include "SoftfootFalls.h"
 
 #include "Print.h"
@@ -35,6 +21,17 @@
 #include "Load.h"
 #include "Container.h"
 
+
+const char* BasePath(const char* filePath)
+{
+	char* basePath = new char[strlen(filePath) + 1];
+	int i = 0;
+	while (i < strlen(filePath)) basePath[i++] = filePath[i];
+	--i;
+	do basePath[i] = '\0';
+	while (--i, filePath[i] != SEPARATOR);
+	return basePath;
+}
 
 const int JOYSTICK_DEAD_ZONE = 8000;
 #ifdef _WIN32
@@ -634,7 +631,11 @@ bool Init()
 {
 	bool success = true;
 
-	if (!Terrtronics_Init())
+#ifdef _WIN32
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO))
+#elif __linux__
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0)
+#endif
 	{
 		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 		success = false;
