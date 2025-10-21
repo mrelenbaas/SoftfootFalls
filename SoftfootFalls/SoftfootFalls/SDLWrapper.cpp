@@ -1,4 +1,5 @@
 #include "SDLWrapper.h"
+#include "SDLInterface.h"
 
 
 void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
@@ -61,16 +62,8 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 #endif
 		minimized = false;
 		break;
-#ifdef _WIN32
-	case SDL_EVENT_KEY_DOWN:
-#elif __linux__
-	case SDL_KEYDOWN:
-#endif
-#ifdef _WIN32
-		if (event.key.key == SDLK_RETURN)
-#elif __linux__
-		if (event.key.keysym.sym == SDLK_RETURN)
-#endif
+	case KEY_PRESSED:
+		if (Key(event) == SDLK_RETURN)
 		{
 			if (fullscreen)
 			{

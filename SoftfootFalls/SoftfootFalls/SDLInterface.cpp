@@ -2,15 +2,40 @@
 
 
 ///////////////////////////////////////////////////////////////////////
+//  KEYS  /////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+#ifdef _WIN32
+SDL_Keycode Key(SDL_Event event)
+{
+	return event.key.key;
+}
+#elif __linux__
+SDL_Keycode Key(SDL_Event event)
+{
+	return event.key.keysym.sym;
+}
+#endif
+
+///////////////////////////////////////////////////////////////////////
 //  WINDOW  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-bool IsWindowQuit(SDL_Event e)
+bool Terrtronics_Init()
 {
 #ifdef _WIN32
-	return e.type == SDL_EVENT_QUIT;
+	return SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO);
 #elif __linux__
-	return e.type == SDL_QUIT;
+	return SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0;
+#endif
+}
+
+bool IsWindowQuit(SDL_Event event)
+{
+#ifdef _WIN32
+	return event.type == SDL_EVENT_QUIT;
+#elif __linux__
+	return event.type == SDL_QUIT;
 #endif
 }
 
@@ -33,6 +58,19 @@ void StopTextInput(SDL_Window* window)
 	SDL_StopTextInput(window);
 #elif __linux__
 	SDL_StopTextInput();
+#endif
+}
+
+///////////////////////////////////////////////////////////////////////
+//  SURFACE  //////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+void DestroySurface(SDL_Surface* surface)
+{
+#ifdef _WIN32
+	SDL_DestroySurface(surface);
+#elif __linux__
+	SDL_FreeSurface(surface);
 #endif
 }
 

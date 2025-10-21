@@ -9,6 +9,8 @@
 #include <vector>
 #include <fstream>
 #include <cmath>
+#include <iostream>
+#include <string>
 
 #include "SoftfootFalls.h"
 
@@ -233,11 +235,7 @@ bool LTexture::loadFromPixels()
 			mWidth = mSurfacePixels->w;
 			mHeight = mSurfacePixels->h;
 		}
-#ifdef _WIN32
-		SDL_DestroySurface(mSurfacePixels);
-#elif __linux__
-		SDL_FreeSurface(mSurfacePixels);
-#endif
+		DestroySurface(mSurfacePixels);
 		mSurfacePixels = NULL;
 	}
 	return mTexture != NULL;
@@ -254,11 +252,7 @@ void LTexture::Free()
 	}
 	if (mSurfacePixels != NULL)
 	{
-#ifdef _WIN32
-		SDL_DestroySurface(mSurfacePixels);
-#elif __linux__
-		SDL_FreeSurface(mSurfacePixels);
-#endif
+		DestroySurface(mSurfacePixels);
 		mSurfacePixels = NULL;
 	}
 }
@@ -352,11 +346,7 @@ void Dot::HandleEvent(SDL_Event& e)
 {
 	if (e.type == KEY_PRESSED && e.key.repeat == 0)
 	{
-#ifdef _WIN32
-		switch (e.key.key)
-#elif __linux__
-		switch (e.key.keysym.sym)
-#endif
+		switch (Key(e))
 		{
 		case SDLK_UP:
 			mVelY -= DOT_VEL;
@@ -374,11 +364,7 @@ void Dot::HandleEvent(SDL_Event& e)
 	}
 	else if (e.type == KEY_RELEASED && e.key.repeat == 0)
 	{
-#ifdef _WIN32
-		switch (e.key.key)
-#elif __linux__
-		switch (e.key.keysym.sym)
-#endif
+		switch (Key(e))
 		{
 		case SDLK_UP:
 			mVelY += DOT_VEL;
@@ -648,11 +634,7 @@ bool Init()
 {
 	bool success = true;
 
-#ifdef _WIN32
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO))
-#elif __linux__
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0)
-#endif
+	if (!Terrtronics_Init())
 	{
 		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 		success = false;
@@ -1025,21 +1007,18 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
 		{
 			SDL_Log("Unable to create texture from %s! SDL Error: %s\n", path, SDL_GetError());
 		}
-#ifdef _WIN32
-		SDL_DestroySurface(loadedSurface);
-#elif __linux__
-		SDL_FreeSurface(loadedSurface);
-#endif
+		DestroySurface(loadedSurface);
 	}
 
 	return newTexture;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
 	Clock* clock = new Clock();
 	Timer* myTimer = new Timer(Timer::Print, 1);
-	Load* load = new Load(SDL_GetBasePath());
+	const char* basePath = BasePath(argv[0]);
+	Load* load = new Load(basePath);
 
 	if (!Init())
 	{
@@ -1240,11 +1219,7 @@ int main()
 					}
 					else if (e.type == KEY_RELEASED)
 					{
-#ifdef _WIN32
-						switch (e.key.key)
-#elif __linux__
-						switch (e.key.keysym.sym)
-#endif
+						switch (Key(e))
 						{
 						case SDLK_HOME:
 							break;
@@ -1252,11 +1227,7 @@ int main()
 					}
 					else if (e.type == KEY_PRESSED)
 					{
-#ifdef _WIN32
-						switch (e.key.key)
-#elif __linux__
-						switch (e.key.keysym.sym)
-#endif
+						switch (Key(e))
 						{
 						case SDLK_HOME:
 							isDebug = !isDebug;
@@ -1336,11 +1307,7 @@ int main()
 					if (e.type == KEY_PRESSED)
 #endif
 					{
-#ifdef _WIN32
-						if (e.key.key == SDLK_BACKSPACE && inputText.length() > 0)
-#elif __linux__
-						if (e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0)
-#endif
+						if (Key(e) == SDLK_BACKSPACE && inputText.length() > 0)
 						{
 							inputText.pop_back();
 						}
@@ -1652,6 +1619,7 @@ int main()
 	}
 
 	delete load;
+	delete[] basePath;
 	delete myTimer;
 	delete clock;
 	return 0;
