@@ -39,6 +39,20 @@ bool IsWindowQuit(SDL_Event event)
 #endif
 }
 
+bool IsResized(SDL_Event& event)
+{
+	bool result = false;
+#ifdef _WIN32
+	if (event.type == SDL_EVENT_WINDOW_RESIZED)
+#elif __linux__
+	if ((event.type == SDL_WINDOWEVENT) && (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED))
+#endif
+	{
+		result = true;
+	}
+	return result;
+}
+
 ///////////////////////////////////////////////////////////////////////
 //  INPUT  ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
