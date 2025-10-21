@@ -144,6 +144,7 @@ SDL_GameController* gGameController;
 SDL_Joystick* gJoystick = NULL;
 SDL_Haptic* gJoyHaptic = NULL;
 LTexture gDotTexture;
+LTexture gPalaceTexture;
 LTexture gBGTexture;
 const int HORIZON_SIZE = 8;
 LTexture gHorizons[HORIZON_SIZE];
@@ -865,6 +866,7 @@ bool loadMedia(Load* load)
 	}
 
 	success = gDotTexture.loadFromFile(load->Path("CharacterFairySmallwig000_64x64.png"));
+	success = gPalaceTexture.loadFromFile(load->Path("BoxFront.png"));
 	success = gBGTexture.loadFromFile(load->Path("bg.png"));
 	success = gHorizons[0].loadFromFile(load->Path("Horizon000.png"));
 	success = gHorizons[1].loadFromFile(load->Path("Horizon001.png"));
@@ -932,6 +934,7 @@ void close(Load* load)
 	gJoystick = NULL;
 	gJoyHaptic = NULL;
 	gDotTexture.Free();
+	gPalaceTexture.Free();
 	gBGTexture.Free();
 	for (int i = 0; i < HORIZON_SIZE; ++i)
 	{
@@ -1616,13 +1619,22 @@ int main(int argc, char* argv[])
 						dot.getBox().y + (dot.getBox().h * 2.5f),
 						beamPoint.x,
 						beamPoint.y);
-					dot.render();
+					//dot.render();
+					SDL_Rect palaceViewport
+					{
+						dot.getBox().x - (dot.getBox().w / 4 * 10),
+						dot.getBox().y - (dot.getBox().h / 4 * 10),
+						dot.getBox().w * 10,
+						dot.getBox().h * 10
+					};
+					SetRenderViewport(gRenderer, &palaceViewport);
+					RenderTexture(gRenderer, gPalaceTexture.getTexture());
 					SDL_Rect palaceHighlightViewport =
 					{
-						palaceHighlightViewport.x = dot.getBox().x + (dot.getBox().w / 2 * 10),
-						palaceHighlightViewport.y = dot.getBox().y - (dot.getBox().h / 2 * 10),
-						palaceHighlightViewport.w = dot.getBox().w * 10,
-						palaceHighlightViewport.h = dot.getBox().h * 10
+						palaceViewport.x + palaceViewport.w,
+						palaceViewport.y,
+						palaceViewport.w,
+						palaceViewport.h
 					};
 					SetRenderViewport(gRenderer, &palaceHighlightViewport);
 					RenderTexture(gRenderer, gPalaceHighlight.getTexture());
