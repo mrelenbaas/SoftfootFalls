@@ -8,11 +8,19 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 	{
 #ifdef _WIN32
 	case SDL_EVENT_WINDOW_RESIZED:
-#endif
 		width = event.window.data1;
 		height = event.window.data2;
 		printf("TODO, WINDOWS: THIS IS IN 2 DIFFERENT FILES width: %i, height: %i\n", width, height);
 		break;
+#elif __linux__
+	case SDL_WINDOWEVENT:
+		if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+			width = event.window.data1;
+			height = event.window.data2;
+			printf("TODO, LINUX: THIS IS IN 2 DIFFERENT FILES width: %i, height: %i\n", gWindow.GetWidth(), gWindow.GetHeight());
+		}
+		break;
+#endif
 	case EVENT_WINDOW_MINIMIZED:
 		minimized = true;
 		break;

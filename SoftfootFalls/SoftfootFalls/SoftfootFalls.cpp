@@ -1133,15 +1133,15 @@ int main(int argc, char* argv[])
 				myTimer->Update();
 				while (SDL_PollEvent(&e) != 0)
 				{
-#ifdef __linux__
-					if (e.type == SDL_WINDOWEVENT) {
-						if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-							gWindow.SetWidth(e.window.data1);
-							gWindow.SetHeight(e.window.data2);
-							printf("TODO, LINUX: THIS IS IN 2 DIFFERENT FILES width: %i, height: %i\n", gWindow.GetWidth(), gWindow.GetHeight());
-						}
-					}
-#endif
+//#ifdef __linux__
+//					if (e.type == SDL_WINDOWEVENT) {
+//						if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+//							gWindow.SetWidth(e.window.data1);
+//							gWindow.SetHeight(e.window.data2);
+//							printf("TODO, LINUX: THIS IS IN 2 DIFFERENT FILES width: %i, height: %i\n", gWindow.GetWidth(), gWindow.GetHeight());
+//						}
+//					}
+//#endif
 				  
 					if (IsWindowQuit(e)) quit = true;
 #ifdef _WIN32
