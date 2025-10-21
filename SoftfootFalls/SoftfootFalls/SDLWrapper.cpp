@@ -27,20 +27,12 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 		{
 			if (fullscreen)
 			{
-#ifdef _WIN32
 				SDL_SetWindowFullscreen(window, false);
-#elif __linux__
-				SDL_SetWindowFullscreen(window, 0);
-#endif
 				fullscreen = false;
 			}
 			else
 			{
-#ifdef _WIN32
 				SDL_SetWindowFullscreen(window, true);
-#elif __linux__
-				SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-#endif
 				fullscreen = true;
 				minimized = false;
 			}
