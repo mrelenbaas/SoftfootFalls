@@ -13,53 +13,13 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 		height = event.window.data2;
 		printf("TODO, WINDOWS: THIS IS IN 2 DIFFERENT FILES width: %i, height: %i\n", width, height);
 		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_MOUSE_ENTER:
-#elif __linux__
-	case SDL_WINDOWEVENT_ENTER:
-#endif
-		mouseFocus = true;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
-#elif __linux__
-	case SDL_WINDOWEVENT_LEAVE:
-#endif
-		mouseFocus = false;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_FOCUS_GAINED:
-#elif __linux__
-	case SDL_WINDOWEVENT_FOCUS_GAINED:
-#endif
-		keyboardFocus = true;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_FOCUS_LOST:
-#elif __linux__
-	case SDL_WINDOWEVENT_FOCUS_LOST:
-#endif
-		keyboardFocus = false;
-		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_MINIMIZED:
-#elif __linux__
-	case SDL_WINDOWEVENT_MINIMIZED:
-#endif
+	case EVENT_WINDOW_MINIMIZED:
 		minimized = true;
 		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_MAXIMIZED:
-#elif __linux__
-	case SDL_WINDOWEVENT_MAXIMIZED:
-#endif
+	case EVENT_WINDOW_MAXIMIZED:
 		minimized = false;
 		break;
-#ifdef _WIN32
-	case SDL_EVENT_WINDOW_RESTORED:
-#elif __linux__
-	case SDL_WINDOWEVENT_RESTORED:
-#endif
+	case EVENT_WINDOW_RESTORED:
 		minimized = false;
 		break;
 	case KEY_PRESSED:
@@ -92,8 +52,6 @@ void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 void LWindow::Free()
 {
 	if (window != NULL) SDL_DestroyWindow(window);
-	mouseFocus = false;
-	keyboardFocus = false;
 	width = 0;
 	height = 0;
 }
@@ -121,16 +79,6 @@ void LWindow::SetHeight(int height)
 SDL_Window* LWindow::GetWindow()
 {
 	return window;
-}
-
-bool LWindow::HasMouseFocus() const
-{
-	return mouseFocus;
-}
-
-bool LWindow::HasKeyboardFocus() const
-{
-	return keyboardFocus;
 }
 
 bool LWindow::IsMinimized() const

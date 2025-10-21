@@ -453,8 +453,6 @@ bool LWindow::Init()
 	SDL_SetRenderVSync(renderer, 1);
 	//SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
 
-	mouseFocus = true;
-	keyboardFocus = true;
 	width = gWindow.GetWidth();
 	height = gWindow.GetHeight();
 	return true;
@@ -462,8 +460,6 @@ bool LWindow::Init()
 	window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, gWindow.GetWidth(), gWindow.GetHeight(), SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (window != NULL)
 	{
-		mouseFocus = true;
-		keyboardFocus = true;
 		width = gWindow.GetWidth();
 		height = gWindow.GetHeight();
 	}

@@ -21,8 +21,6 @@ public:
 	LWindow()
 		: window(nullptr)
 		, renderer(nullptr)
-		, mouseFocus(false)
-		, keyboardFocus(false)
 		, fullscreen(false)
 		, minimized(false)
 		, width(640)
@@ -39,14 +37,10 @@ public:
 	void SetWidth(int);
 	void SetHeight(int);
 	SDL_Window* GetWindow();
-	bool HasMouseFocus() const;
-	bool HasKeyboardFocus() const;
 	bool IsMinimized() const;
 private:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
-	bool mouseFocus;
-	bool keyboardFocus;
 	bool fullscreen;
 	bool minimized;
 	int width;
