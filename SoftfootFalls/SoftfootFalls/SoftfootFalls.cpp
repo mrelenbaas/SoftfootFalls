@@ -132,11 +132,6 @@ SDL_Surface* gScreenSurface = NULL;
 SDL_Texture* gTexture = NULL;
 LTexture gModulatedTexture;
 const int WALKING_ANIMATION_FRAMES = 4;
-#ifdef _WIN32
-SDL_FRect gWalkingSpriteClips[WALKING_ANIMATION_FRAMES];
-#elif __linux__
-SDL_Rect gWalkingSpriteClips[WALKING_ANIMATION_FRAMES];
-#endif
 LTexture gWalkingSpriteSheetTexture;
 LTexture gIconCursor;
 LTexture gSun;
@@ -159,6 +154,8 @@ LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
 LTexture gBoxFront;
 LTexture gPlayerHighlight;
 LTexture gPalaceHighlight;
+LTexture gCharacterTownspersonMoonboy;
+LTexture gCharacterTownspersonMoonboyHands;
 LTexture gPlayerBeam;
 LTexture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
@@ -767,8 +764,8 @@ bool Init()
 		{
 #ifdef _WIN32
 			gRenderer = gWindow.GetRenderer();
-			//SDL_SetRenderVSync(gRenderer, 1);
-			SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
+			SDL_SetRenderVSync(gRenderer, 1);
+			//SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
 			SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #elif __linux__
 			//gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
@@ -807,26 +804,6 @@ bool loadMedia(Load* load)
 	else
 	{
 		gModulatedTexture.setBlendMode(SDL_BLENDMODE_BLEND);
-	}
-	if (!(success = gWalkingSpriteSheetTexture.loadFromFile(load->Path("Player_1024x1024.png")))) {}
-	else
-	{
-		gWalkingSpriteClips[0].x = 0;
-		gWalkingSpriteClips[0].y = 0;
-		gWalkingSpriteClips[0].w = 64;
-		gWalkingSpriteClips[0].h = 205;
-		gWalkingSpriteClips[1].x = 64;
-		gWalkingSpriteClips[1].y = 0;
-		gWalkingSpriteClips[1].w = 64;
-		gWalkingSpriteClips[1].h = 205;
-		gWalkingSpriteClips[2].x = 128;
-		gWalkingSpriteClips[2].y = 0;
-		gWalkingSpriteClips[2].w = 64;
-		gWalkingSpriteClips[2].h = 205;
-		gWalkingSpriteClips[3].x = 192;
-		gWalkingSpriteClips[3].y = 0;
-		gWalkingSpriteClips[3].w = 64;
-		gWalkingSpriteClips[3].h = 205;
 	}
 	success = gIconCursor.loadFromFile(load->Path("IconCursor.png"));
 	success = gSun.loadFromFile(load->Path("CharacterFairySun_000_256x256.png"));
@@ -908,6 +885,8 @@ bool loadMedia(Load* load)
 	success = gBoxFront.loadFromFile(load->Path("BoxFront.png"));
 	success = gPlayerHighlight.loadFromFile(load->Path("PlayerHighlight_000_1024x1024.png"));
 	success = gPalaceHighlight.loadFromFile(load->Path("PalaceHighlight_000_2048x2048.png"));
+	success = gCharacterTownspersonMoonboy.loadFromFile(load->Path("CharacterTownspersonMoonboy_000_1024x1024.png"));
+	success = gCharacterTownspersonMoonboyHands.loadFromFile(load->Path("CharacterTownspersonMoonboy_Hands_000_1024x1024.png"));
 	success = gPlayerBeam.loadFromFile(load->Path("PlayerBeam_000_2048x2048.png"));
 	success = characterFairyHopeful.loadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png"));
 	success = gBitmapFont.buildFont(load->Path("font_000.png"));
@@ -967,6 +946,8 @@ void close(Load* load)
 	gBoxFront.Free();
 	gPlayerHighlight.Free();
 	gPalaceHighlight.Free();
+	gCharacterTownspersonMoonboy.Free();
+	gCharacterTownspersonMoonboyHands.Free();
 	gPlayerBeam.Free();
 	characterFairyHopeful.Free();
 #ifdef _WIN32
@@ -1046,11 +1027,6 @@ int main(int argc, char* argv[])
 			bool quit = false;
 			SDL_Event e;
 			double degrees = 0;
-//#ifdef _WIN32
-//			SDL_FlipMode flipType = SDL_FLIP_NONE;
-//#elif __linux__
-//			SDL_RendererFlip flipType = SDL_FLIP_NONE;
-//#endif
 			int xDir = 0;
 			int yDir = 0;
 			int countedFrames = 0;
@@ -1071,12 +1047,14 @@ int main(int argc, char* argv[])
 			long long decisecondDelta = 0L;
 			long long secondDelta = 0L;
 			long long trisecondDelta = 0L;
+			long long twelvesecondDelta = 0L;
 			long long minuteDelta = 0L;
 			long long hourDelta = 0L;
 			long long halfDayDelta = 0L;
 			long long fullDayDelta = 0L;
 			long long playerDelta = 0L;
 			bool trisecondToggle = false;
+			bool twelvesecondToggle = false;
 			int gridCounter = 0;
 			int playerI = 0;
 			int playerJ = 0;
@@ -1093,6 +1071,7 @@ int main(int argc, char* argv[])
 				secondDelta += currentTime - previousTime;
 				playerDelta += currentTime - previousTime;
 				trisecondDelta += currentTime - previousTime;
+				twelvesecondDelta += currentTime - previousTime;
 				minuteDelta += currentTime - previousTime;
 				hourDelta += currentTime - previousTime;
 				halfDayDelta += currentTime - previousTime;
@@ -1100,6 +1079,7 @@ int main(int argc, char* argv[])
 				double decisecondLimit = 100'000'000;
 				double secondLimit = 1'000'000'000;
 				double trisecondLimit = 3'000'000'000;
+				double twelvesecondLimit = 6'000'000'000;
 				double minuteLimit = 60'000'000'000;
 				double hourLimit = 3'600'000'000'000;
 				double halfDayLimit = 43'200'000'000'000;
@@ -1122,6 +1102,11 @@ int main(int argc, char* argv[])
 					trisecondToggle = !trisecondToggle;
 					trisecondDelta -= trisecondLimit;
 				}
+				if (twelvesecondDelta > twelvesecondLimit)
+				{
+					twelvesecondToggle = !twelvesecondToggle;
+					twelvesecondDelta -= twelvesecondLimit;
+				}
 				if (minuteDelta > minuteLimit)
 				{
 					minuteDelta -= minuteLimit;
@@ -1140,6 +1125,7 @@ int main(int argc, char* argv[])
 				}
 				double secondNormal = (double)secondDelta / secondLimit;
 				double trisecondNormal = (double)trisecondDelta / trisecondLimit;
+				double twelvesecondNormal = (double)twelvesecondDelta / twelvesecondLimit;
 				double minuteNormal = (double)minuteDelta / minuteLimit;
 				previousTime = currentTime;
 
@@ -1401,9 +1387,28 @@ int main(int argc, char* argv[])
 						fullscreenViewport.w = gWindow.GetWidth(),
 						fullscreenViewport.h = gWindow.GetHeight()
 					};
+					int directionModifier = 0;
+					if (twelvesecondToggle)
+					{
+						directionModifier = (gWindow.GetWidth() + fullscreenViewport.w) * twelvesecondNormal;
+					}
+					else
+					{
+						directionModifier = (gWindow.GetWidth() + fullscreenViewport.w) * (1.0f - twelvesecondNormal);
+					}
+					SDL_Rect characterViewport =
+					{
+						characterViewport.x = fullscreenViewport.x - fullscreenViewport.w + directionModifier,
+						characterViewport.y = fullscreenViewport.y - (fullscreenViewport.h / 2),
+						characterViewport.w = fullscreenViewport.w,
+						characterViewport.h = fullscreenViewport.h
+					};
+					SetRenderViewport(gRenderer, &characterViewport);
+					RenderTexture(gRenderer, gCharacterTownspersonMoonboy.getTexture());
 					SetRenderViewport(gRenderer, &fullscreenViewport);
-					gModulatedTexture.render(0, 0);
 					RenderTexture(gRenderer, gModulatedTexture.getTexture());
+					SetRenderViewport(gRenderer, &characterViewport);
+					RenderTexture(gRenderer, gCharacterTownspersonMoonboyHands.getTexture());
 					dot.move((double)gWindow.GetWidth() * 0.000025, (double)gWindow.GetHeight() * 0.000025);
 					dot.setIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ);
 
