@@ -152,10 +152,13 @@ LTexture gDotTexture;
 LTexture gBGTexture;
 const int HORIZON_SIZE = 8;
 LTexture gHorizons[HORIZON_SIZE];
+const int ROAD_SIZE = 5;
+LTexture gRoads[ROAD_SIZE];
 LTexture gBoxes[KEY_PRESS_SURFACE_TOTAL];
 LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
 LTexture gBoxFront;
 LTexture gPlayerHighlight;
+LTexture gPalaceHighlight;
 LTexture gPlayerBeam;
 LTexture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
@@ -893,12 +896,18 @@ bool loadMedia(Load* load)
 	success = gHorizons[5].loadFromFile(load->Path("Horizon005.png"));
 	success = gHorizons[6].loadFromFile(load->Path("Horizon006.png"));
 	success = gHorizons[7].loadFromFile(load->Path("Horizon007.png"));
+	success = gRoads[0].loadFromFile(load->Path("Road_000_256x256.png"));
+	success = gRoads[1].loadFromFile(load->Path("Road_001_256x256.png"));
+	success = gRoads[2].loadFromFile(load->Path("Road_002_256x256.png"));
+	success = gRoads[3].loadFromFile(load->Path("Road_003_256x256.png"));
+	success = gRoads[4].loadFromFile(load->Path("Road_004_256x256.png"));
 	success = gBoxes[KEY_PRESS_SURFACE_UP].loadFromFile(load->Path("BoxUp.png"));
 	success = gBoxes[KEY_PRESS_SURFACE_DOWN].loadFromFile(load->Path("BoxDown.png"));
 	success = gBoxes[KEY_PRESS_SURFACE_LEFT].loadFromFile(load->Path("BoxLeft.png"));
 	success = gBoxes[KEY_PRESS_SURFACE_RIGHT].loadFromFile(load->Path("BoxRight.png"));
 	success = gBoxFront.loadFromFile(load->Path("BoxFront.png"));
 	success = gPlayerHighlight.loadFromFile(load->Path("PlayerHighlight_000_1024x1024.png"));
+	success = gPalaceHighlight.loadFromFile(load->Path("PalaceHighlight_000_2048x2048.png"));
 	success = gPlayerBeam.loadFromFile(load->Path("PlayerBeam_000_2048x2048.png"));
 	success = characterFairyHopeful.loadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png"));
 	success = gBitmapFont.buildFont(load->Path("font_000.png"));
@@ -947,12 +956,17 @@ void close(Load* load)
 	{
 		gHorizons[i].Free();
 	}
+	for (int i = 0; i < ROAD_SIZE; ++i)
+	{
+		gRoads[i].Free();
+	}
 	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i)
 	{
 		gBoxes[i].Free();
 	}
 	gBoxFront.Free();
 	gPlayerHighlight.Free();
+	gPalaceHighlight.Free();
 	gPlayerBeam.Free();
 	characterFairyHopeful.Free();
 #ifdef _WIN32
@@ -1032,11 +1046,11 @@ int main(int argc, char* argv[])
 			bool quit = false;
 			SDL_Event e;
 			double degrees = 0;
-#ifdef _WIN32
-			SDL_FlipMode flipType = SDL_FLIP_NONE;
-#elif __linux__
-			SDL_RendererFlip flipType = SDL_FLIP_NONE;
-#endif
+//#ifdef _WIN32
+//			SDL_FlipMode flipType = SDL_FLIP_NONE;
+//#elif __linux__
+//			SDL_RendererFlip flipType = SDL_FLIP_NONE;
+//#endif
 			int xDir = 0;
 			int yDir = 0;
 			int countedFrames = 0;
@@ -1287,12 +1301,7 @@ int main(int argc, char* argv[])
 							break;
 						}
 					}
-
-#ifdef _WIN32
-					if (e.type == SDL_EVENT_KEY_DOWN)
-#elif __linux__
 					if (e.type == KEY_PRESSED)
-#endif
 					{
 						if (Key(e) == SDLK_BACKSPACE && inputText.length() > 0)
 						{
@@ -1412,6 +1421,7 @@ int main(int argc, char* argv[])
 					float centerY = gWindow.GetHeight() - mouseY;
 					if (centerY > gWindow.GetHeight() * 0.5f) centerY = gWindow.GetHeight() * 0.5f;
 					int horizonI = 0;
+					int roadI = 0;
 					for (int i = ROW_SIZE - 1; i >= 0 ; --i)
 					{
 						normal = (float)i / (float)ROW_SIZE;
@@ -1462,10 +1472,18 @@ int main(int argc, char* argv[])
 							{
 								horizonI = 0;
 							}
+							modI = (i % 4 == 0);
+							RenderTexture(gRenderer, gRoads[modI + roadI].getTexture());
+							++roadI;
+							if (roadI > 3)
+							{
+								roadI = 0;
+							}
 							if (dotI == i && dotJ == j)
 							{
 								RenderTexture(gRenderer, gPlayerHighlight.getTexture());
 							}
+							SetRenderViewport(gRenderer, &middleViewport);
 							Distance distance = { (float)middleViewport.w, (float)middleViewport.h };
 							if (i == 0 && j == 0)
 							{
@@ -1475,7 +1493,7 @@ int main(int argc, char* argv[])
 									NULL,
 									joystickAngle,
 									NULL,
-									flipType,
+									SDL_FLIP_NONE,
 									distance);
 							}
 							if (j == 0)
@@ -1493,7 +1511,7 @@ int main(int argc, char* argv[])
 									NULL,
 									degrees,
 									NULL,
-									flipType,
+									SDL_FLIP_NONE,
 									distance);
 							}
 							if (i == ROW_SIZE - 1 && j == 0)
@@ -1587,7 +1605,17 @@ int main(int argc, char* argv[])
 						beamPoint.x,
 						beamPoint.y);
 					dot.render();
+					SDL_Rect palaceHighlightViewport =
+					{
+						palaceHighlightViewport.x = dot.getBox().x + (dot.getBox().w / 2 * 10),
+						palaceHighlightViewport.y = dot.getBox().y - (dot.getBox().h / 2 * 10),
+						palaceHighlightViewport.w = dot.getBox().w * 10,
+						palaceHighlightViewport.h = dot.getBox().h * 10
+					};
+					SetRenderViewport(gRenderer, &palaceHighlightViewport);
+					RenderTexture(gRenderer, gPalaceHighlight.getTexture());
 					SetRenderViewport(gRenderer, NULL);
+
 
 					if (isDebug)
 					{
