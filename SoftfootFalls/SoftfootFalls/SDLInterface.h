@@ -53,6 +53,8 @@ SDL_Keycode Key(SDL_Event event);
 //  WINDOW  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
+void MainInit(const char*, int, int, SDL_Window**, SDL_Renderer**);
+
 #ifdef _WIN32
 const SDL_EventType EVENT_WINDOW_MINIMIZED = SDL_EVENT_WINDOW_MINIMIZED;
 #elif __linux__
@@ -68,8 +70,6 @@ const SDL_EventType EVENT_WINDOW_RESTORED = SDL_EVENT_WINDOW_RESTORED;
 #elif __linux__
 const SDL_WindowEventID EVENT_WINDOW_RESTORED = SDL_WINDOWEVENT_RESTORED;
 #endif
-
-bool Terrtronics_Init();
 
 bool IsWindowQuit(SDL_Event);
 

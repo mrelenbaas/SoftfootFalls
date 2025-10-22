@@ -21,12 +21,13 @@ SDL_Keycode Key(SDL_Event event)
 //  WINDOW  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-bool Terrtronics_Init()
+void MainInit(const char* title, int width, int height, SDL_Window** window, SDL_Renderer** renderer)
 {
 #ifdef _WIN32
-	return SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO);
+	SDL_CreateWindowAndRenderer(title, width, height, SDL_WINDOW_RESIZABLE, window, renderer);
+	SDL_SetRenderVSync(*renderer, 1);
 #elif __linux__
-	return SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0;
+	*window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 #endif
 }
 
