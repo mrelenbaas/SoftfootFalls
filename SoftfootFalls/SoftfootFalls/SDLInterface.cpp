@@ -21,7 +21,7 @@ SDL_Keycode Key(SDL_Event event)
 //  WINDOW  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-void Init(const char* title, int width, int height, SDL_Window** window, SDL_Renderer** renderer)
+void MainInit(const char* title, int width, int height, SDL_Window** window, SDL_Renderer** renderer)
 {
 #ifdef _WIN32
 	SDL_CreateWindowAndRenderer(title, width, height, SDL_WINDOW_RESIZABLE, window, renderer);
