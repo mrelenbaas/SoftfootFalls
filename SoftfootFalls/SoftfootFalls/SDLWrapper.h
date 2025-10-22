@@ -21,19 +21,17 @@ public:
 	LWindow()
 		: window(nullptr)
 		, renderer(nullptr)
-		, fullscreen(false)
-		, minimized(false)
+		, title("SoftfootFalls\0")
 		, width(640)
-		, height(480) {}
-	bool Init();
-#ifdef __linux__
-	SDL_Renderer* CreateRenderer();
-#endif
-	SDL_Renderer* GetRenderer();
+		, height(480)
+		, fullscreen(false)
+		, minimized(false) {}
+	bool LInit();
 	void HandleEvent(SDL_Renderer*, SDL_Event&);
 	void Free();
 	int GetWidth() const;
 	int GetHeight() const;
+	SDL_Renderer* GetRenderer();
 	void SetWidth(int);
 	void SetHeight(int);
 	SDL_Window* GetWindow();
@@ -41,8 +39,9 @@ public:
 private:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
-	bool fullscreen;
-	bool minimized;
+	const char* title;
 	int width;
 	int height;
+	bool fullscreen;
+	bool minimized;
 };

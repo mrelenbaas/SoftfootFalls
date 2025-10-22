@@ -2,6 +2,12 @@
 #include "SDLInterface.h"
 
 
+bool LWindow::LInit()
+{
+	Init(title, width, height, &window, &renderer);
+	return window != NULL;
+}
+
 void LWindow::HandleEvent(SDL_Renderer* renderer, SDL_Event& event)
 {
 	if (IsResized(event))
@@ -54,6 +60,11 @@ int LWindow::GetWidth() const
 int LWindow::GetHeight() const
 {
 	return height;
+}
+
+SDL_Renderer* LWindow::GetRenderer()
+{
+	return renderer;
 }
 
 void LWindow::SetWidth(int width)

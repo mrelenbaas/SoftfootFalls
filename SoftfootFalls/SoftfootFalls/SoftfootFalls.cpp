@@ -17,6 +17,7 @@
 #endif
 #include "SDLInterface.h"
 #include "SDLWrapper.h"
+#include "Window.h"
 
 #include "Load.h"
 #include "Container.h"
@@ -97,7 +98,6 @@ public:
 	void HandleEvent(SDL_Event& e);
 	void move(double timestepX, double timestepY);
 	void setIJ(int*, int*, float*, float*) const;
-	void render() const;
 	SDL_Rect getBox();
 private:
 	SDL_Rect mBox;
@@ -121,7 +121,7 @@ private:
 	int mNewLine, mSpace;
 };
 
-bool Init();
+bool LInit();
 bool loadMedia(Load*);
 void close(Load*);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
@@ -163,7 +163,7 @@ LTexture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
 LBitmapFont gBitmapFont;
 Directions gDirection = DIRECTION_UP;
-const int ROW_SIZE = 15;
+const int ROW_SIZE = 25;
 
 
 LTexture::LTexture()
@@ -426,12 +426,6 @@ void Dot::setIJ(int* i, int* j, float* normalI, float* normalJ) const
 	*normalJ = jNormal;
 }
 
-void Dot::render() const
-{
-	Distance distance = { mBox.w * 5.0f, mBox.h * 5.0f };
-	gBoxFront.render(mBox.x, mBox.y, NULL, 0.0, NULL, SDL_FLIP_NONE, distance);
-}
-
 SDL_Rect Dot::getBox()
 {
 	SDL_Rect rect =
@@ -442,43 +436,6 @@ SDL_Rect Dot::getBox()
 		mBox.h
 	};
 	return rect;
-}
-
-bool LWindow::Init()
-{
-	const char* title = "SoftfootFalls";
-#ifdef _WIN32
-	if (!SDL_CreateWindowAndRenderer(title, gWindow.GetWidth(), gWindow.GetHeight(), SDL_WINDOW_RESIZABLE, &window, &renderer))
-	{
-		return false;
-	}
-	SDL_SetRenderVSync(renderer, 1);
-	//SDL_SetRenderVSync(gRenderer, SDL_RENDERER_VSYNC_DISABLED);
-
-	width = gWindow.GetWidth();
-	height = gWindow.GetHeight();
-	return true;
-#elif __linux__
-	window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, gWindow.GetWidth(), gWindow.GetHeight(), SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-	if (window != NULL)
-	{
-		width = gWindow.GetWidth();
-		height = gWindow.GetHeight();
-	}
-	return window != NULL;
-#endif
-}
-
-#ifdef __linux__
-SDL_Renderer* LWindow::CreateRenderer()
-{
-	return SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED /*| SDL_RENDERER_PRESENTVSYNC*/);
-}
-#endif
-
-SDL_Renderer* LWindow::GetRenderer()
-{
-	return renderer;
 }
 
 LBitmapFont::LBitmapFont()
@@ -625,7 +582,7 @@ void LBitmapFont::renderText(int x, int y, std::string text)
 	}
 }
 
-bool Init()
+bool LInit()
 {
 	bool success = true;
 
@@ -757,7 +714,7 @@ bool Init()
 		}
 #endif
 		srand(SDL_GetTicks());
-		if (!gWindow.Init())
+		if (!gWindow.LInit())
 		{
 			SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 			success = false;
@@ -1018,7 +975,7 @@ int main(int argc, char* argv[])
 	const char* basePath = BasePath(argv[0]);
 	Load* load = new Load(basePath);
 
-	if (!Init())
+	if (!LInit())
 	{
 		SDL_Log("Failed to initialize!\n");
 	}
@@ -1611,7 +1568,7 @@ int main(int argc, char* argv[])
 						monsterViewport.h = fullscreenViewport.h
 					};
 					SetRenderViewport(gRenderer, &monsterViewport);
-					RenderTexture(gRenderer, gCharacterMonsterMouth.getTexture());
+					//RenderTexture(gRenderer, gCharacterMonsterMouth.getTexture());
 					SetRenderViewport(gRenderer, &fullscreenViewport);
 					RenderLine(
 						gRenderer,
