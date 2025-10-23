@@ -127,6 +127,7 @@ void close(Load*);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 
 Window gWindow;
+SDL_Renderer* gRenderer = NULL;
 SDL_Surface* gScreenSurface = NULL;
 SDL_Texture* gTexture = NULL;
 LTexture gModulatedTexture;
@@ -232,7 +233,7 @@ bool LTexture::loadFromPixels()
 #elif __linux__
 		SDL_SetColorKey(mSurfacePixels, SDL_TRUE, SDL_MapRGB(mSurfacePixels->format, 0, 0xFF, 0xFF));
 #endif
-		mTexture = SDL_CreateTextureFromSurface(gWindow.GetRenderer(), mSurfacePixels);
+		mTexture = SDL_CreateTextureFromSurface(gRenderer, mSurfacePixels);
 		if (mTexture == NULL)
 		{
 			SDL_Log("Unable to create texture from loaded pixels! SDL Error: %s\n", SDL_GetError());
@@ -298,9 +299,9 @@ void LTexture::render(int x, int y, SDL_Rect* clip, double secondAngle, SDL_Poin
 		renderQuad.h = clip->h;
 	}
 #ifdef _WIN32
-	SDL_RenderTextureRotated(gWindow.GetRenderer(), mTexture, clip, &renderQuad, angle, center, flip);
+	SDL_RenderTextureRotated(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
 #elif __linux__
-	SDL_RenderCopyEx(gWindow.GetRenderer(), mTexture, clip, &renderQuad, secondAngle, center, flip);
+	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, secondAngle, center, flip);
 #endif
 }
 
@@ -728,7 +729,9 @@ bool MainInit()
 		}
 		else
 		{
-#ifdef __linux__
+#ifdef _WIN32
+			gRenderer = gWindow.GetRenderer();
+#elif __linux__
 			gRenderer = SDL_CreateRenderer(gWindow.GetWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 			if (gRenderer == NULL)
 			{
@@ -979,6 +982,7 @@ void close(Load* load)
 	}
 	gBitmapFont.Free();
 
+	SDL_DestroyRenderer(gRenderer);
 	gWindow.Free();
 	SDL_Quit();
 }
@@ -995,7 +999,7 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
 	}
 	else
 	{
-		newTexture = SDL_CreateTextureFromSurface(gWindow.GetRenderer(), loadedSurface);
+		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
 		if (newTexture == NULL)
 		{
 			SDL_Log("Unable to create texture from %s! SDL Error: %s\n", path, SDL_GetError());
@@ -1371,7 +1375,7 @@ int main(int argc, char* argv[])
 				}
 				if (!gWindow.IsMinimized())
 				{
-					SDL_RenderClear(gWindow.GetRenderer());
+					SDL_RenderClear(gRenderer);
 
 					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
 					if (xDir == 0 && yDir == 0)
@@ -1478,12 +1482,12 @@ int main(int argc, char* argv[])
 						characterViewport.w = fullscreenViewport.w,
 						characterViewport.h = fullscreenViewport.h
 					};
-					SetRenderViewport(gWindow.GetRenderer(), &characterViewport);
-					RenderTexture(gWindow.GetRenderer(), gCharacterTownspersonMoonboy.getTexture());
-					SetRenderViewport(gWindow.GetRenderer(), &fullscreenViewport);
-					RenderTexture(gWindow.GetRenderer(), gModulatedTexture.getTexture());
-					SetRenderViewport(gWindow.GetRenderer(), &characterViewport);
-					RenderTexture(gWindow.GetRenderer(), gCharacterTownspersonMoonboyHands.getTexture());
+					SetRenderViewport(gRenderer, &characterViewport);
+					RenderTexture(gRenderer, gCharacterTownspersonMoonboy.getTexture());
+					SetRenderViewport(gRenderer, &fullscreenViewport);
+					RenderTexture(gRenderer, gModulatedTexture.getTexture());
+					SetRenderViewport(gRenderer, &characterViewport);
+					RenderTexture(gRenderer, gCharacterTownspersonMoonboyHands.getTexture());
 					dot.move((double)gWindow.GetWidth() * 0.00005, (double)gWindow.GetHeight() * 0.00005);
 					dot.setIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ);
 
@@ -1494,7 +1498,7 @@ int main(int argc, char* argv[])
 						middleViewport.w = 200,
 						middleViewport.h = 200
 					};
-					SetRenderViewport(gWindow.GetRenderer(), NULL);
+					SetRenderViewport(gRenderer, NULL);
 					float normal = secondNormal;
 					float centerX = mouseX;
 					if (centerX > gWindow.GetWidth() * 0.15f) centerX = gWindow.GetWidth() * 0.15f;
@@ -1544,16 +1548,16 @@ int main(int argc, char* argv[])
 							if (middleViewport.w < 0) middleViewport.w = 0;
 							if (middleViewport.h < 0) middleViewport.h = 0;
 							++middleViewport.w;
-							SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
+							SetRenderViewport(gRenderer, &middleViewport);
 							int modI = (i % 2 == 0) ? 0 : 4;
-							RenderTexture(gWindow.GetRenderer(), gHorizons[modI + horizonI].getTexture());
+							RenderTexture(gRenderer, gHorizons[modI + horizonI].getTexture());
 							++horizonI;
 							if (horizonI > 3)
 							{
 								horizonI = 0;
 							}
 							modI = (i % 4 == 0);
-							RenderTexture(gWindow.GetRenderer(), gRoads[modI + roadI].getTexture());
+							RenderTexture(gRenderer, gRoads[modI + roadI].getTexture());
 							++roadI;
 							if (roadI > 3)
 							{
@@ -1561,9 +1565,9 @@ int main(int argc, char* argv[])
 							}
 							if (dotI == i && dotJ == j)
 							{
-								RenderTexture(gWindow.GetRenderer(), gPlayerHighlight.getTexture());
+								RenderTexture(gRenderer, gPlayerHighlight.getTexture());
 							}
-							SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
+							SetRenderViewport(gRenderer, &middleViewport);
 							Distance distance = { (float)middleViewport.w, (float)middleViewport.h };
 							if (i == 0 && j == 0)
 							{
@@ -1618,14 +1622,14 @@ int main(int argc, char* argv[])
 							}
 							if (i == ROW_SIZE - 1 && j == 0)
 							{
-								SetRenderViewport(gWindow.GetRenderer(), NULL);
+								SetRenderViewport(gRenderer, NULL);
 								int x = 0;
 								int y = middleViewport.y - (middleViewport.h * 2.0f);
 								if (y < 0)
 								{
 									y = 0;
 								}
-								SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
+								SetRenderViewport(gRenderer, &middleViewport);
 							}
 
 							SDL_Rect walkingSpriteViewport =
@@ -1641,11 +1645,11 @@ int main(int argc, char* argv[])
 								beamViewport.y = walkingSpriteViewport.y + walkingSpriteViewport.h;
 								beamViewport.w = walkingSpriteViewport.w;
 								beamViewport.h = walkingSpriteViewport.h;
-								SetRenderViewport(gWindow.GetRenderer(), &beamViewport);
-								RenderTexture(gWindow.GetRenderer(), gPlayerBeam.getTexture());
-								SetRenderViewport(gWindow.GetRenderer(), &walkingSpriteViewport);
-								RenderTexture(gWindow.GetRenderer(), gBox->getTexture());
-								SetRenderViewport(gWindow.GetRenderer(), &walkingSpriteViewport);
+								SetRenderViewport(gRenderer, &beamViewport);
+								RenderTexture(gRenderer, gPlayerBeam.getTexture());
+								SetRenderViewport(gRenderer, &walkingSpriteViewport);
+								RenderTexture(gRenderer, gBox->getTexture());
+								SetRenderViewport(gRenderer, &walkingSpriteViewport);
 							}
 						}
 					}
@@ -1667,8 +1671,8 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					SetRenderViewport(gWindow.GetRenderer(), &lineViewport);
-					RenderTexture(gWindow.GetRenderer(), characterFairyHopeful.getTexture());
+					SetRenderViewport(gRenderer, &lineViewport);
+					RenderTexture(gRenderer, characterFairyHopeful.getTexture());
 					SDL_Rect monsterViewport =
 					{
 						monsterViewport.x = fullscreenViewport.x,
@@ -1676,10 +1680,10 @@ int main(int argc, char* argv[])
 						monsterViewport.w = fullscreenViewport.w,
 						monsterViewport.h = fullscreenViewport.h
 					};
-					SetRenderViewport(gWindow.GetRenderer(), &monsterViewport);
-					SetRenderViewport(gWindow.GetRenderer(), &fullscreenViewport);
+					SetRenderViewport(gRenderer, &monsterViewport);
+					SetRenderViewport(gRenderer, &fullscreenViewport);
 					RenderLine(
-						gWindow.GetRenderer(),
+						gRenderer,
 						dot.getBox().x + (dot.getBox().w * 2.5f),
 						dot.getBox().y + (dot.getBox().h * 2.5f),
 						beamPoint.x,
@@ -1691,8 +1695,8 @@ int main(int argc, char* argv[])
 						dot.getBox().w * 10,
 						dot.getBox().h * 10
 					};
-					SetRenderViewport(gWindow.GetRenderer(), &palaceViewport);
-					RenderTexture(gWindow.GetRenderer(), gPalaceTexture.getTexture());
+					SetRenderViewport(gRenderer, &palaceViewport);
+					RenderTexture(gRenderer, gPalaceTexture.getTexture());
 					//if (gMiracleStarfallIndex == 0)
 					//{
 					//	if (gMiracleStarfallSpawn000)
@@ -1779,8 +1783,8 @@ int main(int argc, char* argv[])
 					//		gMiracleStarfallViewport000.h = 0;
 					//		gMiracleStarfallDespawn000 = true;
 					//	}
-					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport000);
-					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall000.getTexture());
+					//	SetRenderViewport(gRenderer, &gMiracleStarfallViewport000);
+					//	RenderTexture(gRenderer, gMiracleStarfall000.getTexture());
 					//}
 					//if (gMiracleStarfallViewport001.x != 0
 					//	&& gMiracleStarfallViewport001.y != 0
@@ -1799,8 +1803,8 @@ int main(int argc, char* argv[])
 					//		gMiracleStarfallViewport001.h = 0;
 					//		gMiracleStarfallDespawn001 = true;
 					//	}
-					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport001);
-					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall001.getTexture());
+					//	SetRenderViewport(gRenderer, &gMiracleStarfallViewport001);
+					//	RenderTexture(gRenderer, gMiracleStarfall001.getTexture());
 					//}
 					//if (gMiracleStarfallViewport002.x != 0
 					//	&& gMiracleStarfallViewport002.y != 0
@@ -1819,8 +1823,8 @@ int main(int argc, char* argv[])
 					//		gMiracleStarfallViewport002.h = 0;
 					//		gMiracleStarfallDespawn002 = true;
 					//	}
-					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport002);
-					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall002.getTexture());
+					//	SetRenderViewport(gRenderer, &gMiracleStarfallViewport002);
+					//	RenderTexture(gRenderer, gMiracleStarfall002.getTexture());
 					//}
 					//if (gMiracleStarfallViewport003.x != 0
 					//	&& gMiracleStarfallViewport003.y != 0
@@ -1839,8 +1843,8 @@ int main(int argc, char* argv[])
 					//		gMiracleStarfallViewport003.h = 0;
 					//		gMiracleStarfallDespawn003 = true;
 					//	}
-					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport003);
-					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall003.getTexture());
+					//	SetRenderViewport(gRenderer, &gMiracleStarfallViewport003);
+					//	RenderTexture(gRenderer, gMiracleStarfall003.getTexture());
 					//}
 					//if (gMiracleStarfallViewport004.x != 0
 					//	&& gMiracleStarfallViewport004.y != 0
@@ -1859,8 +1863,8 @@ int main(int argc, char* argv[])
 					//		gMiracleStarfallViewport004.h = 0;
 					//		gMiracleStarfallDespawn004 = true;
 					//	}
-					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport004);
-					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall004.getTexture());
+					//	SetRenderViewport(gRenderer, &gMiracleStarfallViewport004);
+					//	RenderTexture(gRenderer, gMiracleStarfall004.getTexture());
 					//}
 					for (int m = 0; m < gMiracleStarfallLimit; ++m)
 					{
@@ -1881,8 +1885,8 @@ int main(int argc, char* argv[])
 								gMiracleStarfallViewports[m].h = 0;
 								gMiracleStarfallDespawns[m] = true;
 							}
-							SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewports[m]);
-							RenderTexture(gWindow.GetRenderer(), gMiracleStarfalls[m].getTexture());
+							SetRenderViewport(gRenderer, &gMiracleStarfallViewports[m]);
+							RenderTexture(gRenderer, gMiracleStarfalls[m].getTexture());
 
 //#ifdef _WIN32
 //							//gMiracleStarfallViewports[m]
@@ -1896,9 +1900,9 @@ int main(int argc, char* argv[])
 //								gMiracleStarfallViewports[m].w / 2,
 //								gMiracleStarfallViewports[m].h / 2
 //							};
-//							SDL_RenderTextureRotated(gWindow.GetRenderer(), gMiracleStarfalls[m].getTexture(), NULL, &tempViewport, 360 * twelvesecondNormal, &tempPoint, SDL_FLIP_NONE);
+//							SDL_RenderTextureRotated(gRenderer, gMiracleStarfalls[m].getTexture(), NULL, &tempViewport, 360 * twelvesecondNormal, &tempPoint, SDL_FLIP_NONE);
 //#elif __linux__
-//							SDL_RenderCopyEx(gWindow.GetRenderer(), mTexture, clip, &renderQuad, secondAngle, center, flip);
+//							SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, secondAngle, center, flip);
 //#endif
 						}
 					}
@@ -1909,19 +1913,19 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					SetRenderViewport(gWindow.GetRenderer(), &palaceHighlightViewport);
-					RenderTexture(gWindow.GetRenderer(), gPalaceHighlight.getTexture());
-					SetRenderViewport(gWindow.GetRenderer(), NULL);
+					SetRenderViewport(gRenderer, &palaceHighlightViewport);
+					RenderTexture(gRenderer, gPalaceHighlight.getTexture());
+					SetRenderViewport(gRenderer, NULL);
 
 					if (isDebug)
 					{
 						gBitmapFont.renderText(0, 0, std::to_string(gData[currentData]).c_str());
-						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, 0, 0);
-						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, gWindow.GetWidth(), 0);
-						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, 0, gWindow.GetHeight());
-						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, gWindow.GetWidth(), gWindow.GetHeight());
+						RenderLine(gRenderer, mouseX, mouseY, 0, 0);
+						RenderLine(gRenderer, mouseX, mouseY, gWindow.GetWidth(), 0);
+						RenderLine(gRenderer, mouseX, mouseY, 0, gWindow.GetHeight());
+						RenderLine(gRenderer, mouseX, mouseY, gWindow.GetWidth(), gWindow.GetHeight());
 					}
-					SDL_RenderPresent(gWindow.GetRenderer());
+					SDL_RenderPresent(gRenderer);
 				}
 				++countedFrames;
 			}
