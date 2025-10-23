@@ -21,8 +21,6 @@
 
 #include "Load.h"
 #include "Container.h"
-//test
-//test more
 
 
 const char* BasePath(const char* filePath)
@@ -154,6 +152,15 @@ LTexture gRoads[ROAD_SIZE];
 LTexture gBoxes[KEY_PRESS_SURFACE_TOTAL];
 LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
 LTexture gBoxFront;
+//LTexture gMiracleStarfall000;
+//LTexture gMiracleStarfall001;
+//LTexture gMiracleStarfall002;
+//LTexture gMiracleStarfall003;
+//LTexture gMiracleStarfall004;
+LTexture* gMiracleStarfalls;
+int gMiracleStarfallIndex = 0;
+int gMiracleStarfallModIndex = 0;
+const int gMiracleStarfallLimit = 120;
 LTexture gPlayerHighlight;
 LTexture gPalaceHighlight;
 LTexture gCharacterTownspersonMoonboy;
@@ -837,6 +844,35 @@ bool loadMedia(Load* load)
 	success = gBoxes[KEY_PRESS_SURFACE_LEFT].loadFromFile(load->Path("BoxLeft.png"));
 	success = gBoxes[KEY_PRESS_SURFACE_RIGHT].loadFromFile(load->Path("BoxRight.png"));
 	success = gBoxFront.loadFromFile(load->Path("BoxFront.png"));
+	//success = gMiracleStarfall000.loadFromFile(load->Path("MiracleStarfall_000_1024x1024.png"));
+	//success = gMiracleStarfall001.loadFromFile(load->Path("MiracleStarfall_001_1024x1024.png"));
+	//success = gMiracleStarfall002.loadFromFile(load->Path("MiracleStarfall_002_1024x1024.png"));
+	//success = gMiracleStarfall003.loadFromFile(load->Path("MiracleStarfall_003_1024x1024.png"));
+	//success = gMiracleStarfall004.loadFromFile(load->Path("MiracleStarfall_004_1024x1024.png"));
+	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	{
+		int j = i % 5;
+		if (j == 0)
+		{
+			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_000_1024x1024.png"));
+		}
+		else if (j == 1)
+		{
+			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_001_1024x1024.png"));
+		}
+		else if (j == 2)
+		{
+			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_002_1024x1024.png"));
+		}
+		else if (j == 3)
+		{
+			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_003_1024x1024.png"));
+		}
+		else if (j == 4)
+		{
+			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_004_1024x1024.png"));
+		}
+	}
 	success = gPlayerHighlight.loadFromFile(load->Path("PlayerHighlight_000_1024x1024.png"));
 	success = gPalaceHighlight.loadFromFile(load->Path("PalaceHighlight_000_2048x2048.png"));
 	success = gCharacterTownspersonMoonboy.loadFromFile(load->Path("CharacterTownspersonMoonboy_000_1024x1024.png"));
@@ -900,6 +936,15 @@ void close(Load* load)
 		gBoxes[i].Free();
 	}
 	gBoxFront.Free();
+	//gMiracleStarfall000.Free();
+	//gMiracleStarfall001.Free();
+	//gMiracleStarfall002.Free();
+	//gMiracleStarfall003.Free();
+	//gMiracleStarfall004.Free();
+	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	{
+		gMiracleStarfalls[i].Free();
+	}
 	gPlayerHighlight.Free();
 	gPalaceHighlight.Free();
 	gCharacterTownspersonMoonboy.Free();
@@ -967,6 +1012,41 @@ int main(int argc, char* argv[])
 	Timer* myTimer = new Timer(Timer::Print, 1);
 	const char* basePath = BasePath(argv[0]);
 	Load* load = new Load(basePath);
+
+	gMiracleStarfalls = new LTexture[gMiracleStarfallLimit];
+	//SDL_Rect gMiracleStarfallViewport000 = { 0, 0, 0, 0 };
+	//SDL_Rect gMiracleStarfallViewport001 = { 0, 0, 0, 0 };
+	//SDL_Rect gMiracleStarfallViewport002 = { 0, 0, 0, 0 };
+	//SDL_Rect gMiracleStarfallViewport003 = { 0, 0, 0, 0 };
+	//SDL_Rect gMiracleStarfallViewport004 = { 0, 0, 0, 0 };
+	SDL_Rect gMiracleStarfallViewports[gMiracleStarfallLimit];
+	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	{
+		gMiracleStarfallViewports[i].x = 0;
+		gMiracleStarfallViewports[i].y = 0;
+		gMiracleStarfallViewports[i].w = 0;
+		gMiracleStarfallViewports[i].h = 0;
+	}
+	//bool gMiracleStarfallSpawn000 = false;
+	//bool gMiracleStarfallSpawn001 = false;
+	//bool gMiracleStarfallSpawn002 = false;
+	//bool gMiracleStarfallSpawn003 = false;
+	//bool gMiracleStarfallSpawn004 = false;
+	bool gMiracleStarfallSpawns[gMiracleStarfallLimit];
+	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	{
+		gMiracleStarfallSpawns[i] = false;
+	}
+	//bool gMiracleStarfallDespawn000 = true;
+	//bool gMiracleStarfallDespawn001 = true;
+	//bool gMiracleStarfallDespawn002 = true;
+	//bool gMiracleStarfallDespawn003 = true;
+	//bool gMiracleStarfallDespawn004 = true;
+	bool gMiracleStarfallDespawns[gMiracleStarfallLimit];
+	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	{
+		gMiracleStarfallDespawns[i] = false;
+	}
 
 	if (!MainInit())
 	{
@@ -1239,6 +1319,42 @@ int main(int argc, char* argv[])
 							if (playerJ >= ROW_SIZE) playerJ = ROW_SIZE - 1;
 							degrees += 60;
 							break;
+						case KEY_Q:
+							//if (gMiracleStarfallIndex == 0)
+							//{
+							//	gMiracleStarfallSpawn000 = true;
+							//}
+							//else if (gMiracleStarfallIndex == 1)
+							//{
+							//	gMiracleStarfallSpawn001 = true;
+							//}
+							//else if (gMiracleStarfallIndex == 2)
+							//{
+							//	gMiracleStarfallSpawn002 = true;
+							//}
+							//else if (gMiracleStarfallIndex == 3)
+							//{
+							//	gMiracleStarfallSpawn003 = true;
+							//}
+							//else if (gMiracleStarfallIndex == 4)
+							//{
+							//	gMiracleStarfallSpawn004 = true;
+							//}
+							gMiracleStarfallModIndex = gMiracleStarfallIndex % gMiracleStarfallLimit;
+							gMiracleStarfallSpawns[gMiracleStarfallModIndex] = true;
+
+							//float temp1 = (float)gMiracleStarfallIndex;
+							//float temp2 = (float)gMiracleStarfallLimit;
+							//int tempIndex = gMiracleStarfallIndex % gMiracleStarfallLimit;
+							//printf("%i\n", gMiracleStarfallIndex% gMiracleStarfallLimit);
+							++gMiracleStarfallIndex;
+							if (gMiracleStarfallIndex >= gMiracleStarfallLimit)
+							{
+								gMiracleStarfallIndex = 0;
+							}
+							break;
+						case KEY_E:
+							break;
 						default:
 							break;
 						}
@@ -1368,7 +1484,7 @@ int main(int argc, char* argv[])
 					RenderTexture(gWindow.GetRenderer(), gModulatedTexture.getTexture());
 					SetRenderViewport(gWindow.GetRenderer(), &characterViewport);
 					RenderTexture(gWindow.GetRenderer(), gCharacterTownspersonMoonboyHands.getTexture());
-					dot.move((double)gWindow.GetWidth() * 0.000025, (double)gWindow.GetHeight() * 0.000025);
+					dot.move((double)gWindow.GetWidth() * 0.00005, (double)gWindow.GetHeight() * 0.00005);
 					dot.setIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ);
 
 					SDL_Rect middleViewport =
@@ -1577,6 +1693,215 @@ int main(int argc, char* argv[])
 					};
 					SetRenderViewport(gWindow.GetRenderer(), &palaceViewport);
 					RenderTexture(gWindow.GetRenderer(), gPalaceTexture.getTexture());
+					//if (gMiracleStarfallIndex == 0)
+					//{
+					//	if (gMiracleStarfallSpawn000)
+					//	{
+					//		gMiracleStarfallViewport000.x = palaceViewport.x;
+					//		gMiracleStarfallViewport000.y = palaceViewport.y;
+					//		gMiracleStarfallViewport000.w = palaceViewport.w;
+					//		gMiracleStarfallViewport000.h = palaceViewport.h;
+					//		gMiracleStarfallSpawn000 = false;
+					//		gMiracleStarfallDespawn000 = false;
+					//	}
+					//}
+					//else if (gMiracleStarfallIndex == 1)
+					//{
+					//	if (gMiracleStarfallSpawn001)
+					//	{
+					//		gMiracleStarfallViewport001.x = palaceViewport.x;
+					//		gMiracleStarfallViewport001.y = palaceViewport.y;
+					//		gMiracleStarfallViewport001.w = palaceViewport.w;
+					//		gMiracleStarfallViewport001.h = palaceViewport.h;
+					//		gMiracleStarfallSpawn001 = false;
+					//		gMiracleStarfallDespawn001 = false;
+					//	}
+					//}
+					//else if (gMiracleStarfallIndex == 2)
+					//{
+					//	if (gMiracleStarfallSpawn002)
+					//	{
+					//		gMiracleStarfallViewport002.x = palaceViewport.x;
+					//		gMiracleStarfallViewport002.y = palaceViewport.y;
+					//		gMiracleStarfallViewport002.w = palaceViewport.w;
+					//		gMiracleStarfallViewport002.h = palaceViewport.h;
+					//		gMiracleStarfallSpawn002 = false;
+					//		gMiracleStarfallDespawn002 = false;
+					//	}
+					//}
+					//else if (gMiracleStarfallIndex == 3)
+					//{
+					//	if (gMiracleStarfallSpawn003)
+					//	{
+					//		gMiracleStarfallViewport003.x = palaceViewport.x;
+					//		gMiracleStarfallViewport003.y = palaceViewport.y;
+					//		gMiracleStarfallViewport003.w = palaceViewport.w;
+					//		gMiracleStarfallViewport003.h = palaceViewport.h;
+					//		gMiracleStarfallSpawn003 = false;
+					//		gMiracleStarfallDespawn003 = false;
+					//	}
+					//}
+					//else if (gMiracleStarfallIndex == 4)
+					//{
+					//	if (gMiracleStarfallSpawn004)
+					//	{
+					//		gMiracleStarfallViewport004.x = palaceViewport.x;
+					//		gMiracleStarfallViewport004.y = palaceViewport.y;
+					//		gMiracleStarfallViewport004.w = palaceViewport.w;
+					//		gMiracleStarfallViewport004.h = palaceViewport.h;
+					//		gMiracleStarfallSpawn004 = false;
+					//		gMiracleStarfallDespawn004 = false;
+					//	}
+					//}
+					if (gMiracleStarfallSpawns[gMiracleStarfallModIndex])
+					{
+						gMiracleStarfallViewports[gMiracleStarfallModIndex].x = palaceViewport.x;
+						gMiracleStarfallViewports[gMiracleStarfallModIndex].y = palaceViewport.y;
+						gMiracleStarfallViewports[gMiracleStarfallModIndex].w = palaceViewport.w;
+						gMiracleStarfallViewports[gMiracleStarfallModIndex].h = palaceViewport.h;
+						gMiracleStarfallSpawns[gMiracleStarfallModIndex] = false;
+						gMiracleStarfallDespawns[gMiracleStarfallModIndex] = false;
+					}
+					//if (gMiracleStarfallViewport000.x != 0
+					//	&& gMiracleStarfallViewport000.y != 0
+					//	&& gMiracleStarfallViewport000.w != 0
+					//	&& gMiracleStarfallViewport000.h != 0)
+					//{
+					//	if (!gMiracleStarfallDespawn000)
+					//	{
+					//		gMiracleStarfallViewport000.y -= gWindow.GetHeight() / 100;
+					//	}
+					//	if (gMiracleStarfallViewport000.y < -gMiracleStarfallViewport000.h)
+					//	{
+					//		gMiracleStarfallViewport000.x = 0;
+					//		gMiracleStarfallViewport000.y = 0;
+					//		gMiracleStarfallViewport000.w = 0;
+					//		gMiracleStarfallViewport000.h = 0;
+					//		gMiracleStarfallDespawn000 = true;
+					//	}
+					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport000);
+					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall000.getTexture());
+					//}
+					//if (gMiracleStarfallViewport001.x != 0
+					//	&& gMiracleStarfallViewport001.y != 0
+					//	&& gMiracleStarfallViewport001.w != 0
+					//	&& gMiracleStarfallViewport001.h != 0)
+					//{
+					//	if (!gMiracleStarfallDespawn001)
+					//	{
+					//		gMiracleStarfallViewport001.y -= gWindow.GetHeight() / 100;
+					//	}
+					//	if (gMiracleStarfallViewport001.y < -gMiracleStarfallViewport001.h)
+					//	{
+					//		gMiracleStarfallViewport001.x = 0;
+					//		gMiracleStarfallViewport001.y = 0;
+					//		gMiracleStarfallViewport001.w = 0;
+					//		gMiracleStarfallViewport001.h = 0;
+					//		gMiracleStarfallDespawn001 = true;
+					//	}
+					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport001);
+					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall001.getTexture());
+					//}
+					//if (gMiracleStarfallViewport002.x != 0
+					//	&& gMiracleStarfallViewport002.y != 0
+					//	&& gMiracleStarfallViewport002.w != 0
+					//	&& gMiracleStarfallViewport002.h != 0)
+					//{
+					//	if (!gMiracleStarfallDespawn002)
+					//	{
+					//		gMiracleStarfallViewport002.y -= gWindow.GetHeight() / 100;
+					//	}
+					//	if (gMiracleStarfallViewport002.y < -gMiracleStarfallViewport002.h)
+					//	{
+					//		gMiracleStarfallViewport002.x = 0;
+					//		gMiracleStarfallViewport002.y = 0;
+					//		gMiracleStarfallViewport002.w = 0;
+					//		gMiracleStarfallViewport002.h = 0;
+					//		gMiracleStarfallDespawn002 = true;
+					//	}
+					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport002);
+					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall002.getTexture());
+					//}
+					//if (gMiracleStarfallViewport003.x != 0
+					//	&& gMiracleStarfallViewport003.y != 0
+					//	&& gMiracleStarfallViewport003.w != 0
+					//	&& gMiracleStarfallViewport003.h != 0)
+					//{
+					//	if (!gMiracleStarfallDespawn003)
+					//	{
+					//		gMiracleStarfallViewport003.y -= gWindow.GetHeight() / 100;
+					//	}
+					//	if (gMiracleStarfallViewport003.y < -gMiracleStarfallViewport003.h)
+					//	{
+					//		gMiracleStarfallViewport003.x = 0;
+					//		gMiracleStarfallViewport003.y = 0;
+					//		gMiracleStarfallViewport003.w = 0;
+					//		gMiracleStarfallViewport003.h = 0;
+					//		gMiracleStarfallDespawn003 = true;
+					//	}
+					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport003);
+					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall003.getTexture());
+					//}
+					//if (gMiracleStarfallViewport004.x != 0
+					//	&& gMiracleStarfallViewport004.y != 0
+					//	&& gMiracleStarfallViewport004.w != 0
+					//	&& gMiracleStarfallViewport004.h != 0)
+					//{
+					//	if (!gMiracleStarfallDespawn004)
+					//	{
+					//		gMiracleStarfallViewport004.y -= gWindow.GetHeight() / 100;
+					//	}
+					//	if (gMiracleStarfallViewport004.y < -gMiracleStarfallViewport004.h)
+					//	{
+					//		gMiracleStarfallViewport004.x = 0;
+					//		gMiracleStarfallViewport004.y = 0;
+					//		gMiracleStarfallViewport004.w = 0;
+					//		gMiracleStarfallViewport004.h = 0;
+					//		gMiracleStarfallDespawn004 = true;
+					//	}
+					//	SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewport004);
+					//	RenderTexture(gWindow.GetRenderer(), gMiracleStarfall004.getTexture());
+					//}
+					for (int m = 0; m < gMiracleStarfallLimit; ++m)
+					{
+						if (gMiracleStarfallViewports[m].x != 0
+							&& gMiracleStarfallViewports[m].y != 0
+							&& gMiracleStarfallViewports[m].w != 0
+							&& gMiracleStarfallViewports[m].h != 0)
+						{
+							if (!gMiracleStarfallDespawns[m])
+							{
+								gMiracleStarfallViewports[m].y -= gWindow.GetHeight() / 100;
+							}
+							if (gMiracleStarfallViewports[m].y < -gMiracleStarfallViewports[m].h)
+							{
+								gMiracleStarfallViewports[m].x = 0;
+								gMiracleStarfallViewports[m].y = 0;
+								gMiracleStarfallViewports[m].w = 0;
+								gMiracleStarfallViewports[m].h = 0;
+								gMiracleStarfallDespawns[m] = true;
+							}
+							SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewports[m]);
+							RenderTexture(gWindow.GetRenderer(), gMiracleStarfalls[m].getTexture());
+
+//#ifdef _WIN32
+//							//gMiracleStarfallViewports[m]
+//							SDL_FRect tempViewport = {
+//								gMiracleStarfallViewports[m].x,
+//								gMiracleStarfallViewports[m].y,
+//								gMiracleStarfallViewports[m].w,
+//								gMiracleStarfallViewports[m].h
+//							};
+//							SDL_FPoint tempPoint = {
+//								gMiracleStarfallViewports[m].w / 2,
+//								gMiracleStarfallViewports[m].h / 2
+//							};
+//							SDL_RenderTextureRotated(gWindow.GetRenderer(), gMiracleStarfalls[m].getTexture(), NULL, &tempViewport, 360 * twelvesecondNormal, &tempPoint, SDL_FLIP_NONE);
+//#elif __linux__
+//							SDL_RenderCopyEx(gWindow.GetRenderer(), mTexture, clip, &renderQuad, secondAngle, center, flip);
+//#endif
+						}
+					}
 					SDL_Rect palaceHighlightViewport =
 					{
 						palaceViewport.x + palaceViewport.w,
@@ -1603,6 +1928,8 @@ int main(int argc, char* argv[])
 		}
 		close(load);
 	}
+
+	delete[] gMiracleStarfalls;
 
 	delete load;
 	delete[] basePath;

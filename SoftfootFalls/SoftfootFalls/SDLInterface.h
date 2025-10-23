@@ -36,6 +36,18 @@
 	const SDL_Keycode KEY_D = SDLK_d;
 #endif
 
+
+#ifdef _WIN32
+	const SDL_Keycode KEY_Q = SDLK_Q;
+#elif __linux__
+	const SDL_Keycode KEY_Q = SDLK_q;
+#endif
+#ifdef _WIN32
+	const SDL_Keycode KEY_E = SDLK_E;
+#elif __linux__
+	const SDL_Keycode KEY_E = SDLK_e;
+#endif
+
 #ifdef _WIN32
 		const SDL_EventType KEY_RELEASED = SDL_EVENT_KEY_UP;
 #elif __linux__
