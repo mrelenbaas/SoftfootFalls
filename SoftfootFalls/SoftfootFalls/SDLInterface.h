@@ -65,7 +65,9 @@ SDL_Keycode Key(SDL_Event event);
 //  WINDOW  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-void MainInit(const char*, int, int, SDL_Window**, SDL_Renderer**);
+bool FirstInit();
+
+void SecondInit(const char*, int, int, SDL_Window**, SDL_Renderer**);
 
 #ifdef _WIN32
 const SDL_EventType EVENT_WINDOW_MINIMIZED = SDL_EVENT_WINDOW_MINIMIZED;

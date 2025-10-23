@@ -4,7 +4,7 @@
 
 bool Window::Init()
 {
-	MainInit(title, width, height, &window, &renderer);
+	SecondInit(title, width, height, &window, &renderer);
 	return window != NULL;
 }
 

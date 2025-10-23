@@ -35,10 +35,8 @@ const char* BasePath(const char* filePath)
 }
 
 const int JOYSTICK_DEAD_ZONE = 8000;
-#ifdef _WIN32
-const double M_PI = 3.14159265359;
-#endif
 const int TOTAL_DATA = 10;
+const double PI = 3.14159265358979323846;
 
 enum KeyPressSurfaces
 {
@@ -121,7 +119,7 @@ private:
 	int mNewLine, mSpace;
 };
 
-bool MainInit();
+bool SecondInit();
 bool loadMedia(Load*);
 void close(Load*);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
@@ -585,15 +583,11 @@ void LBitmapFont::renderText(int x, int y, std::string text)
 	}
 }
 
-bool MainInit()
+bool SecondInit()
 {
 	bool success = true;
 
-#ifdef _WIN32
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO))
-#elif __linux__
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0)
-#endif
+	if (FirstInit())
 	{
 		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 		success = false;
@@ -1019,7 +1013,7 @@ int main(int argc, char* argv[])
 		gMiracleStarfallDespawns[i] = false;
 	}
 
-	if (!MainInit())
+	if (!SecondInit())
 	{
 		SDL_Log("Failed to initialize!\n");
 	}
@@ -1319,7 +1313,7 @@ int main(int argc, char* argv[])
 				{
 					SDL_RenderClear(gWindow.GetRenderer());
 
-					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
+					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / PI);
 					if (xDir == 0 && yDir == 0)
 					{
 						joystickAngle = 0;

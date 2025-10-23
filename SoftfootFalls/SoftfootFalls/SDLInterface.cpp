@@ -21,7 +21,26 @@ SDL_Keycode Key(SDL_Event event)
 //  WINDOW  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-void MainInit(const char* title, int width, int height, SDL_Window** window, SDL_Renderer** renderer)
+bool FirstInit()
+{
+	bool result = NULL;
+
+#ifdef _WIN32
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO))
+	{
+		result = true;
+	}
+#elif __linux__
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0)
+	{
+		result = false;
+	}
+#endif
+
+	return result;
+}
+
+void SecondInit(const char* title, int width, int height, SDL_Window** window, SDL_Renderer** renderer)
 {
 #ifdef _WIN32
 	SDL_CreateWindowAndRenderer(title, width, height, SDL_WINDOW_RESIZABLE, window, renderer);
