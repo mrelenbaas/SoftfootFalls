@@ -127,7 +127,6 @@ void close(Load*);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 
 Window gWindow;
-SDL_Renderer* gRenderer = NULL;
 SDL_Surface* gScreenSurface = NULL;
 SDL_Texture* gTexture = NULL;
 LTexture gModulatedTexture;
@@ -228,7 +227,7 @@ bool LTexture::loadFromPixels()
 #elif __linux__
 		SDL_SetColorKey(mSurfacePixels, SDL_TRUE, SDL_MapRGB(mSurfacePixels->format, 0, 0xFF, 0xFF));
 #endif
-		mTexture = SDL_CreateTextureFromSurface(gRenderer, mSurfacePixels);
+		mTexture = SDL_CreateTextureFromSurface(gWindow.GetRenderer(), mSurfacePixels);
 		if (mTexture == NULL)
 		{
 			SDL_Log("Unable to create texture from loaded pixels! SDL Error: %s\n", SDL_GetError());
@@ -294,9 +293,9 @@ void LTexture::render(int x, int y, SDL_Rect* clip, double secondAngle, SDL_Poin
 		renderQuad.h = clip->h;
 	}
 #ifdef _WIN32
-	SDL_RenderTextureRotated(gRenderer, mTexture, clip, &renderQuad, angle, center, flip);
+	SDL_RenderTextureRotated(gWindow.GetRenderer(), mTexture, clip, &renderQuad, angle, center, flip);
 #elif __linux__
-	SDL_RenderCopyEx(gRenderer, mTexture, clip, &renderQuad, secondAngle, center, flip);
+	SDL_RenderCopyEx(gWindow.GetRenderer(), mTexture, clip, &renderQuad, secondAngle, center, flip);
 #endif
 }
 
@@ -724,18 +723,16 @@ bool MainInit()
 		}
 		else
 		{
-#ifdef _WIN32
-			gRenderer = gWindow.GetRenderer();
-#elif __linux__
-			gRenderer = SDL_CreateRenderer(gWindow.GetWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-			if (gRenderer == NULL)
+#ifdef __linux__
+			gWindow.SetRenderer(SDL_CreateRenderer(gWindow.GetWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC));
+			if (gWindow.GetRenderer() == NULL)
 			{
 				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
 				success = false;
 			}
 			else
 			{
-				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+				SDL_SetRenderDrawColor(gWindow.GetRenderer(), 0xFF, 0xFF, 0xFF, 0xFF);
 				int imgFlags = IMG_INIT_PNG;
 				if (!(IMG_Init(imgFlags) & imgFlags))
 				{
@@ -967,7 +964,7 @@ void close(Load* load)
 	}
 	gBitmapFont.Free();
 
-	SDL_DestroyRenderer(gRenderer);
+	SDL_DestroyRenderer(gWindow.GetRenderer());
 	gWindow.Free();
 	SDL_Quit();
 }
@@ -984,7 +981,7 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success)
 	}
 	else
 	{
-		newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
+		newTexture = SDL_CreateTextureFromSurface(gWindow.GetRenderer(), loadedSurface);
 		if (newTexture == NULL)
 		{
 			SDL_Log("Unable to create texture from %s! SDL Error: %s\n", path, SDL_GetError());
@@ -1320,7 +1317,7 @@ int main(int argc, char* argv[])
 				}
 				if (!gWindow.IsMinimized())
 				{
-					SDL_RenderClear(gRenderer);
+					SDL_RenderClear(gWindow.GetRenderer());
 
 					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / M_PI);
 					if (xDir == 0 && yDir == 0)
@@ -1427,12 +1424,12 @@ int main(int argc, char* argv[])
 						characterViewport.w = fullscreenViewport.w,
 						characterViewport.h = fullscreenViewport.h
 					};
-					SetRenderViewport(gRenderer, &characterViewport);
-					RenderTexture(gRenderer, gCharacterTownspersonMoonboy.getTexture());
-					SetRenderViewport(gRenderer, &fullscreenViewport);
-					RenderTexture(gRenderer, gModulatedTexture.getTexture());
-					SetRenderViewport(gRenderer, &characterViewport);
-					RenderTexture(gRenderer, gCharacterTownspersonMoonboyHands.getTexture());
+					SetRenderViewport(gWindow.GetRenderer(), &characterViewport);
+					RenderTexture(gWindow.GetRenderer(), gCharacterTownspersonMoonboy.getTexture());
+					SetRenderViewport(gWindow.GetRenderer(), &fullscreenViewport);
+					RenderTexture(gWindow.GetRenderer(), gModulatedTexture.getTexture());
+					SetRenderViewport(gWindow.GetRenderer(), &characterViewport);
+					RenderTexture(gWindow.GetRenderer(), gCharacterTownspersonMoonboyHands.getTexture());
 					dot.move((double)gWindow.GetWidth() * 0.00005, (double)gWindow.GetHeight() * 0.00005);
 					dot.setIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ);
 
@@ -1443,7 +1440,7 @@ int main(int argc, char* argv[])
 						middleViewport.w = 200,
 						middleViewport.h = 200
 					};
-					SetRenderViewport(gRenderer, NULL);
+					SetRenderViewport(gWindow.GetRenderer(), NULL);
 					float normal = secondNormal;
 					float centerX = mouseX;
 					if (centerX > gWindow.GetWidth() * 0.15f) centerX = gWindow.GetWidth() * 0.15f;
@@ -1493,16 +1490,16 @@ int main(int argc, char* argv[])
 							if (middleViewport.w < 0) middleViewport.w = 0;
 							if (middleViewport.h < 0) middleViewport.h = 0;
 							++middleViewport.w;
-							SetRenderViewport(gRenderer, &middleViewport);
+							SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
 							int modI = (i % 2 == 0) ? 0 : 4;
-							RenderTexture(gRenderer, gHorizons[modI + horizonI].getTexture());
+							RenderTexture(gWindow.GetRenderer(), gHorizons[modI + horizonI].getTexture());
 							++horizonI;
 							if (horizonI > 3)
 							{
 								horizonI = 0;
 							}
 							modI = (i % 4 == 0);
-							RenderTexture(gRenderer, gRoads[modI + roadI].getTexture());
+							RenderTexture(gWindow.GetRenderer(), gRoads[modI + roadI].getTexture());
 							++roadI;
 							if (roadI > 3)
 							{
@@ -1510,9 +1507,9 @@ int main(int argc, char* argv[])
 							}
 							if (dotI == i && dotJ == j)
 							{
-								RenderTexture(gRenderer, gPlayerHighlight.getTexture());
+								RenderTexture(gWindow.GetRenderer(), gPlayerHighlight.getTexture());
 							}
-							SetRenderViewport(gRenderer, &middleViewport);
+							SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
 							Distance distance = { (float)middleViewport.w, (float)middleViewport.h };
 							if (i == 0 && j == 0)
 							{
@@ -1567,14 +1564,14 @@ int main(int argc, char* argv[])
 							}
 							if (i == ROW_SIZE - 1 && j == 0)
 							{
-								SetRenderViewport(gRenderer, NULL);
+								SetRenderViewport(gWindow.GetRenderer(), NULL);
 								int x = 0;
 								int y = middleViewport.y - (middleViewport.h * 2.0f);
 								if (y < 0)
 								{
 									y = 0;
 								}
-								SetRenderViewport(gRenderer, &middleViewport);
+								SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
 							}
 
 							SDL_Rect walkingSpriteViewport =
@@ -1590,11 +1587,11 @@ int main(int argc, char* argv[])
 								beamViewport.y = walkingSpriteViewport.y + walkingSpriteViewport.h;
 								beamViewport.w = walkingSpriteViewport.w;
 								beamViewport.h = walkingSpriteViewport.h;
-								SetRenderViewport(gRenderer, &beamViewport);
-								RenderTexture(gRenderer, gPlayerBeam.getTexture());
-								SetRenderViewport(gRenderer, &walkingSpriteViewport);
-								RenderTexture(gRenderer, gBox->getTexture());
-								SetRenderViewport(gRenderer, &walkingSpriteViewport);
+								SetRenderViewport(gWindow.GetRenderer(), &beamViewport);
+								RenderTexture(gWindow.GetRenderer(), gPlayerBeam.getTexture());
+								SetRenderViewport(gWindow.GetRenderer(), &walkingSpriteViewport);
+								RenderTexture(gWindow.GetRenderer(), gBox->getTexture());
+								SetRenderViewport(gWindow.GetRenderer(), &walkingSpriteViewport);
 							}
 						}
 					}
@@ -1616,8 +1613,8 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					SetRenderViewport(gRenderer, &lineViewport);
-					RenderTexture(gRenderer, characterFairyHopeful.getTexture());
+					SetRenderViewport(gWindow.GetRenderer(), &lineViewport);
+					RenderTexture(gWindow.GetRenderer(), characterFairyHopeful.getTexture());
 					SDL_Rect monsterViewport =
 					{
 						monsterViewport.x = fullscreenViewport.x,
@@ -1625,10 +1622,10 @@ int main(int argc, char* argv[])
 						monsterViewport.w = fullscreenViewport.w,
 						monsterViewport.h = fullscreenViewport.h
 					};
-					SetRenderViewport(gRenderer, &monsterViewport);
-					SetRenderViewport(gRenderer, &fullscreenViewport);
+					SetRenderViewport(gWindow.GetRenderer(), &monsterViewport);
+					SetRenderViewport(gWindow.GetRenderer(), &fullscreenViewport);
 					RenderLine(
-						gRenderer,
+						gWindow.GetRenderer(),
 						dot.getBox().x + (dot.getBox().w * 2.5f),
 						dot.getBox().y + (dot.getBox().h * 2.5f),
 						beamPoint.x,
@@ -1640,8 +1637,8 @@ int main(int argc, char* argv[])
 						dot.getBox().w * 10,
 						dot.getBox().h * 10
 					};
-					SetRenderViewport(gRenderer, &palaceViewport);
-					RenderTexture(gRenderer, gPalaceTexture.getTexture());
+					SetRenderViewport(gWindow.GetRenderer(), &palaceViewport);
+					RenderTexture(gWindow.GetRenderer(), gPalaceTexture.getTexture());
 					if (gMiracleStarfallSpawns[gMiracleStarfallModIndex])
 					{
 						gMiracleStarfallViewports[gMiracleStarfallModIndex].x = palaceViewport.x;
@@ -1670,8 +1667,8 @@ int main(int argc, char* argv[])
 								gMiracleStarfallViewports[m].h = 0;
 								gMiracleStarfallDespawns[m] = true;
 							}
-							SetRenderViewport(gRenderer, &gMiracleStarfallViewports[m]);
-							RenderTexture(gRenderer, gMiracleStarfalls[m].getTexture());
+							SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewports[m]);
+							RenderTexture(gWindow.GetRenderer(), gMiracleStarfalls[m].getTexture());
 						}
 					}
 					SDL_Rect palaceHighlightViewport =
@@ -1681,19 +1678,19 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					SetRenderViewport(gRenderer, &palaceHighlightViewport);
-					RenderTexture(gRenderer, gPalaceHighlight.getTexture());
-					SetRenderViewport(gRenderer, NULL);
+					SetRenderViewport(gWindow.GetRenderer(), &palaceHighlightViewport);
+					RenderTexture(gWindow.GetRenderer(), gPalaceHighlight.getTexture());
+					SetRenderViewport(gWindow.GetRenderer(), NULL);
 
 					if (isDebug)
 					{
 						gBitmapFont.renderText(0, 0, std::to_string(gData[currentData]).c_str());
-						RenderLine(gRenderer, mouseX, mouseY, 0, 0);
-						RenderLine(gRenderer, mouseX, mouseY, gWindow.GetWidth(), 0);
-						RenderLine(gRenderer, mouseX, mouseY, 0, gWindow.GetHeight());
-						RenderLine(gRenderer, mouseX, mouseY, gWindow.GetWidth(), gWindow.GetHeight());
+						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, 0, 0);
+						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, gWindow.GetWidth(), 0);
+						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, 0, gWindow.GetHeight());
+						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, gWindow.GetWidth(), gWindow.GetHeight());
 					}
-					SDL_RenderPresent(gRenderer);
+					SDL_RenderPresent(gWindow.GetRenderer());
 				}
 				++countedFrames;
 			}

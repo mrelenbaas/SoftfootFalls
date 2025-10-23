@@ -33,6 +33,7 @@ public:
 	int GetWidth() const;
 	int GetHeight() const;
 	SDL_Renderer* GetRenderer();
+	void SetRenderer(SDL_Renderer*);
 	SDL_Window* GetWindow();
 	bool IsMinimized() const;
 private:

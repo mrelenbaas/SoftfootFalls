@@ -66,6 +66,11 @@ SDL_Renderer* Window::GetRenderer()
 	return renderer;
 }
 
+void Window::SetRenderer(SDL_Renderer* renderer)
+{
+	(*this).renderer = renderer;
+}
+
 SDL_Window* Window::GetWindow()
 {
 	return window;
