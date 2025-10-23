@@ -154,6 +154,7 @@ LTexture* gMiracleStarfalls;
 int gMiracleStarfallIndex = 0;
 int gMiracleStarfallModIndex = 0;
 const int gMiracleStarfallLimit = 120;
+bool gMiracleStarfallUpdateAtEndOfFrame = false;
 LTexture gPlayerHighlight;
 LTexture gPalaceHighlight;
 LTexture gCharacterTownspersonMoonboy;
@@ -1012,6 +1013,16 @@ int main(int argc, char* argv[])
 	{
 		gMiracleStarfallDespawns[i] = false;
 	}
+	long long gMiracleStarfallDeltas[gMiracleStarfallLimit];
+	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	{
+		gMiracleStarfallDeltas[i] = 0L;
+	}
+	double gMiracleStarfallNormals[gMiracleStarfallLimit];
+	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	{
+		gMiracleStarfallNormals[i] = 0;
+	}
 
 	if (!SecondInit())
 	{
@@ -1077,6 +1088,11 @@ int main(int argc, char* argv[])
 				hourDelta += currentTime - previousTime;
 				halfDayDelta += currentTime - previousTime;
 				fullDayDelta += currentTime - previousTime;
+				for (int m = 0; m < gMiracleStarfallLimit; ++m)
+				{
+					gMiracleStarfallDeltas[m] += currentTime - previousTime;
+				}
+
 				double decisecondLimit = 100'000'000;
 				double secondLimit = 1'000'000'000;
 				double trisecondLimit = 3'000'000'000;
@@ -1128,6 +1144,15 @@ int main(int argc, char* argv[])
 				double trisecondNormal = (double)trisecondDelta / trisecondLimit;
 				double twelvesecondNormal = (double)twelvesecondDelta / twelvesecondLimit;
 				double minuteNormal = (double)minuteDelta / minuteLimit;
+				for (int m = 0; m < gMiracleStarfallLimit; ++m)
+				{
+					gMiracleStarfallNormals[m] = (double)gMiracleStarfallDeltas[m] / secondLimit;
+					if (gMiracleStarfallNormals[m] > 1.0)
+					{
+						gMiracleStarfallDeltas[m] = 0L;
+						gMiracleStarfallDespawns[m] = false;
+					}
+				}
 				previousTime = currentTime;
 
 				SDL_GetMouseState(&mouseX, &mouseY);
@@ -1285,13 +1310,11 @@ int main(int argc, char* argv[])
 							degrees += 60;
 							break;
 						case KEY_Q:
-							gMiracleStarfallModIndex = gMiracleStarfallIndex % gMiracleStarfallLimit;
-							gMiracleStarfallSpawns[gMiracleStarfallModIndex] = true;
-							++gMiracleStarfallIndex;
-							if (gMiracleStarfallIndex >= gMiracleStarfallLimit)
-							{
-								gMiracleStarfallIndex = 0;
-							}
+							gMiracleStarfallUpdateAtEndOfFrame = true;
+							gMiracleStarfallModIndex = gMiracleStarfallIndex % 5;
+							gMiracleStarfallSpawns[gMiracleStarfallIndex] = true;
+							gMiracleStarfallDeltas[gMiracleStarfallIndex] = 0L;
+							gMiracleStarfallNormals[gMiracleStarfallIndex] = (double)gMiracleStarfallDeltas[gMiracleStarfallIndex] / secondLimit;
 							break;
 						case KEY_E:
 							break;
@@ -1633,35 +1656,53 @@ int main(int argc, char* argv[])
 					};
 					SetRenderViewport(gWindow.GetRenderer(), &palaceViewport);
 					RenderTexture(gWindow.GetRenderer(), gPalaceTexture.getTexture());
-					if (gMiracleStarfallSpawns[gMiracleStarfallModIndex])
+					if (gMiracleStarfallSpawns[gMiracleStarfallIndex])
 					{
-						gMiracleStarfallViewports[gMiracleStarfallModIndex].x = palaceViewport.x;
-						gMiracleStarfallViewports[gMiracleStarfallModIndex].y = palaceViewport.y;
-						gMiracleStarfallViewports[gMiracleStarfallModIndex].w = palaceViewport.w;
-						gMiracleStarfallViewports[gMiracleStarfallModIndex].h = palaceViewport.h;
-						gMiracleStarfallSpawns[gMiracleStarfallModIndex] = false;
-						gMiracleStarfallDespawns[gMiracleStarfallModIndex] = false;
+						gMiracleStarfallViewports[gMiracleStarfallIndex].x = palaceViewport.x;
+						gMiracleStarfallViewports[gMiracleStarfallIndex].y = palaceViewport.y;
+						gMiracleStarfallViewports[gMiracleStarfallIndex].w = palaceViewport.w;
+						gMiracleStarfallViewports[gMiracleStarfallIndex].h = palaceViewport.h;
+						gMiracleStarfallDespawns[gMiracleStarfallIndex] = true;
+						gMiracleStarfallSpawns[gMiracleStarfallIndex] = false;
 					}
 					for (int m = 0; m < gMiracleStarfallLimit; ++m)
 					{
-						if (gMiracleStarfallViewports[m].x != 0
-							&& gMiracleStarfallViewports[m].y != 0
-							&& gMiracleStarfallViewports[m].w != 0
-							&& gMiracleStarfallViewports[m].h != 0)
+						//if (gMiracleStarfallViewports[m].x != 0
+						//	&& gMiracleStarfallViewports[m].y != 0
+						//	&& gMiracleStarfallViewports[m].w != 0
+						//	&& gMiracleStarfallViewports[m].h != 0)
+						//gMiracleStarfallDeltas[m] += currentTime - previousTime;
+						//gMiracleStarfallNormals[m] = (double)gMiracleStarfallDeltas[m] / secondLimit;
+						if (gMiracleStarfallDeltas[m] > secondLimit)
 						{
-							if (!gMiracleStarfallDespawns[m])
-							{
-								gMiracleStarfallViewports[m].y -= gWindow.GetHeight() / 100;
-							}
-							if (gMiracleStarfallViewports[m].y < -gMiracleStarfallViewports[m].h)
-							{
-								gMiracleStarfallViewports[m].x = 0;
-								gMiracleStarfallViewports[m].y = 0;
-								gMiracleStarfallViewports[m].w = 0;
-								gMiracleStarfallViewports[m].h = 0;
-								gMiracleStarfallDespawns[m] = true;
-							}
-							SetRenderViewport(gWindow.GetRenderer(), &gMiracleStarfallViewports[m]);
+							//gMiracleStarfallDeltas[m] -= secondLimit;
+							//gMiracleStarfallViewports[m].x = 0;
+							//gMiracleStarfallViewports[m].y = 0;
+							//gMiracleStarfallViewports[m].w = 0;
+							//gMiracleStarfallViewports[m].h = 0;
+							gMiracleStarfallDespawns[m] = false;
+						}
+						if (gMiracleStarfallDespawns[m])
+						{
+							SDL_Rect currentStar = {
+								gMiracleStarfallViewports[m].x,
+								gMiracleStarfallViewports[m].y - (gWindow.GetHeight() * gMiracleStarfallNormals[m]),
+								gMiracleStarfallViewports[m].w,
+								gMiracleStarfallViewports[m].h
+							};
+							//if (gMiracleStarfallDespawns[m])
+							//{
+							//	gMiracleStarfallViewports[m].y -= gWindow.GetHeight() / 100;
+							//}
+							//if (gMiracleStarfallViewports[m].y < -gWindow.GetHeight())
+							//{
+								//gMiracleStarfallViewports[m].x = 0;
+								//gMiracleStarfallViewports[m].y = 0;
+								//gMiracleStarfallViewports[m].w = 0;
+								//gMiracleStarfallViewports[m].h = 0;
+								//gMiracleStarfallDespawns[m] = false;
+							//}
+							SetRenderViewport(gWindow.GetRenderer(), &currentStar);
 							RenderTexture(gWindow.GetRenderer(), gMiracleStarfalls[m].getTexture());
 						}
 					}
@@ -1685,6 +1726,15 @@ int main(int argc, char* argv[])
 						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, gWindow.GetWidth(), gWindow.GetHeight());
 					}
 					SDL_RenderPresent(gWindow.GetRenderer());
+				}
+				if (gMiracleStarfallUpdateAtEndOfFrame)
+				{
+					++gMiracleStarfallIndex;
+					if (gMiracleStarfallIndex >= gMiracleStarfallLimit)
+					{
+						gMiracleStarfallIndex = 0;
+					}
+					gMiracleStarfallUpdateAtEndOfFrame = false;
 				}
 				++countedFrames;
 			}
