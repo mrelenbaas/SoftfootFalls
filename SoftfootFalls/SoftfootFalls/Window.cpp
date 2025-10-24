@@ -28,6 +28,7 @@ void Window::HandleEvent(SDL_Event& event)
 		break;
 	case KEY_PRESSED:
 		if (Key(event) == SDLK_RETURN)
+		{
 			if (fullscreen)
 			{
 				SDL_SetWindowFullscreen(window, false);
@@ -39,6 +40,7 @@ void Window::HandleEvent(SDL_Event& event)
 				fullscreen = true;
 				minimized = false;
 			}
+		}
 		break;
 	}
 }

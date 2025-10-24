@@ -57,6 +57,7 @@ bool LTexture::LoadFromPixels()
 			mWidth = surface->w;
 			mHeight = surface->h;
 		}
+		DestroySurface(surface);
 		surface = NULL;
 	}
 	return mTexture != NULL;
