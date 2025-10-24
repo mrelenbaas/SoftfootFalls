@@ -139,11 +139,15 @@ void SetRenderViewport(SDL_Renderer* renderer, SDL_Rect* rect)
 #endif
 }
 
+#ifdef _WIN32
 void RenderTextureRotated(SDL_Renderer* renderer, SDL_Texture* texture, SDL_FRect* clip, SDL_FRect* renderQuad, double angle, SDL_FPoint* center, SDL_FlipMode flip)
+#elif __linux__
+void RenderTextureRotated(SDL_Renderer* renderer, SDL_Texture* texture, SDL_Rect* clip, SDL_Rect* renderQuad, double angle, SDL_Point* center, SDL_RendererFlip flip)
+#endif
 {
 #ifdef _WIN32
 	SDL_RenderTextureRotated(renderer, texture, clip, renderQuad, angle, center, flip);
 #elif __linux__
-	SDL_RenderCopyEx(renderer, texture, clip, &renderQuad, angle, center, flip);
+	SDL_RenderCopyEx(renderer, texture, clip, renderQuad, angle, center, flip);
 #endif
 }
