@@ -70,34 +70,56 @@ bool LTexture::LoadFromPixels()
 }
 
 #ifdef _WIN32
-void LTexture::render(int x, int y, SDL_FRect* clip, double angle, SDL_FPoint* center, SDL_FlipMode flip, Distance distance)
+void LTexture::Render(
+	float x,
+	float y,
+	SDL_FRect* srcrect,
+	double angle,
+	SDL_FPoint* center,
+	SDL_FlipMode flip,
+	Distance distance)
 #elif __linux__
-void LTexture::render(int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip, Distance distance)
+void LTexture::Render(
+	float x,
+	float y,
+	SDL_Rect* srcrect,
+	double angle,
+	SDL_Point* center,
+	SDL_RendererFlip flip,
+	Distance distance)
 #endif
 {
-	float width = 0.0f;
-	float height = 0.0f;
-	if (distance.width == 0.0f && distance.height == 0.0f)
-	{
-		width = mWidth;
-		height = mHeight;
-	}
-	else
-	{
-		width = distance.width;
-		height = distance.height;
-	}
+	bool result = distance.width == 0.0f && distance.height == 0.0f;
 #ifdef _WIN32
-	SDL_FRect renderQuad = { (float)x, (float)y, width, height };
-#elif __linux__
-	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
-#endif
-	if (clip != NULL)
+	SDL_FRect dstrect =
 	{
-		renderQuad.w = clip->w;
-		renderQuad.h = clip->h;
+		(float)x,
+		(float)y,
+		(result) ? mWidth : distance.width,
+		(result) ? mHeight : distance.height
+	};
+#elif __linux__
+	SDL_Rect dstrect =
+	{
+		x,
+		y,
+		(result) ? mWidth : distance.width,
+		(result) ? mHeight : distance.height
+	};
+#endif
+	if (srcrect != NULL)
+	{
+		dstrect.w = srcrect->w;
+		dstrect.h = srcrect->h;
 	}
-	RenderTextureRotated(renderer, texture, clip, &renderQuad, angle, center, flip);
+	RenderTextureRotated(
+		renderer,
+		texture,
+		srcrect,
+		&dstrect,
+		angle,
+		center,
+		flip);
 }
 
 Uint32 LTexture::GetPixel32(Uint32 x, Uint32 y)

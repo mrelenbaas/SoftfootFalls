@@ -36,15 +36,29 @@ public:
 	bool LoadPixelsFromFile(const char*);
 	bool LoadFromPixels();
 #ifdef _WIN32
-	void render(int x, int y, SDL_FRect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE, Distance distance = { 0, 0 });
+	void Render(
+		float x,
+		float y,
+		SDL_FRect* clip = NULL,
+		double angle = 0.0,
+		SDL_FPoint* center = NULL,
+		SDL_FlipMode flip = SDL_FLIP_NONE,
+		Distance distance = { 0.0f, 0.0f });
 #elif __linux__
-	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, Distance distance = { 0, 0 });
+	void Render(
+		float x,
+		float y,
+		SDL_Rect* clip = NULL,
+		double angle = 0.0,
+		SDL_Point* center = NULL,
+		SDL_RendererFlip flip = SDL_FLIP_NONE,
+		Distance distance = { 0.0f, 0.0f });
 #endif
 	int GetWidth() const { return mWidth; };
 	int GetHeight() const { return mHeight; };
 	Uint32 GetPixel32(Uint32, Uint32);
 	Uint32 GetPitch32() { return surface->pitch / 4; };
-	SDL_Texture* getTexture() { return texture; };
+	SDL_Texture* GetTexture() { return texture; };
 private:
 	void SetWidthAndHeight()
 	{
