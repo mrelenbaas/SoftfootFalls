@@ -48,34 +48,13 @@ void Window::HandleEvent(SDL_Event& event)
 void Window::Free()
 {
 	SDL_DestroyWindow(window);
-	//SDL_DestroyRenderer(renderer);
 	width = 0;
 	height = 0;
-}
-
-int Window::GetWidth() const
-{
-	return width;
-}
-
-int Window::GetHeight() const
-{
-	return height;
-}
-
-SDL_Renderer* Window::GetRenderer()
-{
-	return renderer;
 }
 
 void Window::SetRenderer(SDL_Renderer* renderer)
 {
 	(*this).renderer = renderer;
-}
-
-SDL_Window* Window::GetWindow()
-{
-	return window;
 }
 
 bool Window::IsMinimized() const

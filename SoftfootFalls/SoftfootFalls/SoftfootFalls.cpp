@@ -96,7 +96,6 @@ void close(Load*);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 
 Window gWindow;
-SDL_Surface* gScreenSurface = NULL;
 LTexture gModulatedTexture;
 const int WALKING_ANIMATION_FRAMES = 4;
 LTexture gWalkingSpriteSheetTexture;
@@ -137,88 +136,6 @@ LBitmapFont gBitmapFont;
 Directions gDirection = DIRECTION_UP;
 const int ROW_SIZE = 25;
 
-
-void LTexture::Free()
-{
-	if (mTexture != NULL)
-	{
-		SDL_DestroyTexture(mTexture);
-		mTexture = NULL;
-		mWidth = 0;
-		mHeight = 0;
-	}
-	if (surface != NULL)
-	{
-		DestroySurface(surface);
-		surface = NULL;
-	}
-}
-
-#ifdef _WIN32
-void LTexture::render(int x, int y, SDL_FRect* clip, double angle, SDL_FPoint* center, SDL_FlipMode flip, Distance distance)
-#elif __linux__
-void LTexture::render(int x, int y, SDL_Rect* clip, double secondAngle, SDL_Point* center, SDL_RendererFlip flip, Distance distance)
-#endif
-{
-	float width = 0.0f;
-	float height = 0.0f;
-	if (distance.width == 0.0f && distance.height == 0.0f)
-	{
-		width = mWidth;
-		height = mHeight;
-	}
-	else
-	{
-		width = distance.width;
-		height = distance.height;
-	}
-#ifdef _WIN32
-	SDL_FRect renderQuad = { (float)x, (float)y, width, height };
-#elif __linux__
-	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
-#endif
-	if (clip != NULL)
-	{
-		renderQuad.w = clip->w;
-		renderQuad.h = clip->h;
-	}
-#ifdef _WIN32
-	SDL_RenderTextureRotated(gWindow.GetRenderer(), mTexture, clip, &renderQuad, angle, center, flip);
-#elif __linux__
-	SDL_RenderCopyEx(gWindow.GetRenderer(), mTexture, clip, &renderQuad, secondAngle, center, flip);
-#endif
-}
-
-int LTexture::GetWidth() const
-{
-	return mWidth;
-}
-
-int LTexture::GetHeight() const
-{
-	return mHeight;
-}
-
-Uint32 LTexture::getPixel32(Uint32 x, Uint32 y)
-{
-	Uint32* pixels = static_cast<Uint32*>(surface->pixels);
-	return pixels[(y * getPitch32()) + x];
-}
-
-Uint32 LTexture::getPitch32()
-{
-	Uint32 pitch = 0;
-	if (surface != NULL)
-	{
-		pitch = surface->pitch / 4;
-	}
-	return pitch;
-}
-
-SDL_Texture* LTexture::getTexture()
-{
-	return mTexture;
-}
 
 Dot::Dot()
 {
@@ -349,7 +266,7 @@ bool LBitmapFont::buildFont(std::string path)
 	}
 	else
 	{
-		Uint32 bgColor = mFontTexture.getPixel32(0, 0);
+		Uint32 bgColor = mFontTexture.GetPixel32(0, 0);
 		int cellW = mFontTexture.GetWidth() / 16;
 		int cellH = mFontTexture.GetHeight() / 16;
 		int top = cellH;
@@ -369,7 +286,7 @@ bool LBitmapFont::buildFont(std::string path)
 					{
 						int pX = (cellW * cols) + pCol;
 						int pY = (cellH * rows) + pRow;
-						if (mFontTexture.getPixel32(pX, pY) != bgColor)
+						if (mFontTexture.GetPixel32(pX, pY) != bgColor)
 						{
 							mChars[currentChar].x = pX;
 							pCol = cellW;
@@ -383,7 +300,7 @@ bool LBitmapFont::buildFont(std::string path)
 					{
 						int pX = (cellW * cols) + pColW;
 						int pY = (cellH * rows) + pRowW;
-						if (mFontTexture.getPixel32(pX, pY) != bgColor)
+						if (mFontTexture.GetPixel32(pX, pY) != bgColor)
 						{
 							mChars[currentChar].w = (pX - mChars[currentChar].x) + 1;
 							pColW = -1;
@@ -397,7 +314,7 @@ bool LBitmapFont::buildFont(std::string path)
 					{
 						int pX = (cellW * cols) + pCol;
 						int pY = (cellH * rows) + pRow;
-						if (mFontTexture.getPixel32(pX, pY) != bgColor)
+						if (mFontTexture.GetPixel32(pX, pY) != bgColor)
 						{
 							if (pRow < top)
 							{
@@ -416,7 +333,7 @@ bool LBitmapFont::buildFont(std::string path)
 						{
 							int pX = (cellW * cols) + pCol;
 							int pY = (cellH * rows) + pRow;
-							if (mFontTexture.getPixel32(pX, pY) != bgColor)
+							if (mFontTexture.GetPixel32(pX, pY) != bgColor)
 							{
 								baseA = pRow;
 								pCol = cellW;
@@ -628,7 +545,6 @@ bool SecondInit()
 				}
 			}
 #endif
-			gScreenSurface = SDL_GetWindowSurface(gWindow.GetWindow());
 		}
 	}
 
@@ -643,10 +559,6 @@ bool loadMedia(Load* load)
 
 	gModulatedTexture.Init(gWindow.GetRenderer());
 	if (!(success = gModulatedTexture.LoadFromFile(load->Path("Landscape_Moon_3300x2550.png")))) {}
-	//else
-	//{
-	//	gModulatedTexture.setBlendMode(SDL_BLENDMODE_BLEND);
-	//}
 	gIconCursor.Init(gWindow.GetRenderer());
 	success = gIconCursor.LoadFromFile(load->Path("IconCursor.png"));
 	gSun.Init(gWindow.GetRenderer());

@@ -112,3 +112,5 @@ void RenderLine(SDL_Renderer*, float, float, float, float);
 void RenderTexture(SDL_Renderer*, SDL_Texture*);
 
 void SetRenderViewport(SDL_Renderer*, SDL_Rect*);
+
+void RenderTextureRotated(SDL_Renderer*, SDL_Texture*, SDL_FRect*, SDL_FRect*, double, SDL_FPoint*, SDL_FlipMode);

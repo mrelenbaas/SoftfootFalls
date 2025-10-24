@@ -23,34 +23,39 @@ class LTexture
 public:
 	LTexture()
 		: renderer(nullptr)
-		, mTexture(nullptr)
+		, texture(nullptr)
 		, surface(nullptr)
-		, mRawPixels(nullptr)
-		, mRawPitch(0)
+		, rawPixels(nullptr)
+		, rawPitch(0)
 		, mWidth(0)
 		, mHeight(0) {}
 	~LTexture();
 	void Init(SDL_Renderer* renderer);
+	void Free();
 	bool LoadFromFile(const char*);
 	bool LoadPixelsFromFile(const char*);
 	bool LoadFromPixels();
-	void Free();
 #ifdef _WIN32
 	void render(int x, int y, SDL_FRect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE, Distance distance = { 0, 0 });
 #elif __linux__
-	void render(int x, int y, SDL_Rect* clip = NULL, double secondAngle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, Distance distance = { 0, 0 });
+	void render(int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, Distance distance = { 0, 0 });
 #endif
-	int GetWidth() const;
-	int GetHeight() const;
-	Uint32 getPixel32(Uint32 x, Uint32 y);
-	Uint32 getPitch32();
-	SDL_Texture* getTexture();
+	int GetWidth() const { return mWidth; };
+	int GetHeight() const { return mHeight; };
+	Uint32 GetPixel32(Uint32, Uint32);
+	Uint32 GetPitch32() { return surface->pitch / 4; };
+	SDL_Texture* getTexture() { return texture; };
 private:
+	void SetWidthAndHeight()
+	{
+		mWidth = surface->w;
+		mHeight = surface->h;
+	};
 	SDL_Renderer* renderer;
-	SDL_Texture* mTexture;
+	SDL_Texture* texture;
 	SDL_Surface* surface;
-	void* mRawPixels;
-	int mRawPitch;
+	void* rawPixels;
+	int rawPitch;
 	int mWidth;
 	int mHeight;
 };

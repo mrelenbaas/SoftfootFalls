@@ -30,11 +30,11 @@ public:
 	bool Init();
 	void HandleEvent(SDL_Event&);
 	void Free();
-	int GetWidth() const;
-	int GetHeight() const;
-	SDL_Renderer* GetRenderer();
+	int GetWidth() const { return width; };
+	int GetHeight() const { return height; };
+	SDL_Renderer* GetRenderer() { return renderer; };
+	SDL_Window* GetWindow() { return window; };
 	void SetRenderer(SDL_Renderer*);
-	SDL_Window* GetWindow();
 	bool IsMinimized() const;
 private:
 	SDL_Window* window;
