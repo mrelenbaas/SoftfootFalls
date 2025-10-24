@@ -21,17 +21,10 @@ struct Point
 	float y;
 };
 
-struct Distance
-{
-	float width;
-	float height;
-};
-
 class Container
 {
 protected:
 	Container();
 	virtual ~Container();
 	Index index;
-	Distance distance;
 };

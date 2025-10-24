@@ -56,35 +56,6 @@ enum Directions
 	DIRECTION_TOTAL
 };
 
-class LTexture
-{
-public:
-	LTexture();
-	~LTexture();
-	bool loadFromFile(const char* path);
-	bool loadPixelsFromFile(const char* path);
-	bool loadFromPixels();
-	void Free();
-	void setBlendMode(SDL_BlendMode blending);
-#ifdef _WIN32
-	void render(int x, int y, SDL_FRect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_FlipMode flip = SDL_FLIP_NONE, Distance distance = {0, 0});
-#elif __linux__
-	void render(int x, int y, SDL_Rect* clip = NULL, double secondAngle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, Distance distance = { 0, 0 });
-#endif
-	int GetWidth() const;
-	int GetHeight() const;
-	Uint32 getPixel32(Uint32 x, Uint32 y);
-	Uint32 getPitch32();
-	SDL_Texture* getTexture();
-private:
-	SDL_Texture* mTexture;
-	SDL_Surface* mSurfacePixels;
-	void* mRawPixels;
-	int mRawPitch;
-	int mWidth;
-	int mHeight;
-};
-
 class Dot
 {
 public:
@@ -126,7 +97,6 @@ SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 
 Window gWindow;
 SDL_Surface* gScreenSurface = NULL;
-SDL_Texture* gTexture = NULL;
 LTexture gModulatedTexture;
 const int WALKING_ANIMATION_FRAMES = 4;
 LTexture gWalkingSpriteSheetTexture;
@@ -168,80 +138,6 @@ Directions gDirection = DIRECTION_UP;
 const int ROW_SIZE = 25;
 
 
-LTexture::LTexture()
-{
-	mTexture = NULL;
-	mWidth = 0;
-	mHeight = 0;
-	mSurfacePixels = NULL;
-}
-
-LTexture::~LTexture()
-{
-	Free();
-}
-
-bool LTexture::loadFromFile(const char* path)
-{
-	if (!loadPixelsFromFile(path))
-	{
-		SDL_Log("Failed to load pixels for %s!\n", path);
-	}
-	else
-	{
-		if (!loadFromPixels())
-		{
-			SDL_Log("Failed to texture from pixels from %s!\n", path);
-		}
-	}
-	return mTexture != NULL;
-}
-
-bool LTexture::loadPixelsFromFile(const char* path)
-{
-	Free();
-	mSurfacePixels = IMG_Load(path);
-	if (mSurfacePixels == NULL)
-	{
-		SDL_Log("Unable to load image %s! SDL_image Error: %s\n", path, SDL_GetError());
-	}
-	else
-	{
-		mWidth = mSurfacePixels->w;
-		mHeight = mSurfacePixels->h;
-	}
-	return mSurfacePixels != NULL;
-}
-
-bool LTexture::loadFromPixels()
-{
-	if (mSurfacePixels == NULL)
-	{
-		SDL_Log("No pixels loaded!");
-	}
-	else
-	{
-#ifdef _WIN32
-		SDL_SetSurfaceColorKey(mSurfacePixels, true, SDL_MapSurfaceRGB(mSurfacePixels, 0, 0xFF, 0xFF));
-#elif __linux__
-		SDL_SetColorKey(mSurfacePixels, SDL_TRUE, SDL_MapRGB(mSurfacePixels->format, 0, 0xFF, 0xFF));
-#endif
-		mTexture = SDL_CreateTextureFromSurface(gWindow.GetRenderer(), mSurfacePixels);
-		if (mTexture == NULL)
-		{
-			SDL_Log("Unable to create texture from loaded pixels! SDL Error: %s\n", SDL_GetError());
-		}
-		else
-		{
-			mWidth = mSurfacePixels->w;
-			mHeight = mSurfacePixels->h;
-		}
-		DestroySurface(mSurfacePixels);
-		mSurfacePixels = NULL;
-	}
-	return mTexture != NULL;
-}
-
 void LTexture::Free()
 {
 	if (mTexture != NULL)
@@ -251,16 +147,11 @@ void LTexture::Free()
 		mWidth = 0;
 		mHeight = 0;
 	}
-	if (mSurfacePixels != NULL)
+	if (surface != NULL)
 	{
-		DestroySurface(mSurfacePixels);
-		mSurfacePixels = NULL;
+		DestroySurface(surface);
+		surface = NULL;
 	}
-}
-
-void LTexture::setBlendMode(SDL_BlendMode blending)
-{
-	SDL_SetTextureBlendMode(mTexture, blending);
 }
 
 #ifdef _WIN32
@@ -310,16 +201,16 @@ int LTexture::GetHeight() const
 
 Uint32 LTexture::getPixel32(Uint32 x, Uint32 y)
 {
-	Uint32* pixels = static_cast<Uint32*>(mSurfacePixels->pixels);
+	Uint32* pixels = static_cast<Uint32*>(surface->pixels);
 	return pixels[(y * getPitch32()) + x];
 }
 
 Uint32 LTexture::getPitch32()
 {
 	Uint32 pitch = 0;
-	if (mSurfacePixels != NULL)
+	if (surface != NULL)
 	{
-		pitch = mSurfacePixels->pitch / 4;
+		pitch = surface->pitch / 4;
 	}
 	return pitch;
 }
@@ -450,7 +341,8 @@ bool LBitmapFont::buildFont(std::string path)
 {
 	Free();
 	bool success = true;
-	if (!mFontTexture.loadPixelsFromFile(path.c_str()))
+	mFontTexture.Init(gWindow.GetRenderer());
+	if (!mFontTexture.LoadPixelsFromFile(path.c_str()))
 	{
 		SDL_Log("Unable to load bitmap font surface!\n");
 		success = false;
@@ -543,7 +435,7 @@ bool LBitmapFont::buildFont(std::string path)
 			mChars[i].y += top;
 			mChars[i].h -= top;
 		}
-		if (!mFontTexture.loadFromPixels())
+		if (!mFontTexture.LoadFromPixels())
 		{
 			SDL_Log("Unable to create font texture!\n");
 			success = false;
@@ -749,15 +641,18 @@ bool loadMedia(Load* load)
 
 	bool success = true;
 
-	gTexture = loadTexture(load->Path("Whitebox_Square_1024x1024_000.png"), load, &success);
-	if (!(success = gModulatedTexture.loadFromFile(load->Path("Landscape_Moon_3300x2550.png")))) {}
-	else
-	{
-		gModulatedTexture.setBlendMode(SDL_BLENDMODE_BLEND);
-	}
-	success = gIconCursor.loadFromFile(load->Path("IconCursor.png"));
-	success = gSun.loadFromFile(load->Path("CharacterFairySun_000_256x256.png"));
-	success = gMoon.loadFromFile(load->Path("CharacterFairyMoon_000_256x256.png"));
+	gModulatedTexture.Init(gWindow.GetRenderer());
+	if (!(success = gModulatedTexture.LoadFromFile(load->Path("Landscape_Moon_3300x2550.png")))) {}
+	//else
+	//{
+	//	gModulatedTexture.setBlendMode(SDL_BLENDMODE_BLEND);
+	//}
+	gIconCursor.Init(gWindow.GetRenderer());
+	success = gIconCursor.LoadFromFile(load->Path("IconCursor.png"));
+	gSun.Init(gWindow.GetRenderer());
+	success = gSun.LoadFromFile(load->Path("CharacterFairySun_000_256x256.png"));
+	gMoon.Init(gWindow.GetRenderer());
+	success = gMoon.LoadFromFile(load->Path("CharacterFairyMoon_000_256x256.png"));
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "r+b");
 #elif __linux__
@@ -813,66 +708,97 @@ bool loadMedia(Load* load)
 #endif
 	}
 
-	success = gDotTexture.loadFromFile(load->Path("CharacterFairySmallwig000_64x64.png"));
-	success = gPalaceTexture.loadFromFile(load->Path("BoxFront.png"));
-	success = gBGTexture.loadFromFile(load->Path("bg.png"));
-	success = gHorizons[0].loadFromFile(load->Path("Horizon000.png"));
-	success = gHorizons[1].loadFromFile(load->Path("Horizon001.png"));
-	success = gHorizons[2].loadFromFile(load->Path("Horizon002.png"));
-	success = gHorizons[3].loadFromFile(load->Path("Horizon003.png"));
-	success = gHorizons[4].loadFromFile(load->Path("Horizon004.png"));
-	success = gHorizons[5].loadFromFile(load->Path("Horizon005.png"));
-	success = gHorizons[6].loadFromFile(load->Path("Horizon006.png"));
-	success = gHorizons[7].loadFromFile(load->Path("Horizon007.png"));
-	success = gRoads[0].loadFromFile(load->Path("Road_000_256x256.png"));
-	success = gRoads[1].loadFromFile(load->Path("Road_001_256x256.png"));
-	success = gRoads[2].loadFromFile(load->Path("Road_002_256x256.png"));
-	success = gRoads[3].loadFromFile(load->Path("Road_003_256x256.png"));
-	success = gRoads[4].loadFromFile(load->Path("Road_004_256x256.png"));
-	success = gBoxes[KEY_PRESS_SURFACE_UP].loadFromFile(load->Path("BoxUp.png"));
-	success = gBoxes[KEY_PRESS_SURFACE_DOWN].loadFromFile(load->Path("BoxDown.png"));
-	success = gBoxes[KEY_PRESS_SURFACE_LEFT].loadFromFile(load->Path("BoxLeft.png"));
-	success = gBoxes[KEY_PRESS_SURFACE_RIGHT].loadFromFile(load->Path("BoxRight.png"));
-	success = gBoxFront.loadFromFile(load->Path("BoxFront.png"));
+	gDotTexture.Init(gWindow.GetRenderer());
+	success = gDotTexture.LoadFromFile(load->Path("CharacterFairySmallwig000_64x64.png"));
+	gPalaceTexture.Init(gWindow.GetRenderer());
+	success = gPalaceTexture.LoadFromFile(load->Path("BoxFront.png"));
+	gBGTexture.Init(gWindow.GetRenderer());
+	success = gBGTexture.LoadFromFile(load->Path("bg.png"));
+	gHorizons[0].Init(gWindow.GetRenderer());
+	success = gHorizons[0].LoadFromFile(load->Path("Horizon000.png"));
+	gHorizons[1].Init(gWindow.GetRenderer());
+	success = gHorizons[1].LoadFromFile(load->Path("Horizon001.png"));
+	gHorizons[2].Init(gWindow.GetRenderer());
+	success = gHorizons[2].LoadFromFile(load->Path("Horizon002.png"));
+	gHorizons[3].Init(gWindow.GetRenderer());
+	success = gHorizons[3].LoadFromFile(load->Path("Horizon003.png"));
+	gHorizons[4].Init(gWindow.GetRenderer());
+	success = gHorizons[4].LoadFromFile(load->Path("Horizon004.png"));
+	gHorizons[5].Init(gWindow.GetRenderer());
+	success = gHorizons[5].LoadFromFile(load->Path("Horizon005.png"));
+	gHorizons[6].Init(gWindow.GetRenderer());
+	success = gHorizons[6].LoadFromFile(load->Path("Horizon006.png"));
+	gHorizons[7].Init(gWindow.GetRenderer());
+	success = gHorizons[7].LoadFromFile(load->Path("Horizon007.png"));
+	gRoads[0].Init(gWindow.GetRenderer());
+	success = gRoads[0].LoadFromFile(load->Path("Road_000_256x256.png"));
+	gRoads[1].Init(gWindow.GetRenderer());
+	success = gRoads[1].LoadFromFile(load->Path("Road_001_256x256.png"));
+	gRoads[2].Init(gWindow.GetRenderer());
+	success = gRoads[2].LoadFromFile(load->Path("Road_002_256x256.png"));
+	gRoads[3].Init(gWindow.GetRenderer());
+	success = gRoads[3].LoadFromFile(load->Path("Road_003_256x256.png"));
+	gRoads[4].Init(gWindow.GetRenderer());
+	success = gRoads[4].LoadFromFile(load->Path("Road_004_256x256.png"));
+	gBoxes[KEY_PRESS_SURFACE_UP].Init(gWindow.GetRenderer());
+	success = gBoxes[KEY_PRESS_SURFACE_UP].LoadFromFile(load->Path("BoxUp.png"));
+	gBoxes[KEY_PRESS_SURFACE_DOWN].Init(gWindow.GetRenderer());
+	success = gBoxes[KEY_PRESS_SURFACE_DOWN].LoadFromFile(load->Path("BoxDown.png"));
+	gBoxes[KEY_PRESS_SURFACE_LEFT].Init(gWindow.GetRenderer());
+	success = gBoxes[KEY_PRESS_SURFACE_LEFT].LoadFromFile(load->Path("BoxLeft.png"));
+	gBoxes[KEY_PRESS_SURFACE_RIGHT].Init(gWindow.GetRenderer());
+	success = gBoxes[KEY_PRESS_SURFACE_RIGHT].LoadFromFile(load->Path("BoxRight.png"));
+	gBoxFront.Init(gWindow.GetRenderer());
+	success = gBoxFront.LoadFromFile(load->Path("BoxFront.png"));
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
 		int j = i % 5;
 		if (j == 0)
 		{
-			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_000_1024x1024.png"));
+			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
+			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_000_1024x1024.png"));
 		}
 		else if (j == 1)
 		{
-			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_001_1024x1024.png"));
+			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
+			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_001_1024x1024.png"));
 		}
 		else if (j == 2)
 		{
-			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_002_1024x1024.png"));
+			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
+			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_002_1024x1024.png"));
 		}
 		else if (j == 3)
 		{
-			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_003_1024x1024.png"));
+			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
+			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_003_1024x1024.png"));
 		}
 		else if (j == 4)
 		{
-			success = gMiracleStarfalls[i].loadFromFile(load->Path("MiracleStarfall_004_1024x1024.png"));
+			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
+			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_004_1024x1024.png"));
 		}
 	}
-	success = gPlayerHighlight.loadFromFile(load->Path("PlayerHighlight_000_1024x1024.png"));
-	success = gPalaceHighlight.loadFromFile(load->Path("PalaceHighlight_000_2048x2048.png"));
-	success = gCharacterTownspersonMoonboy.loadFromFile(load->Path("CharacterTownspersonMoonboy_000_1024x1024.png"));
-	success = gCharacterTownspersonMoonboyHands.loadFromFile(load->Path("CharacterTownspersonMoonboy_Hands_000_1024x1024.png"));
-	success = gCharacterMonsterMouth.loadFromFile(load->Path("CharacterMonsterMouth_000_1024x1024.png"));
-	success = gPlayerBeam.loadFromFile(load->Path("PlayerBeam_000_2048x2048.png"));
-	success = characterFairyHopeful.loadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png"));
+	gPlayerHighlight.Init(gWindow.GetRenderer());
+	success = gPlayerHighlight.LoadFromFile(load->Path("PlayerHighlight_000_1024x1024.png"));
+	gPalaceHighlight.Init(gWindow.GetRenderer());
+	success = gPalaceHighlight.LoadFromFile(load->Path("PalaceHighlight_000_2048x2048.png"));
+	gCharacterTownspersonMoonboy.Init(gWindow.GetRenderer());
+	success = gCharacterTownspersonMoonboy.LoadFromFile(load->Path("CharacterTownspersonMoonboy_000_1024x1024.png"));
+	gCharacterTownspersonMoonboyHands.Init(gWindow.GetRenderer());
+	success = gCharacterTownspersonMoonboyHands.LoadFromFile(load->Path("CharacterTownspersonMoonboy_Hands_000_1024x1024.png"));
+	gCharacterMonsterMouth.Init(gWindow.GetRenderer());
+	success = gCharacterMonsterMouth.LoadFromFile(load->Path("CharacterMonsterMouth_000_1024x1024.png"));
+	gPlayerBeam.Init(gWindow.GetRenderer());
+	success = gPlayerBeam.LoadFromFile(load->Path("PlayerBeam_000_2048x2048.png"));
+	characterFairyHopeful.Init(gWindow.GetRenderer());
+	success = characterFairyHopeful.LoadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png"));
 	success = gBitmapFont.buildFont(load->Path("font_000.png"));
 	return success;
 }
 
 void close(Load* load)
 {
-	SDL_DestroyTexture(gTexture);
-	gTexture = NULL;
 	gModulatedTexture.Free();
 	gWalkingSpriteSheetTexture.Free();
 	gIconCursor.Free();
@@ -995,6 +921,10 @@ int main(int argc, char* argv[])
 	Load* load = new Load(basePath);
 
 	gMiracleStarfalls = new LTexture[gMiracleStarfallLimit];
+	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	{
+		gMiracleStarfalls[i].Init(gWindow.GetRenderer());
+	}
 	SDL_Rect gMiracleStarfallViewports[gMiracleStarfallLimit];
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
@@ -1667,19 +1597,8 @@ int main(int argc, char* argv[])
 					}
 					for (int m = 0; m < gMiracleStarfallLimit; ++m)
 					{
-						//if (gMiracleStarfallViewports[m].x != 0
-						//	&& gMiracleStarfallViewports[m].y != 0
-						//	&& gMiracleStarfallViewports[m].w != 0
-						//	&& gMiracleStarfallViewports[m].h != 0)
-						//gMiracleStarfallDeltas[m] += currentTime - previousTime;
-						//gMiracleStarfallNormals[m] = (double)gMiracleStarfallDeltas[m] / secondLimit;
 						if (gMiracleStarfallDeltas[m] > secondLimit)
 						{
-							//gMiracleStarfallDeltas[m] -= secondLimit;
-							//gMiracleStarfallViewports[m].x = 0;
-							//gMiracleStarfallViewports[m].y = 0;
-							//gMiracleStarfallViewports[m].w = 0;
-							//gMiracleStarfallViewports[m].h = 0;
 							gMiracleStarfallDespawns[m] = false;
 						}
 						if (gMiracleStarfallDespawns[m])
@@ -1690,18 +1609,6 @@ int main(int argc, char* argv[])
 								gMiracleStarfallViewports[m].w,
 								gMiracleStarfallViewports[m].h
 							};
-							//if (gMiracleStarfallDespawns[m])
-							//{
-							//	gMiracleStarfallViewports[m].y -= gWindow.GetHeight() / 100;
-							//}
-							//if (gMiracleStarfallViewports[m].y < -gWindow.GetHeight())
-							//{
-								//gMiracleStarfallViewports[m].x = 0;
-								//gMiracleStarfallViewports[m].y = 0;
-								//gMiracleStarfallViewports[m].w = 0;
-								//gMiracleStarfallViewports[m].h = 0;
-								//gMiracleStarfallDespawns[m] = false;
-							//}
 							SetRenderViewport(gWindow.GetRenderer(), &currentStar);
 							RenderTexture(gWindow.GetRenderer(), gMiracleStarfalls[m].getTexture());
 						}
