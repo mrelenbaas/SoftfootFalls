@@ -12,6 +12,16 @@
 
 
 ///////////////////////////////////////////////////////////////////////
+//  SHAPES  ///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+#ifdef _WIN32
+SDL_FRect Rect(int, int, int, int);
+#elif __linux__
+SDL_Rect Rect(int, int, int, int);
+#endif
+
+///////////////////////////////////////////////////////////////////////
 //  KEYS  /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
@@ -109,12 +119,12 @@ void DestroySurface(SDL_Surface*);
 
 void RenderLine(SDL_Renderer*, float, float, float, float);
 
-void RenderTexture(SDL_Renderer*, SDL_Texture*);
+void RenderTexture(SDL_Renderer*, SDL_Texture*, double angle = 0.0);
 
 void SetRenderViewport(SDL_Renderer*, SDL_Rect*);
 
-#ifdef _WIN32
-	void RenderTextureRotated(SDL_Renderer*, SDL_Texture*, SDL_FRect*, SDL_FRect*, double, SDL_FPoint*, SDL_FlipMode);
-#elif __linux__
-	void RenderTextureRotated(SDL_Renderer*, SDL_Texture*, SDL_Rect*, SDL_Rect*, double, SDL_Point*, SDL_RendererFlip);
-#endif
+//#ifdef _WIN32
+//	void RenderTextureRotated(SDL_Renderer*, SDL_Texture*, SDL_FRect*, SDL_FRect*, double, SDL_FPoint*, SDL_FlipMode);
+//#elif __linux__
+//	void RenderTextureRotated(SDL_Renderer*, SDL_Texture*, SDL_Rect*, SDL_Rect*, double, SDL_Point*, SDL_RendererFlip);
+//#endif

@@ -1,21 +1,37 @@
 #include "SDLInterface.h"
+#include "Container.h"
 
+
+///////////////////////////////////////////////////////////////////////
+//  SHAPES  ///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+#ifdef _WIN32
+SDL_FRect Rect(int x, int y, int w, int h)
+#elif __linux__
+SDL_Rect Rect(int x, int y, int w, int h)
+#endif
+{
+#ifdef _WIN32
+	SDL_FRect rect = { x, y, w, h };
+#elif __linux__
+	SDL_Rect rect = { x, y, w, h };
+#endif
+	return rect;
+}
 
 ///////////////////////////////////////////////////////////////////////
 //  KEYS  /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
+SDL_Keycode Key(SDL_Event event)
+{
 #ifdef _WIN32
-SDL_Keycode Key(SDL_Event event)
-{
 	return event.key.key;
-}
 #elif __linux__
-SDL_Keycode Key(SDL_Event event)
-{
 	return event.key.keysym.sym;
-}
 #endif
+}
 
 ///////////////////////////////////////////////////////////////////////
 //  WINDOW  ///////////////////////////////////////////////////////////
@@ -121,10 +137,11 @@ void RenderLine(SDL_Renderer* renderer, float x, float y, float w, float h)
 #endif
 }
 
-void RenderTexture(SDL_Renderer* renderer, SDL_Texture* texture)
+void RenderTexture(SDL_Renderer* renderer, SDL_Texture* texture, double angle)
 {
 #ifdef _WIN32
-	SDL_RenderTexture(renderer, texture, NULL, NULL);
+	//SDL_RenderTexture(renderer, texture, NULL, NULL);
+	SDL_RenderTextureRotated(renderer, texture, NULL, NULL, angle, NULL, SDL_FLIP_NONE);
 #elif __linux__
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
 #endif

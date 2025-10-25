@@ -20,8 +20,8 @@ void LTexture::Free()
 	{
 		SDL_DestroyTexture(texture);
 		texture = NULL;
-		mWidth = 0;
-		mHeight = 0;
+		width = 0;
+		height = 0;
 	}
 	if (surface)
 	{
@@ -67,59 +67,6 @@ bool LTexture::LoadFromPixels()
 		surface = NULL;
 	}
 	return texture != NULL;
-}
-
-#ifdef _WIN32
-void LTexture::Render(
-	float x,
-	float y,
-	SDL_FRect* srcrect,
-	double angle,
-	SDL_FPoint* center,
-	SDL_FlipMode flip,
-	Distance distance)
-#elif __linux__
-void LTexture::Render(
-	float x,
-	float y,
-	SDL_Rect* srcrect,
-	double angle,
-	SDL_Point* center,
-	SDL_RendererFlip flip,
-	Distance distance)
-#endif
-{
-	bool result = distance.width == 0.0f && distance.height == 0.0f;
-#ifdef _WIN32
-	SDL_FRect dstrect =
-	{
-		(float)x,
-		(float)y,
-		(result) ? mWidth : distance.width,
-		(result) ? mHeight : distance.height
-	};
-#elif __linux__
-	SDL_Rect dstrect =
-	{
-		x,
-		y,
-		(result) ? mWidth : distance.width,
-		(result) ? mHeight : distance.height
-	};
-#endif
-	if (srcrect != NULL)
-	{
-		dstrect.w = srcrect->w;
-		dstrect.h = srcrect->h;
-	}
-	RenderTextureRotated(
-		renderer,
-		texture,
-		srcrect,
-		&dstrect,
-		angle,
-		center,
-		flip);
 }
 
 Uint32 LTexture::GetPixel32(Uint32 x, Uint32 y)
