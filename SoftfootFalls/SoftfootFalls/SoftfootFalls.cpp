@@ -4,6 +4,8 @@
 #include "Time.h"
 #include "Clock.h"
 #include "Timer.h"
+#include <sstream>
+#include <iomanip>
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
@@ -18,6 +20,7 @@
 #include "SDLInterface.h"
 #include "SDLWrapper.h"
 #include "Window.h"
+#include "Texture.h"
 
 #include "Load.h"
 #include "Container.h"
@@ -79,13 +82,14 @@ void close(Load*);
 SDL_Texture* loadTexture(const char* path, Load* load, bool* success);
 
 Window gWindow;
-LTexture gBackgroundBackground;
-LTexture gBackgroundForeground;
+Texture gCrest;
+Texture gBackgroundBackground;
+Texture gBackgroundForeground;
 const int HORIZONS_SIZE = 8;
-LTexture gHorizons[HORIZONS_SIZE];
-LTexture gIconCursor;
-LTexture gSun;
-LTexture gMoon;
+Texture gHorizons[HORIZONS_SIZE];
+Texture gIconCursor;
+Texture gSun;
+Texture gMoon;
 #ifdef _WIN32
 SDL_Gamepad* gGameController;
 #elif __linux__
@@ -93,37 +97,41 @@ SDL_GameController* gGameController;
 #endif
 SDL_Joystick* gJoystick = NULL;
 SDL_Haptic* gJoyHaptic = NULL;
-LTexture gDotTexture;
-LTexture gPalaceTexture;
+Texture gDotTexture;
+Texture gPalaceTexture;
 const int ROAD_SIZE = 5;
-LTexture gRoads[ROAD_SIZE];
+Texture gRoads[ROAD_SIZE];
 const int FIRE_SIZE = 3;
-LTexture gFire[FIRE_SIZE];
+Texture gFire[FIRE_SIZE];
 const int FIRES_SIZE = 12;
-LTexture gFires[FIRES_SIZE];
-LTexture gBoxes[KEY_PRESS_SURFACE_TOTAL];
-LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
-LTexture gBoxFront;
-LTexture* gMiracleStarfalls;
+Texture gFires[FIRES_SIZE];
+const int LIGHTNING_SIZE = 8;
+Texture gLightnings[LIGHTNING_SIZE];
+const int CLOUDS_SIZE = 12;
+Texture gClouds[CLOUDS_SIZE];
+Texture gBoxes[KEY_PRESS_SURFACE_TOTAL];
+Texture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
+Texture gBoxFront;
+Texture* gMiracleStarfalls;
 int gMiracleStarfallIndex = 0;
 int gMiracleStarfallModIndex = 0;
 const int gMiracleStarfallLimit = 120;
 bool gMiracleStarfallUpdateAtEndOfFrame = false;
-LTexture gPlayerHighlight;
-LTexture gPalaceHighlightBottom;
-LTexture gPalaceHighlightTop;
-LTexture gPalaceHighlightLeft;
-LTexture gPalaceHighlightRight;
-LTexture gMenuTop;
-LTexture gMenuBottom;
-LTexture gMenuRightTop;
-LTexture gMenuRightBottom;
-LTexture gMenuLeft;
-LTexture gCharacterTownspersonMoonboy;
-LTexture gCharacterTownspersonMoonboyHands;
-LTexture gCharacterMonsterMouth;
-LTexture gPlayerBeam;
-LTexture characterFairyHopeful;
+Texture gPlayerHighlight;
+Texture gPalaceHighlightBottom;
+Texture gPalaceHighlightTop;
+Texture gPalaceHighlightLeft;
+Texture gPalaceHighlightRight;
+Texture gMenuTop;
+Texture gMenuBottom;
+Texture gMenuRightTop;
+Texture gMenuRightBottom;
+Texture gMenuLeft;
+Texture gCharacterTownspersonMoonboy;
+Texture gCharacterTownspersonMoonboyHands;
+Texture gCharacterMonsterMouth;
+Texture gPlayerBeam;
+Texture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
 Directions gDirection = DIRECTION_UP;
 const int ROW_SIZE = 25;
@@ -472,6 +480,8 @@ bool loadMedia(Load* load)
 	success = gDotTexture.LoadFromFile(load->Path("CharacterFairySmallwig000_64x64.png"));
 	gPalaceTexture.Init(gWindow.GetRenderer());
 	success = gPalaceTexture.LoadFromFile(load->Path("BoxFront.png"));
+	gCrest.Init(gWindow.GetRenderer());
+	success = gCrest.LoadFromFile(load->Path("Crest_2048x2048_000.png"));
 	gBackgroundBackground.Init(gWindow.GetRenderer());
 	success = gBackgroundBackground.LoadFromFile(load->Path("bg.png"));
 	gHorizons[0].Init(gWindow.GetRenderer());
@@ -521,6 +531,28 @@ bool loadMedia(Load* load)
 			success = gFires[k].LoadFromFile(load->Path(name.c_str()));
 			++k;
 		}
+	}
+	preName = "MiracleLightning_00";
+	postName = "_512x512.png";
+	for (int i = 0; i < LIGHTNING_SIZE; ++i)
+	{
+		gLightnings[i].Init(gWindow.GetRenderer());
+		std::string name = preName + std::to_string(i) + postName;
+		success = gLightnings[i].LoadFromFile(load->Path(name.c_str()));
+	}
+	preName = "MiracleCloud_";
+	postName = "_1024x1024.png";
+	for (int i = 0; i < CLOUDS_SIZE; ++i)
+	{
+		gClouds[i].Init(gWindow.GetRenderer());
+
+		//int number = 45;
+		std::ostringstream oss;
+		oss << std::setfill('0') << std::setw(3) << i;
+		std::string padded = oss.str();
+		std::string name = preName + padded + postName;
+
+		success = gClouds[i].LoadFromFile(load->Path(name.c_str()));
 	}
 	gBoxes[KEY_PRESS_SURFACE_UP].Init(gWindow.GetRenderer());
 	success = gBoxes[KEY_PRESS_SURFACE_UP].LoadFromFile(load->Path("BoxUp.png"));
@@ -631,6 +663,7 @@ void close(Load* load)
 	gJoyHaptic = NULL;
 	gDotTexture.Free();
 	gPalaceTexture.Free();
+	gCrest.Free();
 	gBackgroundBackground.Free();
 	for (int i = 0; i < HORIZONS_SIZE; ++i)
 	{
@@ -652,6 +685,14 @@ void close(Load* load)
 			gFires[k].Free();
 			++k;
 		}
+	}
+	for (int i = 0; i < LIGHTNING_SIZE; ++i)
+	{
+		gLightnings[i].Free();
+	}
+	for (int i = 0; i < CLOUDS_SIZE; ++i)
+	{
+		gClouds[i].Free();
 	}
 	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i)
 	{
@@ -738,7 +779,7 @@ int main(int argc, char* argv[])
 	const char* basePath = BasePath(argv[0]);
 	Load* load = new Load(basePath);
 
-	gMiracleStarfalls = new LTexture[gMiracleStarfallLimit];
+	gMiracleStarfalls = new Texture[gMiracleStarfallLimit];
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
 		gMiracleStarfalls[i].Init(gWindow.GetRenderer());
@@ -838,6 +879,9 @@ int main(int argc, char* argv[])
 			{
 				isOnFire[i] = false;
 			}
+			bool isIdle = true;
+			int lightningIndex = 0;
+			int cloudIndex = 0;
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -883,6 +927,8 @@ int main(int argc, char* argv[])
 						animationIndex = 0;
 					}
 					fireIndex = animationIndex % FIRE_SIZE;
+					lightningIndex = animationIndex % LIGHTNING_SIZE;
+					cloudIndex = animationIndex % CLOUDS_SIZE;
 				}
 				if (secondDelta > secondLimit)
 				{
@@ -1016,6 +1062,7 @@ int main(int argc, char* argv[])
 					}
 					else if (e.type == KEY_PRESSED)
 					{
+						isIdle = false;
 						switch (Key(e))
 						{
 						case SDLK_HOME:
@@ -1366,6 +1413,27 @@ int main(int argc, char* argv[])
 							if (middleViewport.w < 0) middleViewport.w = 0;
 							if (middleViewport.h < 0) middleViewport.h = 0;
 							++middleViewport.w;
+							SDL_Rect extraRaisedViewport =
+							{
+								middleViewport.x - (middleViewport.w * 0.5f),
+								middleViewport.y - (middleViewport.h * 0.5f) - (middleViewport.h * 1.25f),
+								middleViewport.w * 2.0f,
+								middleViewport.h * 2.0f
+							};
+							SDL_Rect raisedViewport =
+							{
+								middleViewport.x - (middleViewport.w * 0.5f),
+								middleViewport.y - (middleViewport.h * 0.5f),// -(middleViewport.h * 1.25f),
+								middleViewport.w * 2.0f,
+								middleViewport.h * 2.0f
+							};
+							SDL_Rect cloudsViewport =
+							{
+								middleViewport.x - (middleViewport.w * 0.5f),
+								middleViewport.y - (middleViewport.h * 1.1f),
+								middleViewport.w * 2.0f,
+								middleViewport.h * 2.0f
+							};
 							SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
 							int modI = (i % 2 == 0) ? 0 : 4;
 							RenderTexture(gWindow.GetRenderer(), gHorizons[modI + horizonI].GetTexture());
@@ -1386,6 +1454,8 @@ int main(int argc, char* argv[])
 								RenderTexture(gWindow.GetRenderer(), gFire[fireIndex].GetTexture());
 								isOnFire[k] = true;
 								RenderTexture(gWindow.GetRenderer(), gPlayerHighlight.GetTexture());
+								SetRenderViewport(gWindow.GetRenderer(), &raisedViewport);
+								SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
 							}
 							if (isOnFire[k])
 							{
@@ -1430,7 +1500,7 @@ int main(int argc, char* argv[])
 
 							SDL_Rect walkingSpriteViewport =
 							{
-								walkingSpriteViewport.x = farLeft.x + ((farLeft.w * ROW_SIZE) * dotNormalJ) - (farLeft.w / 3),
+								walkingSpriteViewport.x = farLeft.x + ((farLeft.w * ROW_SIZE) * dotNormalJ) - (farLeft.w),
 								walkingSpriteViewport.y = farLeft.y - (farLeft.h * 0.5f),
 								walkingSpriteViewport.w = farLeft.w / 2,
 								walkingSpriteViewport.h = farLeft.h / 2
@@ -1441,11 +1511,22 @@ int main(int argc, char* argv[])
 								beamViewport.y = walkingSpriteViewport.y + walkingSpriteViewport.h;
 								beamViewport.w = walkingSpriteViewport.w;
 								beamViewport.h = walkingSpriteViewport.h;
-								SetRenderViewport(gWindow.GetRenderer(), &beamViewport);
-								RenderTexture(gWindow.GetRenderer(), gPlayerBeam.GetTexture());
-								SetRenderViewport(gWindow.GetRenderer(), &walkingSpriteViewport);
+								extraRaisedViewport.x = walkingSpriteViewport.x;
+								raisedViewport.x = walkingSpriteViewport.x;
+								cloudsViewport.x = walkingSpriteViewport.x;
+								SetRenderViewport(gWindow.GetRenderer(), &raisedViewport);
+								RenderTexture(gWindow.GetRenderer(), gLightnings[lightningIndex].GetTexture());
+								SetRenderViewport(gWindow.GetRenderer(), &extraRaisedViewport);
 								RenderTexture(gWindow.GetRenderer(), gBox->GetTexture());
-								SetRenderViewport(gWindow.GetRenderer(), &walkingSpriteViewport);
+								SetRenderViewport(gWindow.GetRenderer(), &cloudsViewport);
+								RenderTexture(gWindow.GetRenderer(), gClouds[cloudIndex].GetTexture());
+								SetRenderViewport(gWindow.GetRenderer(), NULL);
+								RenderLine(
+									gWindow.GetRenderer(),
+									dot.getBox().x + (dot.getBox().w * 2.5f),
+									dot.getBox().y + (dot.getBox().h * 2.5f),
+									extraRaisedViewport.x + (extraRaisedViewport.w * 0.5f),
+									extraRaisedViewport.y + (extraRaisedViewport.h * 0.5f));
 							}
 							++k;
 						}
@@ -1479,12 +1560,6 @@ int main(int argc, char* argv[])
 					};
 					SetRenderViewport(gWindow.GetRenderer(), &monsterViewport);
 					SetRenderViewport(gWindow.GetRenderer(), &fullscreenViewport);
-					RenderLine(
-						gWindow.GetRenderer(),
-						dot.getBox().x + (dot.getBox().w * 2.5f),
-						dot.getBox().y + (dot.getBox().h * 2.5f),
-						beamPoint.x,
-						beamPoint.y);
 					SDL_Rect palaceViewport
 					{
 						dot.getBox().x - (dot.getBox().w / 4 * 10),
@@ -1535,7 +1610,6 @@ int main(int argc, char* argv[])
 						100
 					};
 					SetRenderViewport(gWindow.GetRenderer(), NULL);
-					//RenderTexture(gWindow.GetRenderer(), gMiracleStarfalls[0].GetTexture(), 360 * secondNormal);
 					SDL_SetRenderDrawColor(gWindow.GetRenderer(), 0xFF, 0xFF, 0xFF, 0xFF);
 					RenderLine(gWindow.GetRenderer(), point1.x, point1.y, point2.x, point2.y);
 					RenderLine(gWindow.GetRenderer(), point2.x, point2.y, point2.x + 100, point2.y);
@@ -1590,6 +1664,12 @@ int main(int argc, char* argv[])
 					};
 					SetRenderViewport(gWindow.GetRenderer(), &menuTopViewport);
 					RenderTexture(gWindow.GetRenderer(), gMenuTop.GetTexture());
+
+					if (isIdle)
+					{
+						SetRenderViewport(gWindow.GetRenderer(), &fullscreenViewport);
+						RenderTexture(gWindow.GetRenderer(), gCrest.GetTexture());
+					}
 
 					if (isDebug)
 					{
