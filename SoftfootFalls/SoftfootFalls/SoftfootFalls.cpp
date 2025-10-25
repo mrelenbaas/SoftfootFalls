@@ -26,7 +26,7 @@
 #include "Container.h"
 
 
-const char* BasePath(const char* filePath)
+static const char* BasePath(const char* filePath)
 {
 	char* basePath = new char[strlen(filePath) + 1];
 	int i = 0;
@@ -57,23 +57,6 @@ enum Directions
 	DIRECTION_LEFT,
 	DIRECTION_RIGHT,
 	DIRECTION_TOTAL
-};
-
-class Dot
-{
-public:
-	static const int DOT_WIDTH = 20;
-	static const int DOT_HEIGHT = 20;
-	static const int DOT_VEL = 100;
-	Dot();
-	~Dot();
-	void HandleEvent(SDL_Event& e);
-	void move(double timestepX, double timestepY);
-	void setIJ(int*, int*, float*, float*) const;
-	SDL_Rect getBox();
-private:
-	SDL_Rect mBox;
-	int mVelX, mVelY;
 };
 
 bool SecondInit();
@@ -109,6 +92,12 @@ const int LIGHTNING_SIZE = 8;
 Texture gLightnings[LIGHTNING_SIZE];
 const int CLOUDS_SIZE = 12;
 Texture gClouds[CLOUDS_SIZE];
+const int RAIN_CLOUDS_SIZE = 2;
+Texture gRainClouds[RAIN_CLOUDS_SIZE];
+const int RAIN_SIZE = 3;
+Texture gRain[RAIN_SIZE];
+const int WINDS_SIZE = 5;
+Texture gWinds[WINDS_SIZE];
 Texture gBoxes[KEY_PRESS_SURFACE_TOTAL];
 Texture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
 Texture gBoxFront;
@@ -137,26 +126,11 @@ Directions gDirection = DIRECTION_UP;
 const int ROW_SIZE = 25;
 const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 
-
-Dot::Dot()
+void Dot::HandleEvent(SDL_Event& event)
 {
-	mBox.x = 0;
-	mBox.y = 0;
-	mBox.w = DOT_WIDTH;
-	mBox.h = DOT_HEIGHT;
-	mVelX = 0;
-	mVelY = 0;
-}
-
-Dot::~Dot()
-{
-}
-
-void Dot::HandleEvent(SDL_Event& e)
-{
-	if (e.type == KEY_PRESSED && e.key.repeat == 0)
+	if (event.type == KEY_PRESSED && event.key.repeat == 0)
 	{
-		switch (Key(e))
+		switch (Key(event))
 		{
 		case SDLK_UP:
 			mVelY -= DOT_VEL;
@@ -172,9 +146,9 @@ void Dot::HandleEvent(SDL_Event& e)
 			break;
 		}
 	}
-	else if (e.type == KEY_RELEASED && e.key.repeat == 0)
+	else if (event.type == KEY_RELEASED && event.key.repeat == 0)
 	{
-		switch (Key(e))
+		switch (Key(event))
 		{
 		case SDLK_UP:
 			mVelY += DOT_VEL;
@@ -224,8 +198,8 @@ void Dot::move(double timeStepX, double timeStepY)
 
 void Dot::setIJ(int* i, int* j, float* normalI, float* normalJ) const
 {
-	float width = (float)gWindow.GetWidth();
-	float height = (float)gWindow.GetHeight();
+	float width = (float)gWindow.GetWidth() - (mBox.w * 4.0f);
+	float height = (float)gWindow.GetHeight() - (mBox.h * 4.0f);
 	float x = (float)mBox.x;
 	float y = (float)mBox.y;
 	float jNormal = x / width;
@@ -233,6 +207,7 @@ void Dot::setIJ(int* i, int* j, float* normalI, float* normalJ) const
 	*i = ROW_SIZE - (ROW_SIZE * iNormal);
 	if (*i == ROW_SIZE) *i = ROW_SIZE - 1;
 	*j = ROW_SIZE * jNormal;
+	if (*j == ROW_SIZE) *j = ROW_SIZE - 1;
 	*normalI = iNormal;
 	*normalJ = jNormal;
 }
@@ -413,14 +388,10 @@ bool loadMedia(Load* load)
 
 	bool success = true;
 
-	gBackgroundForeground.Init(gWindow.GetRenderer());
-	if (!(success = gBackgroundForeground.LoadFromFile(load->Path("Landscape_Moon_3300x2550.png")))) {}
-	gIconCursor.Init(gWindow.GetRenderer());
-	success = gIconCursor.LoadFromFile(load->Path("IconCursor.png"));
-	gSun.Init(gWindow.GetRenderer());
-	success = gSun.LoadFromFile(load->Path("CharacterFairySun_000_256x256.png"));
-	gMoon.Init(gWindow.GetRenderer());
-	success = gMoon.LoadFromFile(load->Path("CharacterFairyMoon_000_256x256.png"));
+	success = gBackgroundForeground.Init(gWindow.GetRenderer(), load->Path("Landscape_Moon_3300x2550.png"));
+	success = gIconCursor.Init(gWindow.GetRenderer(), load->Path("IconCursor.png"));
+	success = gSun.Init(gWindow.GetRenderer(), load->Path("CharacterFairySun_000_256x256.png"));
+	success = gMoon.Init(gWindow.GetRenderer(), load->Path("CharacterFairyMoon_000_256x256.png"));
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "r+b");
 #elif __linux__
@@ -476,47 +447,29 @@ bool loadMedia(Load* load)
 #endif
 	}
 
-	gDotTexture.Init(gWindow.GetRenderer());
-	success = gDotTexture.LoadFromFile(load->Path("CharacterFairySmallwig000_64x64.png"));
-	gPalaceTexture.Init(gWindow.GetRenderer());
-	success = gPalaceTexture.LoadFromFile(load->Path("BoxFront.png"));
-	gCrest.Init(gWindow.GetRenderer());
-	success = gCrest.LoadFromFile(load->Path("Crest_2048x2048_000.png"));
-	gBackgroundBackground.Init(gWindow.GetRenderer());
-	success = gBackgroundBackground.LoadFromFile(load->Path("bg.png"));
-	gHorizons[0].Init(gWindow.GetRenderer());
-	success = gHorizons[0].LoadFromFile(load->Path("Horizon000.png"));
-	gHorizons[1].Init(gWindow.GetRenderer());
-	success = gHorizons[1].LoadFromFile(load->Path("Horizon001.png"));
-	gHorizons[2].Init(gWindow.GetRenderer());
-	success = gHorizons[2].LoadFromFile(load->Path("Horizon002.png"));
-	gHorizons[3].Init(gWindow.GetRenderer());
-	success = gHorizons[3].LoadFromFile(load->Path("Horizon003.png"));
-	gHorizons[4].Init(gWindow.GetRenderer());
-	success = gHorizons[4].LoadFromFile(load->Path("Horizon004.png"));
-	gHorizons[5].Init(gWindow.GetRenderer());
-	success = gHorizons[5].LoadFromFile(load->Path("Horizon005.png"));
-	gHorizons[6].Init(gWindow.GetRenderer());
-	success = gHorizons[6].LoadFromFile(load->Path("Horizon006.png"));
-	gHorizons[7].Init(gWindow.GetRenderer());
-	success = gHorizons[7].LoadFromFile(load->Path("Horizon007.png"));
-	gRoads[0].Init(gWindow.GetRenderer());
-	success = gRoads[0].LoadFromFile(load->Path("Road_000_256x256.png"));
-	gRoads[1].Init(gWindow.GetRenderer());
-	success = gRoads[1].LoadFromFile(load->Path("Road_001_256x256.png"));
-	gRoads[2].Init(gWindow.GetRenderer());
-	success = gRoads[2].LoadFromFile(load->Path("Road_002_256x256.png"));
-	gRoads[3].Init(gWindow.GetRenderer());
-	success = gRoads[3].LoadFromFile(load->Path("Road_003_256x256.png"));
-	gRoads[4].Init(gWindow.GetRenderer());
-	success = gRoads[4].LoadFromFile(load->Path("Road_004_256x256.png"));
+	success = gDotTexture.Init(gWindow.GetRenderer(), load->Path("CharacterFairySmallwig000_64x64.png"));
+	success = gPalaceTexture.Init(gWindow.GetRenderer(), load->Path("BoxFront.png"));
+	success = gCrest.Init(gWindow.GetRenderer(), load->Path("Crest_2048x2048_000.png"));
+	success = gBackgroundBackground.Init(gWindow.GetRenderer(), load->Path("bg.png"));
+	success = gHorizons[0].Init(gWindow.GetRenderer(), load->Path("Horizon000.png"));
+	success = gHorizons[1].Init(gWindow.GetRenderer(), load->Path("Horizon001.png"));
+	success = gHorizons[2].Init(gWindow.GetRenderer(), load->Path("Horizon002.png"));
+	success = gHorizons[3].Init(gWindow.GetRenderer(), load->Path("Horizon003.png"));
+	success = gHorizons[4].Init(gWindow.GetRenderer(), load->Path("Horizon004.png"));
+	success = gHorizons[5].Init(gWindow.GetRenderer(), load->Path("Horizon005.png"));
+	success = gHorizons[6].Init(gWindow.GetRenderer(), load->Path("Horizon006.png"));
+	success = gHorizons[7].Init(gWindow.GetRenderer(), load->Path("Horizon007.png"));
+	success = gRoads[0].Init(gWindow.GetRenderer(), load->Path("Road_000_256x256.png"));
+	success = gRoads[1].Init(gWindow.GetRenderer(), load->Path("Road_001_256x256.png"));
+	success = gRoads[2].Init(gWindow.GetRenderer(), load->Path("Road_002_256x256.png"));
+	success = gRoads[3].Init(gWindow.GetRenderer(), load->Path("Road_003_256x256.png"));
+	success = gRoads[4].Init(gWindow.GetRenderer(), load->Path("Road_004_256x256.png"));
 	std::string preName = "Fire_00";
 	std::string postName = "_512x512.png";
 	for (int i = 0; i < FIRE_SIZE; ++i)
 	{
-		gFire[i].Init(gWindow.GetRenderer());
 		std::string name = preName + std::to_string(i) + postName;
-		success = gFire[i].LoadFromFile(load->Path(name.c_str()));
+		success = gFire[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
 	}
 	preName = "Fire_00";
 	std::string middleName = "_64x64_00";
@@ -526,9 +479,8 @@ bool loadMedia(Load* load)
 	{
 		for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
 		{
-			gFires[k].Init(gWindow.GetRenderer());
 			std::string name = preName + std::to_string(i) + middleName + std::to_string(j) + postName;
-			success = gFires[k].LoadFromFile(load->Path(name.c_str()));
+			success = gFires[k].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
 			++k;
 		}
 	}
@@ -536,95 +488,95 @@ bool loadMedia(Load* load)
 	postName = "_512x512.png";
 	for (int i = 0; i < LIGHTNING_SIZE; ++i)
 	{
-		gLightnings[i].Init(gWindow.GetRenderer());
 		std::string name = preName + std::to_string(i) + postName;
-		success = gLightnings[i].LoadFromFile(load->Path(name.c_str()));
+		success = gLightnings[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
 	}
 	preName = "MiracleCloud_";
 	postName = "_1024x1024.png";
 	for (int i = 0; i < CLOUDS_SIZE; ++i)
 	{
-		gClouds[i].Init(gWindow.GetRenderer());
-
-		//int number = 45;
 		std::ostringstream oss;
 		oss << std::setfill('0') << std::setw(3) << i;
 		std::string padded = oss.str();
 		std::string name = preName + padded + postName;
-
-		success = gClouds[i].LoadFromFile(load->Path(name.c_str()));
+		success = gClouds[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
 	}
-	gBoxes[KEY_PRESS_SURFACE_UP].Init(gWindow.GetRenderer());
-	success = gBoxes[KEY_PRESS_SURFACE_UP].LoadFromFile(load->Path("BoxUp.png"));
-	gBoxes[KEY_PRESS_SURFACE_DOWN].Init(gWindow.GetRenderer());
-	success = gBoxes[KEY_PRESS_SURFACE_DOWN].LoadFromFile(load->Path("BoxDown.png"));
-	gBoxes[KEY_PRESS_SURFACE_LEFT].Init(gWindow.GetRenderer());
-	success = gBoxes[KEY_PRESS_SURFACE_LEFT].LoadFromFile(load->Path("BoxLeft.png"));
-	gBoxes[KEY_PRESS_SURFACE_RIGHT].Init(gWindow.GetRenderer());
-	success = gBoxes[KEY_PRESS_SURFACE_RIGHT].LoadFromFile(load->Path("BoxRight.png"));
-	gBoxFront.Init(gWindow.GetRenderer());
-	success = gBoxFront.LoadFromFile(load->Path("BoxFront.png"));
+	preName = "MiracleRainCloud_";
+	postName = "_1024x1024.png";
+	for (int i = 0; i < RAIN_CLOUDS_SIZE; ++i)
+	{
+		std::ostringstream oss;
+		oss << std::setfill('0') << std::setw(3) << i;
+		std::string padded = oss.str();
+		std::string name = preName + padded + postName;
+		success = gRainClouds[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
+	}
+	preName = "MiracleRain_";
+	postName = "_1024x1024.png";
+	for (int i = 0; i < RAIN_SIZE; ++i)
+	{
+		std::ostringstream oss;
+		oss << std::setfill('0') << std::setw(3) << i;
+		std::string padded = oss.str();
+		std::string name = preName + padded + postName;
+		success = gRain[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
+	}
+	preName = "MiracleStarfallStreamer_";
+	postName = "_1024x1024.png";
+	for (int i = 0; i < WINDS_SIZE; ++i)
+	{
+		std::ostringstream oss;
+		oss << std::setfill('0') << std::setw(3) << i;
+		std::string padded = oss.str();
+		std::string name = preName + padded + postName;
+		success = gWinds[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
+	}
+	success = gBoxes[KEY_PRESS_SURFACE_UP].Init(gWindow.GetRenderer(), load->Path("BoxUp.png"));
+	success = gBoxes[KEY_PRESS_SURFACE_DOWN].Init(gWindow.GetRenderer(), load->Path("BoxDown.png"));
+	success = gBoxes[KEY_PRESS_SURFACE_LEFT].Init(gWindow.GetRenderer(), load->Path("BoxLeft.png"));
+	success = gBoxes[KEY_PRESS_SURFACE_RIGHT].Init(gWindow.GetRenderer(), load->Path("BoxRight.png"));
+	success = gBoxFront.Init(gWindow.GetRenderer(), load->Path("BoxFront.png"));
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
 		int j = i % 5;
 		if (j == 0)
 		{
-			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
-			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_000_1024x1024.png"));
+			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_000_1024x1024.png"));
 		}
 		else if (j == 1)
 		{
-			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
-			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_001_1024x1024.png"));
+			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_001_1024x1024.png"));
 		}
 		else if (j == 2)
 		{
-			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
-			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_002_1024x1024.png"));
+			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_002_1024x1024.png"));
 		}
 		else if (j == 3)
 		{
-			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
-			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_003_1024x1024.png"));
+			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_003_1024x1024.png"));
 		}
 		else if (j == 4)
 		{
-			gMiracleStarfalls[i].Init(gWindow.GetRenderer());
-			success = gMiracleStarfalls[i].LoadFromFile(load->Path("MiracleStarfall_004_1024x1024.png"));
+			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_004_1024x1024.png"));
 		}
 	}
-	gPlayerHighlight.Init(gWindow.GetRenderer());
-	success = gPlayerHighlight.LoadFromFile(load->Path("PlayerHighlight_000_1024x1024.png"));
-	gPalaceHighlightBottom.Init(gWindow.GetRenderer());
-	success = gPalaceHighlightBottom.LoadFromFile(load->Path("PalaceHighlightBottom_000_2048x2048.png"));
-	gPalaceHighlightTop.Init(gWindow.GetRenderer());
-	success = gPalaceHighlightTop.LoadFromFile(load->Path("PalaceHighlightTop_000_2048x2048.png"));
-	gPalaceHighlightLeft.Init(gWindow.GetRenderer());
-	success = gPalaceHighlightLeft.LoadFromFile(load->Path("PalaceHighlightLeft_000_1024x1024.png"));
-	gPalaceHighlightRight.Init(gWindow.GetRenderer());
-	success = gPalaceHighlightRight.LoadFromFile(load->Path("PalaceHighlightRight_000_2048x2048.png"));
+	success = gPlayerHighlight.Init(gWindow.GetRenderer(), load->Path("PlayerHighlight_000_1024x1024.png"));
+	success = gPalaceHighlightBottom.Init(gWindow.GetRenderer(), load->Path("PalaceHighlightBottom_000_2048x2048.png"));
+	success = gPalaceHighlightTop.Init(gWindow.GetRenderer(), load->Path("PalaceHighlightTop_000_2048x2048.png"));
+	success = gPalaceHighlightLeft.Init(gWindow.GetRenderer(), load->Path("PalaceHighlightLeft_000_1024x1024.png"));
+	success = gPalaceHighlightRight.Init(gWindow.GetRenderer(), load->Path("PalaceHighlightRight_000_2048x2048.png"));
 
-	gMenuTop.Init(gWindow.GetRenderer());
-	success = gMenuTop.LoadFromFile(load->Path("MenuTop_000_2048x2048.png"));
-	gMenuBottom.Init(gWindow.GetRenderer());
-	success = gMenuBottom.LoadFromFile(load->Path("MenuBottom_000_2048x2048.png"));
-	gMenuRightTop.Init(gWindow.GetRenderer());
-	success = gMenuRightTop.LoadFromFile(load->Path("MenuRightTop_000_2048x2048.png"));
-	gMenuRightBottom.Init(gWindow.GetRenderer());
-	success = gMenuRightBottom.LoadFromFile(load->Path("MenuRightBottom_000_2048x2048.png"));
-	gMenuLeft.Init(gWindow.GetRenderer());
-	success = gMenuLeft.LoadFromFile(load->Path("MenuLeft_000_1024x1024.png"));
+	success = gMenuTop.Init(gWindow.GetRenderer(), load->Path("MenuTop_000_2048x2048.png"));
+	success = gMenuBottom.Init(gWindow.GetRenderer(), load->Path("MenuBottom_000_2048x2048.png"));
+	success = gMenuRightTop.Init(gWindow.GetRenderer(), load->Path("MenuRightTop_000_2048x2048.png"));
+	success = gMenuRightBottom.Init(gWindow.GetRenderer(), load->Path("MenuRightBottom_000_2048x2048.png"));
+	success = gMenuLeft.Init(gWindow.GetRenderer(), load->Path("MenuLeft_000_1024x1024.png"));
 
-	gCharacterTownspersonMoonboy.Init(gWindow.GetRenderer());
-	success = gCharacterTownspersonMoonboy.LoadFromFile(load->Path("CharacterTownspersonMoonboy_000_1024x1024.png"));
-	gCharacterTownspersonMoonboyHands.Init(gWindow.GetRenderer());
-	success = gCharacterTownspersonMoonboyHands.LoadFromFile(load->Path("CharacterTownspersonMoonboy_Hands_000_1024x1024.png"));
-	gCharacterMonsterMouth.Init(gWindow.GetRenderer());
-	success = gCharacterMonsterMouth.LoadFromFile(load->Path("CharacterMonsterMouth_000_1024x1024.png"));
-	gPlayerBeam.Init(gWindow.GetRenderer());
-	success = gPlayerBeam.LoadFromFile(load->Path("PlayerBeam_000_2048x2048.png"));
-	characterFairyHopeful.Init(gWindow.GetRenderer());
-	success = characterFairyHopeful.LoadFromFile(load->Path("CharacterFairyHopeful_000_256x256.png"));
+	success = gCharacterTownspersonMoonboy.Init(gWindow.GetRenderer(), load->Path("CharacterTownspersonMoonboy_000_1024x1024.png"));
+	success = gCharacterTownspersonMoonboyHands.Init(gWindow.GetRenderer(), load->Path("CharacterTownspersonMoonboy_Hands_000_1024x1024.png"));
+	success = gCharacterMonsterMouth.Init(gWindow.GetRenderer(), load->Path("CharacterMonsterMouth_000_1024x1024.png"));
+	success = gPlayerBeam.Init(gWindow.GetRenderer(), load->Path("PlayerBeam_000_2048x2048.png"));
+	success = characterFairyHopeful.Init(gWindow.GetRenderer(), load->Path("CharacterFairyHopeful_000_256x256.png"));
 	return success;
 }
 
@@ -693,6 +645,18 @@ void close(Load* load)
 	for (int i = 0; i < CLOUDS_SIZE; ++i)
 	{
 		gClouds[i].Free();
+	}
+	for (int i = 0; i < RAIN_CLOUDS_SIZE; ++i)
+	{
+		gRainClouds[i].Free();
+	}
+	for (int i = 0; i < RAIN_SIZE; ++i)
+	{
+		gRain[i].Free();
+	}
+	for (int i = 0; i < WINDS_SIZE; ++i)
+	{
+		gWinds[i].Free();
 	}
 	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i)
 	{
@@ -779,12 +743,8 @@ int main(int argc, char* argv[])
 	const char* basePath = BasePath(argv[0]);
 	Load* load = new Load(basePath);
 
-	gMiracleStarfalls = new Texture[gMiracleStarfallLimit];
-	for (int i = 0; i < gMiracleStarfallLimit; ++i)
-	{
-		gMiracleStarfalls[i].Init(gWindow.GetRenderer());
-	}
-	SDL_Rect gMiracleStarfallViewports[gMiracleStarfallLimit];
+	gMiracleStarfalls = new Texture[gMiracleStarfallLimit]{};
+	SDL_Rect gMiracleStarfallViewports[gMiracleStarfallLimit]{};
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallViewports[i].x = 0;
@@ -792,22 +752,22 @@ int main(int argc, char* argv[])
 		gMiracleStarfallViewports[i].w = 0;
 		gMiracleStarfallViewports[i].h = 0;
 	}
-	bool gMiracleStarfallSpawns[gMiracleStarfallLimit];
+	bool gMiracleStarfallSpawns[gMiracleStarfallLimit]{};
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallSpawns[i] = false;
 	}
-	bool gMiracleStarfallDespawns[gMiracleStarfallLimit];
+	bool gMiracleStarfallDespawns[gMiracleStarfallLimit]{};
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallDespawns[i] = false;
 	}
-	long long gMiracleStarfallDeltas[gMiracleStarfallLimit];
+	long long gMiracleStarfallDeltas[gMiracleStarfallLimit]{};
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallDeltas[i] = 0L;
 	}
-	double gMiracleStarfallNormals[gMiracleStarfallLimit];
+	double gMiracleStarfallNormals[gMiracleStarfallLimit]{};
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallNormals[i] = 0;
@@ -874,7 +834,7 @@ int main(int argc, char* argv[])
 			const double ANIMATION_LIMIT = 12.0;
 			int animationIndex = 0;
 			int fireIndex = 0;
-			bool isOnFire[GRID_SIZE];
+			bool isOnFire[GRID_SIZE]{};
 			for (int i = 0; i < GRID_SIZE; ++i)
 			{
 				isOnFire[i] = false;
@@ -882,6 +842,9 @@ int main(int argc, char* argv[])
 			bool isIdle = true;
 			int lightningIndex = 0;
 			int cloudIndex = 0;
+			int rainCloudIndex = 0;
+			int rainIndex = 0;
+			int windIndex = 0;
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -929,6 +892,9 @@ int main(int argc, char* argv[])
 					fireIndex = animationIndex % FIRE_SIZE;
 					lightningIndex = animationIndex % LIGHTNING_SIZE;
 					cloudIndex = animationIndex % CLOUDS_SIZE;
+					rainCloudIndex = animationIndex % RAIN_CLOUDS_SIZE;
+					rainIndex = animationIndex % RAIN_SIZE;
+					windIndex = animationIndex % WINDS_SIZE;
 				}
 				if (secondDelta > secondLimit)
 				{
@@ -985,7 +951,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)
 #elif __linux__
-					else if (e.type == SDL_JOYBUTTONDOWN)
+					else if (event.type == SDL_JOYBUTTONDOWN)
 #endif
 					{
 						if (gGameController != NULL)
@@ -1014,7 +980,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_AXIS_MOTION)
 #elif __linux__
-					else if (e.type == SDL_JOYAXISMOTION)
+					else if (event.type == SDL_JOYAXISMOTION)
 #endif
 					{
 						//if (event.jaxis.which == 0)
@@ -1445,6 +1411,7 @@ int main(int argc, char* argv[])
 							modI = (i % 4 == 0);
 							RenderTexture(gWindow.GetRenderer(), gRoads[modI + roadI].GetTexture());
 							++roadI;
+							RenderTexture(gWindow.GetRenderer(), gClouds[cloudIndex].GetTexture());
 							if (roadI > 3)
 							{
 								roadI = 0;
@@ -1519,7 +1486,9 @@ int main(int argc, char* argv[])
 								SetRenderViewport(gWindow.GetRenderer(), &extraRaisedViewport);
 								RenderTexture(gWindow.GetRenderer(), gBox->GetTexture());
 								SetRenderViewport(gWindow.GetRenderer(), &cloudsViewport);
-								RenderTexture(gWindow.GetRenderer(), gClouds[cloudIndex].GetTexture());
+								RenderTexture(gWindow.GetRenderer(), gWinds[windIndex].GetTexture());
+								RenderTexture(gWindow.GetRenderer(), gRainClouds[rainCloudIndex].GetTexture());
+								RenderTexture(gWindow.GetRenderer(), gRain[rainIndex].GetTexture());
 								SetRenderViewport(gWindow.GetRenderer(), NULL);
 								RenderLine(
 									gWindow.GetRenderer(),
@@ -1715,6 +1684,8 @@ int main(int argc, char* argv[])
 						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, 0, gWindow.GetHeight());
 						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, gWindow.GetWidth(), gWindow.GetHeight());
 					}
+					SetRenderViewport(gWindow.GetRenderer(), NULL);
+					RenderTexture(gWindow.GetRenderer(), gRain[rainIndex].GetTexture());
 					SDL_RenderPresent(gWindow.GetRenderer());
 				}
 				if (gMiracleStarfallUpdateAtEndOfFrame)

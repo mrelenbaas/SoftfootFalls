@@ -31,7 +31,7 @@ public:
 		, height(0) {
 	}
 	~Texture();
-	void Init(SDL_Renderer* renderer);
+	bool Init(SDL_Renderer* renderer, const char*);
 	void Free();
 	bool LoadFromFile(const char*);
 	bool LoadPixelsFromFile(const char*);

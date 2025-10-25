@@ -9,9 +9,10 @@ Texture::~Texture()
 	Free();
 }
 
-void Texture::Init(SDL_Renderer* renderer)
+bool Texture::Init(SDL_Renderer* renderer, const char* name)
 {
 	(*this).renderer = renderer;
+	return LoadFromFile(name);
 }
 
 void Texture::Free()
