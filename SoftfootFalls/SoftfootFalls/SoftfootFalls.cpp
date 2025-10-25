@@ -97,6 +97,10 @@ LTexture gDotTexture;
 LTexture gPalaceTexture;
 const int ROAD_SIZE = 5;
 LTexture gRoads[ROAD_SIZE];
+const int FIRE_SIZE = 3;
+LTexture gFire[FIRE_SIZE];
+const int FIRES_SIZE = 12;
+LTexture gFires[FIRES_SIZE];
 LTexture gBoxes[KEY_PRESS_SURFACE_TOTAL];
 LTexture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
 LTexture gBoxFront;
@@ -123,6 +127,7 @@ LTexture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
 Directions gDirection = DIRECTION_UP;
 const int ROW_SIZE = 25;
+const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 
 
 Dot::Dot()
@@ -495,6 +500,28 @@ bool loadMedia(Load* load)
 	success = gRoads[3].LoadFromFile(load->Path("Road_003_256x256.png"));
 	gRoads[4].Init(gWindow.GetRenderer());
 	success = gRoads[4].LoadFromFile(load->Path("Road_004_256x256.png"));
+	std::string preName = "Fire_00";
+	std::string postName = "_512x512.png";
+	for (int i = 0; i < FIRE_SIZE; ++i)
+	{
+		gFire[i].Init(gWindow.GetRenderer());
+		std::string name = preName + std::to_string(i) + postName;
+		success = gFire[i].LoadFromFile(load->Path(name.c_str()));
+	}
+	preName = "Fire_00";
+	std::string middleName = "_64x64_00";
+	postName = ".png";
+	int k = 0;
+	for (int i = 0; i < FIRE_SIZE; ++i)
+	{
+		for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
+		{
+			gFires[k].Init(gWindow.GetRenderer());
+			std::string name = preName + std::to_string(i) + middleName + std::to_string(j) + postName;
+			success = gFires[k].LoadFromFile(load->Path(name.c_str()));
+			++k;
+		}
+	}
 	gBoxes[KEY_PRESS_SURFACE_UP].Init(gWindow.GetRenderer());
 	success = gBoxes[KEY_PRESS_SURFACE_UP].LoadFromFile(load->Path("BoxUp.png"));
 	gBoxes[KEY_PRESS_SURFACE_DOWN].Init(gWindow.GetRenderer());
@@ -612,6 +639,19 @@ void close(Load* load)
 	for (int i = 0; i < ROAD_SIZE; ++i)
 	{
 		gRoads[i].Free();
+	}
+	for (int i = 0; i < FIRE_SIZE; ++i)
+	{
+		gFire[i].Free();
+	}
+	int k = 0;
+	for (int i = 0; i < FIRE_SIZE; ++i)
+	{
+		for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
+		{
+			gFires[k].Free();
+			++k;
+		}
 	}
 	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i)
 	{
@@ -769,6 +809,7 @@ int main(int argc, char* argv[])
 #endif
 
 			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			long long animationDelta = 0L;
 			long long decisecondDelta = 0L;
 			long long secondDelta = 0L;
 			long long trisecondDelta = 0L;
@@ -789,9 +830,18 @@ int main(int argc, char* argv[])
 			float dotNormalJ = 0.0f;
 			SDL_Rect defaultRect = { -1, -1, -1, -1 };
 			SDL_Rect beamViewport = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
+			const double ANIMATION_LIMIT = 12.0;
+			int animationIndex = 0;
+			int fireIndex = 0;
+			bool isOnFire[GRID_SIZE];
+			for (int i = 0; i < GRID_SIZE; ++i)
+			{
+				isOnFire[i] = false;
+			}
 			while (!quit)
 			{
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+				animationDelta += currentTime - previousTime;
 				decisecondDelta += currentTime - previousTime;
 				secondDelta += currentTime - previousTime;
 				playerDelta += currentTime - previousTime;
@@ -806,14 +856,15 @@ int main(int argc, char* argv[])
 					gMiracleStarfallDeltas[m] += currentTime - previousTime;
 				}
 
-				double decisecondLimit = 100'000'000;
-				double secondLimit = 1'000'000'000;
-				double trisecondLimit = 3'000'000'000;
-				double twelvesecondLimit = 6'000'000'000;
-				double minuteLimit = 60'000'000'000;
+				double decisecondLimit = 100'000'000.0;
+				double secondLimit = 1'000'000'000.0;
+				double animationLimit = secondLimit / ANIMATION_LIMIT;
+				double trisecondLimit = 3'000'000'000.0;
+				double twelvesecondLimit = 6'000'000'000.0;
+				double minuteLimit = 60'000'000'000.0;
 				double hourLimit = 3'600'000'000'000;
-				double halfDayLimit = 43'200'000'000'000;
-				double fullDayLimit = 86'400'000'000'000;
+				double halfDayLimit = 43'200'000'000'000.0;
+				double fullDayLimit = 86'400'000'000'000.0;
 				if (decisecondDelta > decisecondLimit)
 				{
 					decisecondDelta -= decisecondLimit;
@@ -822,6 +873,16 @@ int main(int argc, char* argv[])
 					{
 						gridCounter = 0;
 					}
+				}
+				if (animationDelta > animationLimit)
+				{
+					animationDelta -= animationLimit;
+					++animationIndex;
+					if (animationIndex >= ANIMATION_LIMIT)
+					{
+						animationIndex = 0;
+					}
+					fireIndex = animationIndex % FIRE_SIZE;
 				}
 				if (secondDelta > secondLimit)
 				{
@@ -853,6 +914,8 @@ int main(int argc, char* argv[])
 				{
 					fullDayDelta -= fullDayLimit;
 				}
+				double animationNormal = (double)animationDelta / animationLimit;
+				//printf("fireIndex: %i\n", fireIndex);
 				double secondNormal = (double)secondDelta / secondLimit;
 				double trisecondNormal = (double)trisecondDelta / trisecondLimit;
 				double twelvesecondNormal = (double)twelvesecondDelta / twelvesecondLimit;
@@ -1260,6 +1323,7 @@ int main(int argc, char* argv[])
 					if (centerY > gWindow.GetHeight() * 0.5f) centerY = gWindow.GetHeight() * 0.5f;
 					int horizonI = 0;
 					int roadI = 0;
+					int k = 0;
 					for (int i = ROW_SIZE - 1; i >= 0 ; --i)
 					{
 						normal = (float)i / (float)ROW_SIZE;
@@ -1319,7 +1383,13 @@ int main(int argc, char* argv[])
 							}
 							if (dotI == i && dotJ == j)
 							{
+								RenderTexture(gWindow.GetRenderer(), gFire[fireIndex].GetTexture());
+								isOnFire[k] = true;
 								RenderTexture(gWindow.GetRenderer(), gPlayerHighlight.GetTexture());
+							}
+							if (isOnFire[k])
+							{
+								RenderTexture(gWindow.GetRenderer(), gFires[animationIndex].GetTexture());
 							}
 							SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
 							Distance distance = { (float)middleViewport.w, (float)middleViewport.h };
@@ -1377,6 +1447,7 @@ int main(int argc, char* argv[])
 								RenderTexture(gWindow.GetRenderer(), gBox->GetTexture());
 								SetRenderViewport(gWindow.GetRenderer(), &walkingSpriteViewport);
 							}
+							++k;
 						}
 					}
 
