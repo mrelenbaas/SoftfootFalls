@@ -47,6 +47,7 @@ void Window::HandleEvent(SDL_Event& event)
 
 void Window::Free()
 {
+	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	width = 0;
 	height = 0;
