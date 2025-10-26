@@ -70,6 +70,12 @@ bool Texture::LoadFromPixels()
 	return texture != NULL;
 }
 
+void Texture::Draw(SDL_Rect* viewport, double angle)
+{
+	SetRenderViewport(renderer, viewport);
+	RenderTexture(renderer, texture, angle);
+}
+
 Uint32 Texture::GetPixel32(Uint32 x, Uint32 y)
 {
 	return static_cast<Uint32*>(surface->pixels)[(y * GetPitch32()) + x];

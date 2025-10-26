@@ -20,8 +20,18 @@ public:
 	~Dot() {}
 	void HandleEvent(SDL_Event&);
 	void move(double timestepX, double timestepY);
+	SDL_Rect GetBox()
+	{
+		SDL_Rect rect =
+		{
+			mBox.x,
+			mBox.y,
+			mBox.w,
+			mBox.h
+		};
+		return rect;
+	}
 	void setIJ(int*, int*, float*, float*) const;
-	SDL_Rect getBox();
 private:
 	SDL_Rect mBox { 0, 0, DOT_WIDTH, DOT_HEIGHT };
 	int mVelX = 0;
