@@ -951,7 +951,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)
 #elif __linux__
-					else if (event.type == SDL_JOYBUTTONDOWN)
+					else if (e.type == SDL_JOYBUTTONDOWN)
 #endif
 					{
 						if (gGameController != NULL)
@@ -980,7 +980,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
 					else if (e.type == SDL_EVENT_JOYSTICK_AXIS_MOTION)
 #elif __linux__
-					else if (event.type == SDL_JOYAXISMOTION)
+					else if (e.type == SDL_JOYAXISMOTION)
 #endif
 					{
 						//if (event.jaxis.which == 0)
