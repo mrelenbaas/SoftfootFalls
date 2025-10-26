@@ -6,17 +6,22 @@
 //  SHAPES  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-#ifdef _WIN32
-SDL_FRect Rect(int x, int y, int w, int h)
-#elif __linux__
+//#ifdef _WIN32
+//SDL_FRect Rect(int x, int y, int w, int h)
+//#elif __linux__
+//SDL_Rect Rect(int x, int y, int w, int h)
+//#endif
+//{
+//#ifdef _WIN32
+//	SDL_FRect rect = { x, y, w, h };
+//#elif __linux__
+//	SDL_Rect rect = { x, y, w, h };
+//#endif
+//	return rect;
+//}
 SDL_Rect Rect(int x, int y, int w, int h)
-#endif
 {
-#ifdef _WIN32
-	SDL_FRect rect = { x, y, w, h };
-#elif __linux__
 	SDL_Rect rect = { x, y, w, h };
-#endif
 	return rect;
 }
 

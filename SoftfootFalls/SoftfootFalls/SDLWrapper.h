@@ -1,3 +1,5 @@
+#include <iostream>
+
 #ifdef _WIN32
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_image.h>
@@ -18,22 +20,40 @@ public:
 	static const int DOT_VEL = 100;
 	Dot() {}
 	~Dot() {}
-	void HandleEvent(SDL_Event&);
-	void move(double timestepX, double timestepY);
+	void Move(int, int, long long, double);
 	SDL_Rect GetBox()
 	{
 		SDL_Rect rect =
 		{
-			mBox.x,
-			mBox.y,
-			mBox.w,
-			mBox.h
+			box.x,
+			box.y,
+			box.w,
+			box.h
 		};
 		return rect;
 	}
-	void setIJ(int*, int*, float*, float*) const;
+	void SetIJ(int*, int*, float*, float*, int, int, const int) const;
+	void SetUp(bool isUp)
+	{
+		(*this).isUp = isUp;
+	}
+	void SetDown(bool isDown)
+	{
+		(*this).isDown = isDown;
+	}
+	void SetLeft(bool isLeft)
+	{
+		(*this).isLeft = isLeft;
+	}
+	void SetRight(bool isRight)
+	{
+		(*this).isRight = isRight;
+	}
 private:
-	SDL_Rect mBox { 0, 0, DOT_WIDTH, DOT_HEIGHT };
-	int mVelX = 0;
-	int mVelY = 0;
+	SDL_Rect box { 0, 0, DOT_WIDTH, DOT_HEIGHT };
+	long long previousTime = 0L;
+	bool isUp = false;
+	bool isDown = false;
+	bool isLeft = false;
+	bool isRight = false;
 };

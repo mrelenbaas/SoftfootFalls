@@ -41,37 +41,11 @@ const int JOYSTICK_DEAD_ZONE = 8000;
 const int TOTAL_DATA = 10;
 const double PI = 3.14159265358979323846;
 
-enum KeyPressSurfaces
-{
-	KEY_PRESS_SURFACE_UP,
-	KEY_PRESS_SURFACE_DOWN,
-	KEY_PRESS_SURFACE_LEFT,
-	KEY_PRESS_SURFACE_RIGHT,
-	KEY_PRESS_SURFACE_TOTAL
-};
-
-enum Directions
-{
-	DIRECTION_UP,
-	DIRECTION_DOWN,
-	DIRECTION_LEFT,
-	DIRECTION_RIGHT,
-	DIRECTION_TOTAL
-};
-
 bool SecondInit();
-bool loadMedia(Load*);
-void close(Load*);
+bool loadMedia(Load*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*);
+void close(Load*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*);
 
 Window gWindow;
-Texture gCrest;
-Texture gBackgroundBackground;
-Texture gBackgroundForeground;
-const int HORIZONS_SIZE = 8;
-Texture gHorizons[HORIZONS_SIZE];
-Texture gIconCursor;
-Texture gSun;
-Texture gMoon;
 #ifdef _WIN32
 SDL_Gamepad* gGameController;
 #elif __linux__
@@ -79,137 +53,16 @@ SDL_GameController* gGameController;
 #endif
 SDL_Joystick* gJoystick = NULL;
 SDL_Haptic* gJoyHaptic = NULL;
-Texture gDotTexture;
-Texture gPalaceTexture;
-const int ROAD_SIZE = 5;
-Texture gRoads[ROAD_SIZE];
 const int FIRE_SIZE = 3;
-Texture gFire[FIRE_SIZE];
 const int FIRES_SIZE = 12;
 Texture gFires[FIRES_SIZE];
-const int LIGHTNING_SIZE = 8;
-Texture gLightnings[LIGHTNING_SIZE];
-const int CLOUDS_SIZE = 12;
-Texture gClouds[CLOUDS_SIZE];
-const int RAIN_CLOUDS_SIZE = 2;
-Texture gRainClouds[RAIN_CLOUDS_SIZE];
-const int RAIN_SIZE = 3;
-Texture gRain[RAIN_SIZE];
-const int WINDS_SIZE = 5;
-Texture gWinds[WINDS_SIZE];
-Texture gBoxes[KEY_PRESS_SURFACE_TOTAL];
-Texture* gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
-Texture gBoxFront;
 Texture* gMiracleStarfalls;
 int gMiracleStarfallIndex = 0;
 int gMiracleStarfallModIndex = 0;
 const int gMiracleStarfallLimit = 120;
 bool gMiracleStarfallUpdateAtEndOfFrame = false;
-Texture gPlayerHighlight;
-Texture gPalaceHighlightBottom;
-Texture gPalaceHighlightTop;
-Texture gPalaceHighlightLeft;
-Texture gPalaceHighlightRight;
-Texture gMenuTop;
-Texture gMenuBottom;
-Texture gMenuRightTop;
-Texture gMenuRightBottom;
-Texture gMenuLeft;
-Texture gCharacterTownspersonMoonboy;
-Texture gCharacterTownspersonMoonboyHands;
-Texture gCharacterMonsterMouth;
-Texture gPlayerBeam;
-Texture characterFairyHopeful;
 Sint32 gData[TOTAL_DATA];
-Directions gDirection = DIRECTION_UP;
-const int ROW_SIZE = 25;
-const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
-
-void Dot::HandleEvent(SDL_Event& event)
-{
-	if (event.type == KEY_PRESSED && event.key.repeat == 0)
-	{
-		switch (Key(event))
-		{
-		case SDLK_UP:
-			mVelY -= DOT_VEL;
-			break;
-		case SDLK_DOWN:
-			mVelY += DOT_VEL;
-			break;
-		case SDLK_LEFT:
-			mVelX -= DOT_VEL;
-			break;
-		case SDLK_RIGHT:
-			mVelX += DOT_VEL;
-			break;
-		}
-	}
-	else if (event.type == KEY_RELEASED && event.key.repeat == 0)
-	{
-		switch (Key(event))
-		{
-		case SDLK_UP:
-			mVelY += DOT_VEL;
-			break;
-		case SDLK_DOWN:
-			mVelY -= DOT_VEL;
-			break;
-		case SDLK_LEFT:
-			mVelX += DOT_VEL;
-			break;
-		case SDLK_RIGHT:
-			mVelX -= DOT_VEL;
-			break;
-		}
-	}
-}
-
-void Dot::move(double timeStepX, double timeStepY)
-{
-	double potentialX = mBox.x + (mVelX * timeStepX);
-	if (potentialX < 0)
-	{
-		mBox.x = 0;
-	}
-	else if (potentialX > gWindow.GetWidth() - (mBox.w * 4.0))
-	{
-		mBox.x = gWindow.GetWidth() - (mBox.w * 4);
-	}
-	else
-	{
-		mBox.x = potentialX;
-	}
-	double potentialY = mBox.y + (mVelY * timeStepY);
-	if (potentialY < 0)
-	{
-		mBox.y = 0;
-	}
-	else if (potentialY > gWindow.GetHeight() - (mBox.h * 4.0))
-	{
-		mBox.y = gWindow.GetHeight() - (mBox.h * 4.0);
-	}
-	else
-	{
-		mBox.y = potentialY;
-	}
-}
-
-void Dot::setIJ(int* i, int* j, float* normalI, float* normalJ) const
-{
-	float width = (float)gWindow.GetWidth() - (mBox.w * 4.0f);
-	float height = (float)gWindow.GetHeight() - (mBox.h * 4.0f);
-	float x = (float)mBox.x;
-	float y = (float)mBox.y;
-	float jNormal = x / width;
-	float iNormal = y / height;
-	*i = ROW_SIZE - (ROW_SIZE * iNormal);
-	if (*i == ROW_SIZE) *i = ROW_SIZE - 1;
-	*j = ROW_SIZE * jNormal;
-	if (*j == ROW_SIZE) *j = ROW_SIZE - 1;
-	*normalI = iNormal;
-	*normalJ = jNormal;
-}
+BoxesEnum gDirection = BoxUp;
 
 bool SecondInit()
 {
@@ -369,7 +222,7 @@ bool SecondInit()
 	return success;
 }
 
-bool loadMedia(Load* load)
+bool loadMedia(Load* load, Texture* textures, Texture* horizons, Texture* roads, Texture* redFire, Texture* blueFire, Texture* lightnings, Texture* clouds, Texture* rainClouds, Texture* rains, Texture* winds, Texture* boxes)
 {
 	using namespace std;
 	bool success = true;
@@ -427,37 +280,14 @@ bool loadMedia(Load* load)
 		SDL_RWclose(file);
 #endif
 	}
-	success = gBackgroundForeground.Init(gWindow.GetRenderer(), load->Path("Landscape_Moon_3300x2550.png"));
-	success = gIconCursor.Init(gWindow.GetRenderer(), load->Path("IconCursor.png"));
-	success = gSun.Init(gWindow.GetRenderer(), load->Path("CharacterFairySun_000_256x256.png"));
-	success = gMoon.Init(gWindow.GetRenderer(), load->Path("CharacterFairyMoon_000_256x256.png"));
-	success = gDotTexture.Init(gWindow.GetRenderer(), load->Path("CharacterFairySmallwig000_64x64.png"));
-	success = gPalaceTexture.Init(gWindow.GetRenderer(), load->Path("BoxFront.png"));
-	success = gCrest.Init(gWindow.GetRenderer(), load->Path("Crest_2048x2048_000.png"));
-	success = gBackgroundBackground.Init(gWindow.GetRenderer(), load->Path("bg.png"));
-	success = gHorizons[0].Init(gWindow.GetRenderer(), load->Path("Horizon000.png"));
-	success = gHorizons[1].Init(gWindow.GetRenderer(), load->Path("Horizon001.png"));
-	success = gHorizons[2].Init(gWindow.GetRenderer(), load->Path("Horizon002.png"));
-	success = gHorizons[3].Init(gWindow.GetRenderer(), load->Path("Horizon003.png"));
-	success = gHorizons[4].Init(gWindow.GetRenderer(), load->Path("Horizon004.png"));
-	success = gHorizons[5].Init(gWindow.GetRenderer(), load->Path("Horizon005.png"));
-	success = gHorizons[6].Init(gWindow.GetRenderer(), load->Path("Horizon006.png"));
-	success = gHorizons[7].Init(gWindow.GetRenderer(), load->Path("Horizon007.png"));
-	success = gRoads[0].Init(gWindow.GetRenderer(), load->Path("Road_000_256x256.png"));
-	success = gRoads[1].Init(gWindow.GetRenderer(), load->Path("Road_001_256x256.png"));
-	success = gRoads[2].Init(gWindow.GetRenderer(), load->Path("Road_002_256x256.png"));
-	success = gRoads[3].Init(gWindow.GetRenderer(), load->Path("Road_003_256x256.png"));
-	success = gRoads[4].Init(gWindow.GetRenderer(), load->Path("Road_004_256x256.png"));
+	for (int i = 0; i < PathEnum_Size; ++i) success = textures[i].Init(gWindow.GetRenderer(), load->Path(Paths[i]));
+	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(gWindow.GetRenderer(), load->Path(RoadsPaths[i]));
+	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Init(gWindow.GetRenderer(), load->Path(HorizonsPaths[i]));
+	for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Init(gWindow.GetRenderer(), load->Path(redFirePaths[i]));
+	for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Init(gWindow.GetRenderer(), load->Path(blueFirePaths[i]));
 	std::string preName = "Fire_00";
-	std::string postName = "_512x512.png";
-	for (int i = 0; i < FIRE_SIZE; ++i)
-	{
-		std::string name = preName + std::to_string(i) + postName;
-		success = gFire[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
-	}
-	preName = "Fire_00";
 	std::string middleName = "_64x64_00";
-	postName = ".png";
+	std::string postName = ".png";
 	int k = 0;
 	for (int i = 0; i < FIRE_SIZE; ++i)
 	{
@@ -468,58 +298,12 @@ bool loadMedia(Load* load)
 			++k;
 		}
 	}
-	preName = "MiracleLightning_00";
-	postName = "_512x512.png";
-	for (int i = 0; i < LIGHTNING_SIZE; ++i)
-	{
-		std::string name = preName + std::to_string(i) + postName;
-		success = gLightnings[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
-	}
-	preName = "MiracleCloud_";
-	postName = "_1024x1024.png";
-	for (int i = 0; i < CLOUDS_SIZE; ++i)
-	{
-		std::ostringstream oss;
-		oss << std::setfill('0') << std::setw(3) << i;
-		std::string padded = oss.str();
-		std::string name = preName + padded + postName;
-		success = gClouds[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
-	}
-	preName = "MiracleRainCloud_";
-	postName = "_1024x1024.png";
-	for (int i = 0; i < RAIN_CLOUDS_SIZE; ++i)
-	{
-		std::ostringstream oss;
-		oss << std::setfill('0') << std::setw(3) << i;
-		std::string padded = oss.str();
-		std::string name = preName + padded + postName;
-		success = gRainClouds[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
-	}
-	preName = "MiracleRain_";
-	postName = "_1024x1024.png";
-	for (int i = 0; i < RAIN_SIZE; ++i)
-	{
-		std::ostringstream oss;
-		oss << std::setfill('0') << std::setw(3) << i;
-		std::string padded = oss.str();
-		std::string name = preName + padded + postName;
-		success = gRain[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
-	}
-	preName = "MiracleStarfallStreamer_";
-	postName = "_1024x1024.png";
-	for (int i = 0; i < WINDS_SIZE; ++i)
-	{
-		std::ostringstream oss;
-		oss << std::setfill('0') << std::setw(3) << i;
-		std::string padded = oss.str();
-		std::string name = preName + padded + postName;
-		success = gWinds[i].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
-	}
-	success = gBoxes[KEY_PRESS_SURFACE_UP].Init(gWindow.GetRenderer(), load->Path("BoxUp.png"));
-	success = gBoxes[KEY_PRESS_SURFACE_DOWN].Init(gWindow.GetRenderer(), load->Path("BoxDown.png"));
-	success = gBoxes[KEY_PRESS_SURFACE_LEFT].Init(gWindow.GetRenderer(), load->Path("BoxLeft.png"));
-	success = gBoxes[KEY_PRESS_SURFACE_RIGHT].Init(gWindow.GetRenderer(), load->Path("BoxRight.png"));
-	success = gBoxFront.Init(gWindow.GetRenderer(), load->Path("BoxFront.png"));
+	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Init(gWindow.GetRenderer(), load->Path(lightningsPaths[i]));
+	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Init(gWindow.GetRenderer(), load->Path(cloudsPaths[i]));
+	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Init(gWindow.GetRenderer(), load->Path(rainCloudsPaths[i]));
+	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Init(gWindow.GetRenderer(), load->Path(rainPaths[i]));
+	for (int i = 0; i < WindEnum_Size; ++i) winds[i].Init(gWindow.GetRenderer(), load->Path(windPaths[i]));
+	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Init(gWindow.GetRenderer(), load->Path(boxesPaths[i]));
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
 		int j = i % 5;
@@ -544,25 +328,10 @@ bool loadMedia(Load* load)
 			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_004_1024x1024.png"));
 		}
 	}
-	success = gPlayerHighlight.Init(gWindow.GetRenderer(), load->Path("PlayerHighlight_000_1024x1024.png"));
-	success = gPalaceHighlightBottom.Init(gWindow.GetRenderer(), load->Path("PalaceHighlightBottom_000_2048x2048.png"));
-	success = gPalaceHighlightTop.Init(gWindow.GetRenderer(), load->Path("PalaceHighlightTop_000_2048x2048.png"));
-	success = gPalaceHighlightLeft.Init(gWindow.GetRenderer(), load->Path("PalaceHighlightLeft_000_1024x1024.png"));
-	success = gPalaceHighlightRight.Init(gWindow.GetRenderer(), load->Path("PalaceHighlightRight_000_2048x2048.png"));
-	success = gMenuTop.Init(gWindow.GetRenderer(), load->Path("MenuTop_000_2048x2048.png"));
-	success = gMenuBottom.Init(gWindow.GetRenderer(), load->Path("MenuBottom_000_2048x2048.png"));
-	success = gMenuRightTop.Init(gWindow.GetRenderer(), load->Path("MenuRightTop_000_2048x2048.png"));
-	success = gMenuRightBottom.Init(gWindow.GetRenderer(), load->Path("MenuRightBottom_000_2048x2048.png"));
-	success = gMenuLeft.Init(gWindow.GetRenderer(), load->Path("MenuLeft_000_1024x1024.png"));
-	success = gCharacterTownspersonMoonboy.Init(gWindow.GetRenderer(), load->Path("CharacterTownspersonMoonboy_000_1024x1024.png"));
-	success = gCharacterTownspersonMoonboyHands.Init(gWindow.GetRenderer(), load->Path("CharacterTownspersonMoonboy_Hands_000_1024x1024.png"));
-	success = gCharacterMonsterMouth.Init(gWindow.GetRenderer(), load->Path("CharacterMonsterMouth_000_1024x1024.png"));
-	success = gPlayerBeam.Init(gWindow.GetRenderer(), load->Path("PlayerBeam_000_2048x2048.png"));
-	success = characterFairyHopeful.Init(gWindow.GetRenderer(), load->Path("CharacterFairyHopeful_000_256x256.png"));
 	return success;
 }
 
-void close(Load* load)
+void close(Load* load, Texture* textures, Texture* horizons, Texture* roads, Texture* redFire, Texture* blueFire, Texture* lightnings, Texture* clouds, Texture* rainClouds, Texture* rains, Texture* winds, Texture* boxes)
 {
 	if (gGameController != NULL)
 	{
@@ -616,17 +385,11 @@ void close(Load* load)
 	gGameController = NULL;
 	gJoystick = NULL;
 	gJoyHaptic = NULL;
-	gBackgroundForeground.Free();
-	gIconCursor.Free();
-	gSun.Free();
-	gMoon.Free();
-	gDotTexture.Free();
-	gPalaceTexture.Free();
-	gCrest.Free();
-	gBackgroundBackground.Free();
-	for (int i = 0; i < HORIZONS_SIZE; ++i) gHorizons[i].Free();
-	for (int i = 0; i < ROAD_SIZE; ++i) gRoads[i].Free();
-	for (int i = 0; i < FIRE_SIZE; ++i) gFire[i].Free();
+	for (int i = 0; i < PathEnum_Size; ++i) textures[i].Free();
+	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Free();
+	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Free();
+	for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Free();
+	for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Free();
 	int k = 0;
 	for (int i = 0; i < FIRE_SIZE; ++i)
 		for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
@@ -634,36 +397,21 @@ void close(Load* load)
 			gFires[k].Free();
 			++k;
 		}
-	for (int i = 0; i < LIGHTNING_SIZE; ++i) gLightnings[i].Free();
-	for (int i = 0; i < CLOUDS_SIZE; ++i) gClouds[i].Free();
-	for (int i = 0; i < RAIN_CLOUDS_SIZE; ++i) gRainClouds[i].Free();
-	for (int i = 0; i < RAIN_SIZE; ++i) gRain[i].Free();
-	for (int i = 0; i < WINDS_SIZE; ++i) gWinds[i].Free();
-	for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i) gBoxes[i].Free();
-	gBoxFront.Free();
+	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Free();
+	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Free();
+	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Free();
+	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Free();
+	for (int i = 0; i < WindEnum_Size; ++i) winds[i].Free();
+	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
 	for (int i = 0; i < gMiracleStarfallLimit; ++i) gMiracleStarfalls[i].Free();
-	gPlayerHighlight.Free();
-	gPalaceHighlightBottom.Free();
-	gPalaceHighlightTop.Free();
-	gPalaceHighlightLeft.Free();
-	gPalaceHighlightRight.Free();
-	gMenuTop.Free();
-	gMenuBottom.Free();
-	gMenuRightTop.Free();
-	gMenuRightBottom.Free();
-	gMenuLeft.Free();
-	gCharacterTownspersonMoonboy.Free();
-	gCharacterTownspersonMoonboyHands.Free();
-	gCharacterMonsterMouth.Free();
-	gPlayerBeam.Free();
-	characterFairyHopeful.Free();\
-	SDL_DestroyRenderer(gWindow.GetRenderer());
 	gWindow.Free();
 	SDL_Quit();
 }
 
 int main(int argc, char* argv[])
 {
+	const int ROW_SIZE = 25;
+	const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 	Clock* clock = new Clock();
 	Timer* myTimer = new Timer(Timer::Print, 1);
 	const char* basePath = BasePath(argv[0]);
@@ -708,7 +456,19 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		if (!loadMedia(load))
+		Texture textures[PathEnum_Size];
+		Texture horizons[HorizonsEnum_Size];
+		Texture roads[RoadsEnum_Size];
+		Texture redFire[RedFireEnum_Size];
+		Texture blueFire[BlueFireEnum_Size];
+		Texture lightnings[LightningEnum_Size];
+		Texture clouds[CloudsEnum_Size];
+		Texture rainClouds[RainCloudsEnum_Size];
+		Texture rains[RainEnum_Size];
+		Texture winds[WindEnum_Size];
+		Texture boxes[BoxesEnum_Size];
+		Texture* gBox = &boxes[BoxUp];
+		if (!loadMedia(load, textures, horizons, roads, redFire, blueFire, lightnings, clouds, rainClouds, rains, winds, boxes))
 		{
 			SDL_Log("Failed to load media!\n");
 		}
@@ -727,13 +487,6 @@ int main(int argc, char* argv[])
 			double minuteAngle = 0;
 			bool isDebug = false;
 			bool isInput = false;
-#ifdef _WIN32
-			float mouseX = 0.0f;
-			float mouseY = 0.0f;
-#elif __linux__
-			int mouseX = 0;
-			int mouseY = 0;
-#endif
 
 			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 			long long animationDelta = 0L;
@@ -816,11 +569,11 @@ int main(int argc, char* argv[])
 						animationIndex = 0;
 					}
 					fireIndex = animationIndex % FIRE_SIZE;
-					lightningIndex = animationIndex % LIGHTNING_SIZE;
-					cloudIndex = animationIndex % CLOUDS_SIZE;
-					rainCloudIndex = animationIndex % RAIN_CLOUDS_SIZE;
-					rainIndex = animationIndex % RAIN_SIZE;
-					windIndex = animationIndex % WINDS_SIZE;
+					lightningIndex = animationIndex % LightningEnum_Size;
+					cloudIndex = animationIndex % CloudsEnum_Size;
+					rainCloudIndex = animationIndex % RainCloudsEnum_Size;
+					rainIndex = animationIndex % RainEnum_Size;
+					windIndex = animationIndex % WindEnum_Size;
 				}
 				if (secondDelta > secondLimit)
 				{
@@ -868,7 +621,6 @@ int main(int argc, char* argv[])
 				}
 				previousTime = currentTime;
 
-				SDL_GetMouseState(&mouseX, &mouseY);
 				myTimer->Update();
 				while (SDL_PollEvent(&e) != 0)
 				{
@@ -949,6 +701,23 @@ int main(int argc, char* argv[])
 						{
 						case SDLK_HOME:
 							break;
+
+						case SDLK_UP:
+						case KEY_W:
+							dot.SetUp(false);
+							break;
+						case SDLK_DOWN:
+						case KEY_S:
+							dot.SetDown(false);
+							break;
+						case SDLK_LEFT:
+						case KEY_A:
+							dot.SetLeft(false);
+							break;
+						case SDLK_RIGHT:
+						case KEY_D:
+							dot.SetRight(false);
+							break;
 						}
 					}
 					else if (e.type == KEY_PRESSED)
@@ -965,19 +734,19 @@ int main(int argc, char* argv[])
 						case SDLK_END:
 							switch (gDirection)
 							{
-							case DIRECTION_UP:
-								gDirection = DIRECTION_DOWN;
+							case BoxUp:
+								gDirection = BoxDown;
 								break;
-							case DIRECTION_DOWN:
-								gDirection = DIRECTION_LEFT;
+							case BoxDown:
+								gDirection = BoxLeft;
 								break;
-							case DIRECTION_LEFT:
-								gDirection = DIRECTION_RIGHT;
+							case BoxLeft:
+								gDirection = BoxRight;
 								break;
-							case DIRECTION_RIGHT:
-								gDirection = DIRECTION_UP;
+							case BoxRight:
+								gDirection = BoxUp;
 								break;
-							case DIRECTION_TOTAL:
+							case BoxesEnum_Size:
 								break;
 							}
 #ifdef _WIN32
@@ -987,7 +756,7 @@ int main(int argc, char* argv[])
 							break;
 						case SDLK_UP:
 						case KEY_W:
-							gBox = &gBoxes[KEY_PRESS_SURFACE_UP];
+							gBox = &boxes[BoxUp];
 							--currentData;
 							if (currentData < 0)
 							{
@@ -995,10 +764,11 @@ int main(int argc, char* argv[])
 							}
 							++playerI;
 							if (playerI >= ROW_SIZE) playerI = ROW_SIZE - 1;
+							dot.SetUp(true);
 							break;
 						case SDLK_DOWN:
 						case KEY_S:
-							gBox = &gBoxes[KEY_PRESS_SURFACE_DOWN];
+							gBox = &boxes[BoxDown];
 							++currentData;
 							if (currentData == TOTAL_DATA)
 							{
@@ -1006,22 +776,25 @@ int main(int argc, char* argv[])
 							}
 							--playerI;
 							if (playerI < 0) playerI = 0;
+							dot.SetDown(true);
 							break;
 						case SDLK_LEFT:
 						case KEY_A:
-							gBox = &gBoxes[KEY_PRESS_SURFACE_LEFT];
+							gBox = &boxes[BoxLeft];
 							--gData[currentData];
 							--playerJ;
 							if (playerJ < 0) playerJ = 0;
 							degrees -= 60;
+							dot.SetLeft(true);
 							break;
 						case SDLK_RIGHT:
 						case KEY_D:
-							gBox = &gBoxes[KEY_PRESS_SURFACE_RIGHT];
+							gBox = &boxes[BoxRight];
 							++gData[currentData];
 							++playerJ;
 							if (playerJ >= ROW_SIZE) playerJ = ROW_SIZE - 1;
 							degrees += 60;
+							dot.SetRight(true);
 							break;
 						case KEY_Q:
 							gMiracleStarfallUpdateAtEndOfFrame = true;
@@ -1046,7 +819,6 @@ int main(int argc, char* argv[])
 							inputText.pop_back();
 						}
 					}
-					dot.HandleEvent(e);
 					gWindow.HandleEvent(e);
 				}
 				if (!gWindow.IsMinimized())
@@ -1061,35 +833,35 @@ int main(int argc, char* argv[])
 
 					switch (gDirection)
 					{
-					case DIRECTION_UP:
-						backgroundScrollingOffset = -gBackgroundBackground.GetHeight() * minuteNormal;
-						if (backgroundScrollingOffset < -gBackgroundBackground.GetHeight())
+					case BoxUp:
+						backgroundScrollingOffset = -textures[BackgroundBackground].GetHeight() * minuteNormal;
+						if (backgroundScrollingOffset < -textures[BackgroundBackground].GetHeight())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
-					case DIRECTION_DOWN:
-						backgroundScrollingOffset = gBackgroundBackground.GetHeight() * minuteNormal;
-						if (backgroundScrollingOffset > gBackgroundBackground.GetHeight())
+					case BoxDown:
+						backgroundScrollingOffset = textures[BackgroundBackground].GetHeight() * minuteNormal;
+						if (backgroundScrollingOffset > textures[BackgroundBackground].GetHeight())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
-					case DIRECTION_LEFT:
-						backgroundScrollingOffset = -gBackgroundBackground.GetWidth() * minuteNormal;
-						if (backgroundScrollingOffset < -gBackgroundBackground.GetWidth())
+					case BoxLeft:
+						backgroundScrollingOffset = -textures[BackgroundBackground].GetWidth() * minuteNormal;
+						if (backgroundScrollingOffset < -textures[BackgroundBackground].GetWidth())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
-					case DIRECTION_RIGHT:
-						backgroundScrollingOffset = gBackgroundBackground.GetWidth() * minuteNormal;
-						if (backgroundScrollingOffset > gBackgroundBackground.GetWidth())
+					case BoxRight:
+						backgroundScrollingOffset = textures[BackgroundBackground].GetWidth() * minuteNormal;
+						if (backgroundScrollingOffset > textures[BackgroundBackground].GetWidth())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
-					case DIRECTION_TOTAL:
+					case BoxesEnum_Size:
 						break;
 					}
 
@@ -1099,92 +871,92 @@ int main(int argc, char* argv[])
 					{
 						0,
 						0,
-						backgroundViewport.w = gBackgroundBackground.GetWidth(),
-						gBackgroundBackground.GetHeight()
+						backgroundViewport.w = textures[BackgroundBackground].GetWidth(),
+						textures[BackgroundBackground].GetHeight()
 					};
 					switch (gDirection)
 					{
-					case DIRECTION_UP:
+					case BoxUp:
 						backgroundViewport.x = 0;
 						backgroundViewport.y = backgroundScrollingOffset;
-						gBackgroundBackground.Draw(&backgroundViewport);
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = 0;
-						backgroundViewport.y = backgroundScrollingOffset + gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
+						backgroundViewport.y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = 0;
-						backgroundViewport.y = backgroundScrollingOffset + (gBackgroundBackground.GetHeight() * 2);
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = gBackgroundBackground.GetWidth();
+						backgroundViewport.y = backgroundScrollingOffset + (textures[BackgroundBackground].GetHeight() * 2);
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = backgroundScrollingOffset;
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = gBackgroundBackground.GetWidth();
-						backgroundViewport.y = backgroundScrollingOffset + gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = gBackgroundBackground.GetWidth();
-						backgroundViewport.y = backgroundScrollingOffset + (gBackgroundBackground.GetHeight() * 2);
-						gBackgroundBackground.Draw(&backgroundViewport);
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
+						backgroundViewport.y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
+						backgroundViewport.y = backgroundScrollingOffset + (textures[BackgroundBackground].GetHeight() * 2);
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						break;
-					case DIRECTION_DOWN:
+					case BoxDown:
 						backgroundViewport.x = 0;
 						backgroundViewport.y = backgroundScrollingOffset;
-						gBackgroundBackground.Draw(&backgroundViewport);
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = 0;
-						backgroundViewport.y = backgroundScrollingOffset + gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
+						backgroundViewport.y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = 0;
-						backgroundViewport.y = backgroundScrollingOffset - gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = gBackgroundBackground.GetWidth();
+						backgroundViewport.y = backgroundScrollingOffset - textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = backgroundScrollingOffset;
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = gBackgroundBackground.GetWidth();
-						backgroundViewport.y = backgroundScrollingOffset + gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = gBackgroundBackground.GetWidth();
-						backgroundViewport.y = backgroundScrollingOffset - gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
+						backgroundViewport.y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
+						backgroundViewport.y = backgroundScrollingOffset - textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						break;
-					case DIRECTION_LEFT:
+					case BoxLeft:
 						backgroundViewport.x = backgroundScrollingOffset;
 						backgroundViewport.y = 0;
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = backgroundScrollingOffset + gBackgroundBackground.GetWidth();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = 0;
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = backgroundScrollingOffset + (gBackgroundBackground.GetWidth() * 2);
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = backgroundScrollingOffset + (textures[BackgroundBackground].GetWidth() * 2);
 						backgroundViewport.y = 0;
-						gBackgroundBackground.Draw(&backgroundViewport);
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset;
-						backgroundViewport.y = gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = backgroundScrollingOffset + gBackgroundBackground.GetWidth();
-						backgroundViewport.y = gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = backgroundScrollingOffset + (gBackgroundBackground.GetWidth() * 2);
-						backgroundViewport.y = gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
+						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
+						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = backgroundScrollingOffset + (textures[BackgroundBackground].GetWidth() * 2);
+						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						break;
-					case DIRECTION_RIGHT:
+					case BoxRight:
 						backgroundViewport.x = backgroundScrollingOffset;
 						backgroundViewport.y = 0;
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = backgroundScrollingOffset + gBackgroundBackground.GetWidth();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = 0;
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = backgroundScrollingOffset - gBackgroundBackground.GetWidth();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = backgroundScrollingOffset - textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = 0;
-						gBackgroundBackground.Draw(&backgroundViewport);
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset;
-						backgroundViewport.y = gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = backgroundScrollingOffset + gBackgroundBackground.GetWidth();
-						backgroundViewport.y = gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
-						backgroundViewport.x = backgroundScrollingOffset - gBackgroundBackground.GetWidth();
-						backgroundViewport.y = gBackgroundBackground.GetHeight();
-						gBackgroundBackground.Draw(&backgroundViewport);
+						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
+						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
+						backgroundViewport.x = backgroundScrollingOffset - textures[BackgroundBackground].GetWidth();
+						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
+						textures[BackgroundBackground].Draw(&backgroundViewport);
 						break;
-					case DIRECTION_TOTAL:
+					case BoxesEnum_Size:
 						break;
 					}
 					SDL_Rect fullscreenViewport =
@@ -1213,11 +985,11 @@ int main(int argc, char* argv[])
 						characterViewport.w = fullscreenViewport.w,
 						characterViewport.h = fullscreenViewport.h
 					};
-					gCharacterTownspersonMoonboy.Draw(&characterViewport);
-					gBackgroundForeground.Draw(&fullscreenViewport);
-					gCharacterTownspersonMoonboyHands.Draw(&characterViewport);
-					dot.move((double)gWindow.GetWidth() * 0.00005, (double)gWindow.GetHeight() * 0.00005);
-					dot.setIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ);
+					textures[CharacterTownspersonMoonboy].Draw(&characterViewport);
+					textures[BackgroundForeground].Draw(&fullscreenViewport);
+					textures[CharacterTownspersonMoonboy_Hands].Draw(&characterViewport);
+					dot.Move(gWindow.GetWidth(), gWindow.GetHeight(), currentTime, secondLimit);
+					dot.SetIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ, (float)gWindow.GetWidth(), (float)gWindow.GetHeight(), ROW_SIZE);
 
 					SDL_Rect middleViewport =
 					{
@@ -1228,10 +1000,8 @@ int main(int argc, char* argv[])
 					};
 					SetRenderViewport(gWindow.GetRenderer(), NULL);
 					float normal = secondNormal;
-					float centerX = mouseX;
-					if (centerX > gWindow.GetWidth() * 0.15f) centerX = gWindow.GetWidth() * 0.15f;
-					float centerY = gWindow.GetHeight() - mouseY;
-					if (centerY > gWindow.GetHeight() * 0.5f) centerY = gWindow.GetHeight() * 0.5f;
+					float centerX = gWindow.GetWidth() * 0.15f;
+					float centerY = gWindow.GetHeight() * 0.5f;
 					int horizonI = 0;
 					int roadI = 0;
 					int k = 0;
@@ -1299,25 +1069,24 @@ int main(int argc, char* argv[])
 								middleViewport.h * 2.0f
 							};
 							int modI = (i % 2 == 0) ? 0 : 4;
-							gHorizons[modI + horizonI].Draw(&middleViewport);
+							horizons[modI + horizonI].Draw(&middleViewport);
 							++horizonI;
 							if (horizonI > 3)
 							{
 								horizonI = 0;
 							}
 							modI = (i % 4 == 0);
-							gRoads[modI + roadI].Draw(&middleViewport);
+							roads[modI + roadI].Draw(&middleViewport);
 							++roadI;
-							gClouds[cloudIndex].Draw(&middleViewport);
+							clouds[cloudIndex].Draw(&middleViewport);
 							if (roadI > 3)
 							{
 								roadI = 0;
 							}
 							if (dotI == i && dotJ == j)
 							{
-								gFire[fireIndex].Draw(&middleViewport);
 								isOnFire[k] = true;
-								gPlayerHighlight.Draw(&middleViewport);
+								textures[PlayerHighlight].Draw(&middleViewport);
 							}
 							if (isOnFire[k])
 							{
@@ -1327,7 +1096,7 @@ int main(int argc, char* argv[])
 							Distance distance = { (float)middleViewport.w, (float)middleViewport.h };
 							if (i == 0 && j == 0)
 							{
-								gIconCursor.Draw(&middleViewport);
+								textures[IconCursor].Draw(&middleViewport);
 							}
 							if (j == 0)
 							{
@@ -1338,15 +1107,15 @@ int main(int argc, char* argv[])
 							}
 							if (i == 0 && j == ROW_SIZE - 1)
 							{
-								gIconCursor.Draw(&middleViewport);
+								textures[IconCursor].Draw(&middleViewport);
 							}
 							if (i == ROW_SIZE - 1 && j == 0)
 							{
-								gSun.Draw(&middleViewport, 360 * secondNormal);
+								textures[CharacterFairySun].Draw(&middleViewport, 360 * secondNormal);
 							}
 							if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1)
 							{
-								gMoon.Draw(&middleViewport, 360 * secondNormal);
+								textures[CharacterFairyMoon].Draw(&middleViewport, 360 * secondNormal);
 							}
 							if (i == ROW_SIZE - 1 && j == 0)
 							{
@@ -1376,12 +1145,13 @@ int main(int argc, char* argv[])
 								extraRaisedViewport.x = walkingSpriteViewport.x;
 								raisedViewport.x = walkingSpriteViewport.x;
 								cloudsViewport.x = walkingSpriteViewport.x;
-								gLightnings[lightningIndex].Draw(&raisedViewport);
+								lightnings[lightningIndex].Draw(&raisedViewport);
 								gBox->Draw(&extraRaisedViewport);
+								redFire[fireIndex].Draw(&extraRaisedViewport);
 								SetRenderViewport(gWindow.GetRenderer(), &cloudsViewport);
-								gWinds[windIndex].Draw(&raisedViewport);
-								gRainClouds[rainCloudIndex].Draw(&raisedViewport);
-								gRain[rainIndex].Draw(&raisedViewport);
+								winds[windIndex].Draw(&raisedViewport);
+								rainClouds[rainCloudIndex].Draw(&raisedViewport);
+								rains[rainIndex].Draw(&raisedViewport);
 								SetRenderViewport(gWindow.GetRenderer(), NULL);
 								RenderLine(
 									gWindow.GetRenderer(),
@@ -1411,7 +1181,7 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					characterFairyHopeful.Draw(&lineViewport);
+					textures[CharacterFairyHopeful].Draw(&lineViewport);
 					SDL_Rect monsterViewport =
 					{
 						monsterViewport.x = fullscreenViewport.x,
@@ -1428,7 +1198,7 @@ int main(int argc, char* argv[])
 						dot.GetBox().w * 10,
 						dot.GetBox().h * 10
 					};
-					gPalaceTexture.Draw(&palaceViewport);
+					textures[BoxFront].Draw(&palaceViewport);
 					if (gMiracleStarfallSpawns[gMiracleStarfallIndex])
 					{
 						gMiracleStarfallViewports[gMiracleStarfallIndex].x = palaceViewport.x;
@@ -1483,7 +1253,8 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					gPalaceHighlightBottom.Draw(&palaceHighlightBottomViewport);
+					blueFire[fireIndex].Draw(&palaceHighlightBottomViewport);
+					textures[PalaceHighlightBottom].Draw(&palaceHighlightBottomViewport);
 					SDL_Rect palaceHighlightTopViewport =
 					{
 						palaceViewport.x,
@@ -1491,7 +1262,7 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					gPalaceHighlightTop.Draw(&palaceHighlightTopViewport);
+					textures[PalaceHighlightTop].Draw(&palaceHighlightTopViewport);
 					SDL_Rect palaceHighlightLeftViewport =
 					{
 						palaceViewport.x + (palaceViewport.w * palaceHighlightPercent),
@@ -1499,7 +1270,7 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					gPalaceHighlightLeft.Draw(&palaceHighlightLeftViewport);
+					textures[PalaceHighlightLeft].Draw(&palaceHighlightLeftViewport);
 					SDL_Rect palaceHighlightRightViewport =
 					{
 						palaceViewport.x - (palaceViewport.w * palaceHighlightPercent),
@@ -1507,7 +1278,7 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					gPalaceHighlightRight.Draw(&palaceHighlightRightViewport);
+					textures[PalaceHighlightRight].Draw(&palaceHighlightRightViewport);
 
 					SDL_Rect menuTopViewport =
 					{
@@ -1516,11 +1287,11 @@ int main(int argc, char* argv[])
 						fullscreenViewport.w,
 						fullscreenViewport.h
 					};
-					gMenuTop.Draw(&menuTopViewport);
+					textures[MenuTop].Draw(&menuTopViewport);
 
 					if (isIdle)
 					{
-						gCrest.Draw(&fullscreenViewport);
+						textures[Crest].Draw(&fullscreenViewport);
 					}
 
 					if (isDebug)
@@ -1532,7 +1303,7 @@ int main(int argc, char* argv[])
 							fullscreenViewport.w,
 							fullscreenViewport.h
 						};
-						gMenuBottom.Draw(&menuBottomViewport);
+						textures[MenuBottom].Draw(&menuBottomViewport);
 						SDL_Rect menuRightTopViewport =
 						{
 							fullscreenViewport.w * 0.5f,
@@ -1540,7 +1311,7 @@ int main(int argc, char* argv[])
 							fullscreenViewport.w * 0.5f,
 							fullscreenViewport.h * 0.6f
 						};
-						gMenuRightTop.Draw(&menuRightTopViewport);
+						textures[MenuRightTop].Draw(&menuRightTopViewport);
 						SDL_Rect menuRightBottomViewport =
 						{
 							fullscreenViewport.w * 0.5f,
@@ -1548,7 +1319,7 @@ int main(int argc, char* argv[])
 							fullscreenViewport.w * 0.5f,
 							fullscreenViewport.h * 0.6f
 						};
-						gMenuRightBottom.Draw(&menuRightBottomViewport);
+						textures[MenuRightBottom].Draw(&menuRightBottomViewport);
 						SDL_Rect menuLeftViewport =
 						{
 							fullscreenViewport.x,
@@ -1556,14 +1327,10 @@ int main(int argc, char* argv[])
 							fullscreenViewport.w * 0.5f,
 							fullscreenViewport.h * 0.6f
 						};
-						gMenuLeft.Draw(&menuLeftViewport);
+						textures[MenuLeft].Draw(&menuLeftViewport);
 						SetRenderViewport(gWindow.GetRenderer(), NULL);
-						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, 0, 0);
-						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, gWindow.GetWidth(), 0);
-						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, 0, gWindow.GetHeight());
-						RenderLine(gWindow.GetRenderer(), mouseX, mouseY, gWindow.GetWidth(), gWindow.GetHeight());
 					}
-					gRain[rainIndex].Draw(NULL);
+					rains[rainIndex].Draw(NULL);
 					SDL_RenderPresent(gWindow.GetRenderer());
 				}
 				if (gMiracleStarfallUpdateAtEndOfFrame)
@@ -1578,7 +1345,7 @@ int main(int argc, char* argv[])
 				++countedFrames;
 			}
 		}
-		close(load);
+		close(load, textures, horizons, roads, redFire, blueFire, lightnings, clouds, rainClouds, rains, winds, boxes);
 	}
 
 	delete[] gMiracleStarfalls;
