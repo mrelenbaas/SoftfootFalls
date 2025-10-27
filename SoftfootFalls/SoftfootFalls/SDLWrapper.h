@@ -23,32 +23,14 @@ public:
 	void Move(int, int, long long, double);
 	SDL_Rect GetBox()
 	{
-		SDL_Rect rect =
-		{
-			box.x,
-			box.y,
-			box.w,
-			box.h
-		};
+		SDL_Rect rect = { box.x, box.y, box.w, box.h };
 		return rect;
 	}
 	void SetIJ(int*, int*, float*, float*, int, int, const int) const;
-	void SetUp(bool isUp)
-	{
-		(*this).isUp = isUp;
-	}
-	void SetDown(bool isDown)
-	{
-		(*this).isDown = isDown;
-	}
-	void SetLeft(bool isLeft)
-	{
-		(*this).isLeft = isLeft;
-	}
-	void SetRight(bool isRight)
-	{
-		(*this).isRight = isRight;
-	}
+	void SetUp(bool isUp) { (*this).isUp = isUp; }
+	void SetDown(bool isDown) { (*this).isDown = isDown; }
+	void SetLeft(bool isLeft) { (*this).isLeft = isLeft; }
+	void SetRight(bool isRight) { (*this).isRight = isRight; }
 private:
 	SDL_Rect box { 0, 0, DOT_WIDTH, DOT_HEIGHT };
 	long long previousTime = 0L;

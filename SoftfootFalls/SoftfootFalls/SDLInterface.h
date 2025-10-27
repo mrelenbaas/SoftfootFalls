@@ -12,65 +12,64 @@
 
 
 ///////////////////////////////////////////////////////////////////////
-//  SHAPES  ///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-
-//#ifdef _WIN32
-//SDL_FRect Rect(int, int, int, int);
-//#elif __linux__
-//SDL_Rect Rect(int, int, int, int);
-//#endif
-SDL_Rect Rect(int, int, int, int);
-
-///////////////////////////////////////////////////////////////////////
 //  KEYS  /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN32
-	const SDL_Keycode KEY_W = SDLK_W;
+const SDL_Keycode KEY_W = SDLK_W;
 #elif __linux__
-	const SDL_Keycode KEY_W = SDLK_w;
+const SDL_Keycode KEY_W = SDLK_w;
 #endif
 #ifdef _WIN32
-	const SDL_Keycode KEY_A = SDLK_A;
+const SDL_Keycode KEY_A = SDLK_A;
 #elif __linux__
-	const SDL_Keycode KEY_A = SDLK_a;
+const SDL_Keycode KEY_A = SDLK_a;
 #endif
 #ifdef _WIN32
-	const SDL_Keycode KEY_S = SDLK_S;
+const SDL_Keycode KEY_S = SDLK_S;
 #elif __linux__
-	const SDL_Keycode KEY_S = SDLK_s;
+const SDL_Keycode KEY_S = SDLK_s;
 #endif
 #ifdef _WIN32
-	const SDL_Keycode KEY_D = SDLK_D;
+const SDL_Keycode KEY_D = SDLK_D;
 #elif __linux__
-	const SDL_Keycode KEY_D = SDLK_d;
-#endif
-
-
-#ifdef _WIN32
-	const SDL_Keycode KEY_Q = SDLK_Q;
-#elif __linux__
-	const SDL_Keycode KEY_Q = SDLK_q;
-#endif
-#ifdef _WIN32
-	const SDL_Keycode KEY_E = SDLK_E;
-#elif __linux__
-	const SDL_Keycode KEY_E = SDLK_e;
+const SDL_Keycode KEY_D = SDLK_d;
 #endif
 
+
 #ifdef _WIN32
-		const SDL_EventType KEY_RELEASED = SDL_EVENT_KEY_UP;
+const SDL_Keycode KEY_Q = SDLK_Q;
 #elif __linux__
-		const SDL_EventType KEY_RELEASED = SDL_KEYUP;
+const SDL_Keycode KEY_Q = SDLK_q;
 #endif
 #ifdef _WIN32
-		const SDL_EventType KEY_PRESSED = SDL_EVENT_KEY_DOWN;
+const SDL_Keycode KEY_E = SDLK_E;
 #elif __linux__
-		const SDL_EventType KEY_PRESSED = SDL_KEYDOWN;
+const SDL_Keycode KEY_E = SDLK_e;
+#endif
+
+#ifdef _WIN32
+const SDL_EventType KEY_RELEASED = SDL_EVENT_KEY_UP;
+#elif __linux__
+const SDL_EventType KEY_RELEASED = SDL_KEYUP;
+#endif
+#ifdef _WIN32
+const SDL_EventType KEY_PRESSED = SDL_EVENT_KEY_DOWN;
+#elif __linux__
+const SDL_EventType KEY_PRESSED = SDL_KEYDOWN;
 #endif
 
 SDL_Keycode Key(SDL_Event event);
+
+///////////////////////////////////////////////////////////////////////
+//  CONTROLLER  ///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+#ifdef _WIN32
+const SDL_EventType EVENT_JOYSTICK_BUTTON_DOWN = SDL_EVENT_JOYSTICK_BUTTON_DOWN;
+#elif __linux__
+const SDL_EventType EVENT_JOYSTICK_BUTTON_DOWN = SDL_JOYBUTTONDOWN;
+#endif
 
 ///////////////////////////////////////////////////////////////////////
 //  WINDOW  ///////////////////////////////////////////////////////////

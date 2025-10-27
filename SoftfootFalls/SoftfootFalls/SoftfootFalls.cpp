@@ -6,12 +6,15 @@
 #include "Timer.h"
 #include <sstream>
 #include <iomanip>
+#include <vector>
+#include <cstdlib>
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_image.h>
-#include <windows.h>
+#include <Windows.h>
 #include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
 #elif __linux__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -485,7 +488,7 @@ int main(int argc, char* argv[])
 			std::string inputText = "Input";
 			int currentData = 0;
 			double minuteAngle = 0;
-			bool isDebug = false;
+			bool isHome = false;
 			bool isInput = false;
 
 			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -625,11 +628,7 @@ int main(int argc, char* argv[])
 				while (SDL_PollEvent(&e) != 0)
 				{
 					if (IsWindowQuit(e)) quit = true;
-#ifdef _WIN32
-					else if (e.type == SDL_EVENT_JOYSTICK_BUTTON_DOWN)
-#elif __linux__
-					else if (e.type == SDL_JOYBUTTONDOWN)
-#endif
+					else if (e.type == EVENT_JOYSTICK_BUTTON_DOWN)
 					{
 						if (gGameController != NULL)
 						{
@@ -666,14 +665,32 @@ int main(int argc, char* argv[])
 						{
 							if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
 							{
+								gBox = &boxes[BoxLeft];
+								--gData[currentData];
+								--playerJ;
+								if (playerJ < 0) playerJ = 0;
+								degrees -= 60;
+								dot.SetLeft(true);
 								xDir = -1;
 							}
-							else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
+							else
 							{
+								dot.SetLeft(false);
+								xDir = 0;
+							}
+							if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
+							{
+								gBox = &boxes[BoxRight];
+								++gData[currentData];
+								++playerJ;
+								if (playerJ >= ROW_SIZE) playerJ = ROW_SIZE - 1;
+								degrees += 60;
+								dot.SetRight(true);
 								xDir = 1;
 							}
 							else
 							{
+								dot.SetRight(false);
 								xDir = 0;
 							}
 						}
@@ -681,14 +698,38 @@ int main(int argc, char* argv[])
 						{
 							if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
 							{
+								gBox = &boxes[BoxUp];
+								--currentData;
+								if (currentData < 0)
+								{
+									currentData = TOTAL_DATA - 1;
+								}
+								++playerI;
+								if (playerI >= ROW_SIZE) playerI = ROW_SIZE - 1;
+								dot.SetUp(true);
 								yDir = -1;
 							}
-							else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
+							else
 							{
+								dot.SetUp(false);
+								yDir = 0;
+							}
+							if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
+							{
+								gBox = &boxes[BoxDown];
+								++currentData;
+								if (currentData == TOTAL_DATA)
+								{
+									currentData = 0;
+								}
+								--playerI;
+								if (playerI < 0) playerI = 0;
+								dot.SetDown(true);
 								yDir = 1;
 							}
 							else
 							{
+								dot.SetDown(false);
 								yDir = 0;
 							}
 						}
@@ -723,10 +764,17 @@ int main(int argc, char* argv[])
 					else if (e.type == KEY_PRESSED)
 					{
 						isIdle = false;
+#ifdef _WIN32
+						size_t requiredSize;
+						mbstowcs_s(&requiredSize, nullptr, 0, load->Path("medium.wav"), _TRUNCATE);
+						std::vector<wchar_t> wideBuffer(requiredSize);
+						mbstowcs_s(&requiredSize, wideBuffer.data(), requiredSize, load->Path("medium.wav"), _TRUNCATE);
+						std::wstring wideString(wideBuffer.data());
+#endif
 						switch (Key(e))
 						{
 						case SDLK_HOME:
-							isDebug = !isDebug;
+							isHome = !isHome;
 							if (isInput) StopTextInput(gWindow.GetWindow());
 							else StartTextInput(gWindow.GetWindow());
 							isInput = !isInput;
@@ -750,6 +798,7 @@ int main(int argc, char* argv[])
 								break;
 							}
 #ifdef _WIN32
+							PlaySound(wideString.c_str(), NULL, SND_FILENAME | SND_ASYNC);
 #elif __linux__
 							system("aplay ~/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav");
 #endif
@@ -1294,7 +1343,7 @@ int main(int argc, char* argv[])
 						textures[Crest].Draw(&fullscreenViewport);
 					}
 
-					if (isDebug)
+					if (isHome)
 					{
 						SDL_Rect menuBottomViewport =
 						{
