@@ -116,6 +116,8 @@ void DestroySurface(SDL_Surface* surface)
 
 void RenderLine(SDL_Renderer* renderer, float x, float y, float w, float h)
 {
+	SetRenderViewport(renderer, NULL);
+	SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 #if _WIN32
 	SDL_RenderLine(renderer, x, y, w, h);
 #elif __linux__

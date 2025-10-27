@@ -29,17 +29,6 @@
 #include "Container.h"
 
 
-static const char* BasePath(const char* filePath)
-{
-	char* basePath = new char[strlen(filePath) + 1];
-	int i = 0;
-	while (i < strlen(filePath)) basePath[i++] = filePath[i];
-	--i;
-	do basePath[i] = '\0';
-	while (--i, filePath[i] != SEPARATOR);
-	return basePath;
-}
-
 const int JOYSTICK_DEAD_ZONE = 8000;
 const int TOTAL_DATA = 10;
 const double PI = 3.14159265358979323846;
@@ -505,8 +494,6 @@ int main(int argc, char* argv[])
 			bool trisecondToggle = false;
 			bool twelvesecondToggle = false;
 			int gridCounter = 0;
-			int playerI = 0;
-			int playerJ = 0;
 			int dotI = 0;
 			int dotJ = 0;
 			float dotNormalI = 0.0f;
@@ -667,8 +654,6 @@ int main(int argc, char* argv[])
 							{
 								gBox = &boxes[BoxLeft];
 								--gData[currentData];
-								--playerJ;
-								if (playerJ < 0) playerJ = 0;
 								degrees -= 60;
 								dot.SetLeft(true);
 								xDir = -1;
@@ -682,8 +667,6 @@ int main(int argc, char* argv[])
 							{
 								gBox = &boxes[BoxRight];
 								++gData[currentData];
-								++playerJ;
-								if (playerJ >= ROW_SIZE) playerJ = ROW_SIZE - 1;
 								degrees += 60;
 								dot.SetRight(true);
 								xDir = 1;
@@ -704,8 +687,6 @@ int main(int argc, char* argv[])
 								{
 									currentData = TOTAL_DATA - 1;
 								}
-								++playerI;
-								if (playerI >= ROW_SIZE) playerI = ROW_SIZE - 1;
 								dot.SetUp(true);
 								yDir = -1;
 							}
@@ -722,8 +703,6 @@ int main(int argc, char* argv[])
 								{
 									currentData = 0;
 								}
-								--playerI;
-								if (playerI < 0) playerI = 0;
 								dot.SetDown(true);
 								yDir = 1;
 							}
@@ -811,8 +790,6 @@ int main(int argc, char* argv[])
 							{
 								currentData = TOTAL_DATA - 1;
 							}
-							++playerI;
-							if (playerI >= ROW_SIZE) playerI = ROW_SIZE - 1;
 							dot.SetUp(true);
 							break;
 						case SDLK_DOWN:
@@ -823,16 +800,12 @@ int main(int argc, char* argv[])
 							{
 								currentData = 0;
 							}
-							--playerI;
-							if (playerI < 0) playerI = 0;
 							dot.SetDown(true);
 							break;
 						case SDLK_LEFT:
 						case KEY_A:
 							gBox = &boxes[BoxLeft];
 							--gData[currentData];
-							--playerJ;
-							if (playerJ < 0) playerJ = 0;
 							degrees -= 60;
 							dot.SetLeft(true);
 							break;
@@ -840,8 +813,6 @@ int main(int argc, char* argv[])
 						case KEY_D:
 							gBox = &boxes[BoxRight];
 							++gData[currentData];
-							++playerJ;
-							if (playerJ >= ROW_SIZE) playerJ = ROW_SIZE - 1;
 							degrees += 60;
 							dot.SetRight(true);
 							break;
@@ -929,19 +900,15 @@ int main(int argc, char* argv[])
 						backgroundViewport.x = 0;
 						backgroundViewport.y = backgroundScrollingOffset;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
-						backgroundViewport.x = 0;
 						backgroundViewport.y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
-						backgroundViewport.x = 0;
 						backgroundViewport.y = backgroundScrollingOffset + (textures[BackgroundBackground].GetHeight() * 2);
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = backgroundScrollingOffset;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
-						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
-						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = backgroundScrollingOffset + (textures[BackgroundBackground].GetHeight() * 2);
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						break;
@@ -949,19 +916,15 @@ int main(int argc, char* argv[])
 						backgroundViewport.x = 0;
 						backgroundViewport.y = backgroundScrollingOffset;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
-						backgroundViewport.x = 0;
 						backgroundViewport.y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
-						backgroundViewport.x = 0;
 						backgroundViewport.y = backgroundScrollingOffset - textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = backgroundScrollingOffset;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
-						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
-						backgroundViewport.x = textures[BackgroundBackground].GetWidth();
 						backgroundViewport.y = backgroundScrollingOffset - textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						break;
@@ -970,19 +933,15 @@ int main(int argc, char* argv[])
 						backgroundViewport.y = 0;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
-						backgroundViewport.y = 0;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset + (textures[BackgroundBackground].GetWidth() * 2);
-						backgroundViewport.y = 0;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset;
 						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
-						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset + (textures[BackgroundBackground].GetWidth() * 2);
-						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						break;
 					case BoxRight:
@@ -990,19 +949,15 @@ int main(int argc, char* argv[])
 						backgroundViewport.y = 0;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
-						backgroundViewport.y = 0;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset - textures[BackgroundBackground].GetWidth();
-						backgroundViewport.y = 0;
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset;
 						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
-						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						backgroundViewport.x = backgroundScrollingOffset - textures[BackgroundBackground].GetWidth();
-						backgroundViewport.y = textures[BackgroundBackground].GetHeight();
 						textures[BackgroundBackground].Draw(&backgroundViewport);
 						break;
 					case BoxesEnum_Size:
@@ -1047,13 +1002,13 @@ int main(int argc, char* argv[])
 						middleViewport.w = 200,
 						middleViewport.h = 200
 					};
-					SetRenderViewport(gWindow.GetRenderer(), NULL);
 					float normal = secondNormal;
 					float centerX = gWindow.GetWidth() * 0.15f;
 					float centerY = gWindow.GetHeight() * 0.5f;
 					int horizonI = 0;
 					int roadI = 0;
 					int k = 0;
+					SDL_Rect dotBox = dot.GetBox();
 					for (int i = ROW_SIZE - 1; i >= 0 ; --i)
 					{
 						normal = (float)i / (float)ROW_SIZE;
@@ -1106,7 +1061,7 @@ int main(int argc, char* argv[])
 							SDL_Rect raisedViewport =
 							{
 								middleViewport.x - (middleViewport.w * 0.5f),
-								middleViewport.y - (middleViewport.h * 0.5f),// -(middleViewport.h * 1.25f),
+								middleViewport.y - (middleViewport.h * 0.5f),
 								middleViewport.w * 2.0f,
 								middleViewport.h * 2.0f
 							};
@@ -1141,7 +1096,6 @@ int main(int argc, char* argv[])
 							{
 								gFires[animationIndex].Draw(&middleViewport);
 							}
-							SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
 							Distance distance = { (float)middleViewport.w, (float)middleViewport.h };
 							if (i == 0 && j == 0)
 							{
@@ -1166,17 +1120,6 @@ int main(int argc, char* argv[])
 							{
 								textures[CharacterFairyMoon].Draw(&middleViewport, 360 * secondNormal);
 							}
-							if (i == ROW_SIZE - 1 && j == 0)
-							{
-								SetRenderViewport(gWindow.GetRenderer(), NULL);
-								int x = 0;
-								int y = middleViewport.y - (middleViewport.h * 2.0f);
-								if (y < 0)
-								{
-									y = 0;
-								}
-								SetRenderViewport(gWindow.GetRenderer(), &middleViewport);
-							}
 
 							SDL_Rect walkingSpriteViewport =
 							{
@@ -1197,15 +1140,13 @@ int main(int argc, char* argv[])
 								lightnings[lightningIndex].Draw(&raisedViewport);
 								gBox->Draw(&extraRaisedViewport);
 								redFire[fireIndex].Draw(&extraRaisedViewport);
-								SetRenderViewport(gWindow.GetRenderer(), &cloudsViewport);
 								winds[windIndex].Draw(&raisedViewport);
 								rainClouds[rainCloudIndex].Draw(&raisedViewport);
 								rains[rainIndex].Draw(&raisedViewport);
-								SetRenderViewport(gWindow.GetRenderer(), NULL);
 								RenderLine(
 									gWindow.GetRenderer(),
-									dot.GetBox().x + (dot.GetBox().w * 2.5f),
-									dot.GetBox().y + (dot.GetBox().h * 2.5f),
+									dotBox.x + (dotBox.w * 2.5f),
+									dotBox.y + (dotBox.h * 2.5f),
 									extraRaisedViewport.x + (extraRaisedViewport.w * 0.5f),
 									extraRaisedViewport.y + (extraRaisedViewport.h * 0.5f));
 							}
@@ -1220,8 +1161,8 @@ int main(int argc, char* argv[])
 					};
 					Point linePoint =
 					{
-						(dot.GetBox().x + beamPoint.x) / 2,
-						(dot.GetBox().y + beamPoint.y) / 2
+						(dotBox.x + beamPoint.x) / 2,
+						(dotBox.y + beamPoint.y) / 2
 					};
 					SDL_Rect lineViewport =
 					{
@@ -1238,14 +1179,12 @@ int main(int argc, char* argv[])
 						monsterViewport.w = fullscreenViewport.w,
 						monsterViewport.h = fullscreenViewport.h
 					};
-					SetRenderViewport(gWindow.GetRenderer(), &monsterViewport);
-					SetRenderViewport(gWindow.GetRenderer(), &fullscreenViewport);
 					SDL_Rect palaceViewport
 					{
-						dot.GetBox().x - (dot.GetBox().w / 4 * 10),
-						dot.GetBox().y - (dot.GetBox().h / 4 * 10),
-						dot.GetBox().w * 10,
-						dot.GetBox().h * 10
+						dotBox.x - (dotBox.w / 4 * 10),
+						dotBox.y - (dotBox.h / 4 * 10),
+						dotBox.w * 10,
+						dotBox.h * 10
 					};
 					textures[BoxFront].Draw(&palaceViewport);
 					if (gMiracleStarfallSpawns[gMiracleStarfallIndex])
@@ -1287,8 +1226,6 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					SetRenderViewport(gWindow.GetRenderer(), NULL);
-					SDL_SetRenderDrawColor(gWindow.GetRenderer(), 0xFF, 0xFF, 0xFF, 0xFF);
 					RenderLine(gWindow.GetRenderer(), point1.x, point1.y, point2.x, point2.y);
 					RenderLine(gWindow.GetRenderer(), point2.x, point2.y, point2.x + 100, point2.y);
 					RenderLine(gWindow.GetRenderer(), point2.x + 100, point2.y, point2.x + 100, point2.y + 100);
@@ -1377,7 +1314,6 @@ int main(int argc, char* argv[])
 							fullscreenViewport.h * 0.6f
 						};
 						textures[MenuLeft].Draw(&menuLeftViewport);
-						SetRenderViewport(gWindow.GetRenderer(), NULL);
 					}
 					rains[rainIndex].Draw(NULL);
 					SDL_RenderPresent(gWindow.GetRenderer());
