@@ -394,7 +394,19 @@ int main(int argc, char* argv[])
 	Timer* myTimer = new Timer(Timer::Print, 1);
 	const char* basePath = BasePath(argv[0]);
 	Load* load = new Load(basePath);
-	SDL_Rect viewports[ViewportsEnum_Size] = { -1, -1, -1, -1 };
+	long long deltas[TimerEnum_Size];
+	for (int i = 0; i < TimerEnum_Size; ++i) deltas[i] = 0L;
+	double normals[TimerEnum_Size]{};
+	for (int i = 0; i < TimerEnum_Size; ++i) normals[i] = 0.0;
+	double limits[TimerEnum_Size]{};
+	limits[second_1] = 1'000'000'000.0;
+	limits[second_3] = 3'000'000'000.0;
+	limits[second_12] = 12'000'000'000.0;
+	limits[minute_1] = 60'000'000'000.0;
+	const double ANIMATION_LIMIT = 12.0;
+	limits[animation] = limits[second_1] / ANIMATION_LIMIT;
+	SDL_Rect viewports[TimerEnum_Size]{};
+	for (int i = 0; i < TimerEnum_Size; ++i) viewports[i] = { 0, 0, 0, 0 };
 
 	gMiracleStarfalls = new Texture[gMiracleStarfallLimit]{};
 	SDL_Rect gMiracleStarfallViewports[gMiracleStarfallLimit]{};
@@ -427,7 +439,6 @@ int main(int argc, char* argv[])
 	}
 	Point point1 = { 0.0f, 0.0f };
 	Point point2 = { 0.0f, 0.0f };
-	//bool isSecondPointReady = false;
 
 	if (!SecondInit())
 	{
@@ -468,16 +479,6 @@ int main(int argc, char* argv[])
 			bool isInput = false;
 
 			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-			long long animationDelta = 0L;
-			long long decisecondDelta = 0L;
-			long long secondDelta = 0L;
-			long long trisecondDelta = 0L;
-			long long twelvesecondDelta = 0L;
-			long long minuteDelta = 0L;
-			long long hourDelta = 0L;
-			long long halfDayDelta = 0L;
-			long long fullDayDelta = 0L;
-			long long playerDelta = 0L;
 			bool trisecondToggle = false;
 			bool twelvesecondToggle = false;
 			int gridCounter = 0;
@@ -487,7 +488,6 @@ int main(int argc, char* argv[])
 			float dotNormalJ = 0.0f;
 			SDL_Rect defaultRect = { -1, -1, -1, -1 };
 			SDL_Rect beamViewport = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
-			const double ANIMATION_LIMIT = 12.0;
 			int animationIndex = 0;
 			int fireIndex = 0;
 			bool isOnFire[GRID_SIZE]{};
@@ -509,42 +509,22 @@ int main(int argc, char* argv[])
 				//double deltaTime = (double)(now - lastTime) / SDL_GetPerformanceFrequency();
 				//lastTime = now;
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-				animationDelta += currentTime - previousTime;
-				decisecondDelta += currentTime - previousTime;
-				secondDelta += currentTime - previousTime;
-				playerDelta += currentTime - previousTime;
-				trisecondDelta += currentTime - previousTime;
-				twelvesecondDelta += currentTime - previousTime;
-				minuteDelta += currentTime - previousTime;
-				hourDelta += currentTime - previousTime;
-				halfDayDelta += currentTime - previousTime;
-				fullDayDelta += currentTime - previousTime;
+				deltas[second_1] += currentTime - previousTime;
+				deltas[animation] += currentTime - previousTime;
+				deltas[second_3] += currentTime - previousTime;
+				deltas[second_12] += currentTime - previousTime;
+				deltas[minute_1] += currentTime - previousTime;
 				for (int m = 0; m < gMiracleStarfallLimit; ++m)
 				{
 					gMiracleStarfallDeltas[m] += currentTime - previousTime;
 				}
 
-				double decisecondLimit = 100'000'000.0;
-				double secondLimit = 1'000'000'000.0;
-				double animationLimit = secondLimit / ANIMATION_LIMIT;
-				double trisecondLimit = 3'000'000'000.0;
-				double twelvesecondLimit = 6'000'000'000.0;
-				double minuteLimit = 60'000'000'000.0;
 				double hourLimit = 3'600'000'000'000;
 				double halfDayLimit = 43'200'000'000'000.0;
 				double fullDayLimit = 86'400'000'000'000.0;
-				if (decisecondDelta > decisecondLimit)
+				if (deltas[animation] > limits[animation])
 				{
-					decisecondDelta -= decisecondLimit;
-					++gridCounter;
-					if (gridCounter > ROW_SIZE * ROW_SIZE)
-					{
-						gridCounter = 0;
-					}
-				}
-				if (animationDelta > animationLimit)
-				{
-					animationDelta -= animationLimit;
+					deltas[animation] -= limits[animation];
 					++animationIndex;
 					if (animationIndex >= ANIMATION_LIMIT)
 					{
@@ -557,50 +537,36 @@ int main(int argc, char* argv[])
 					rainIndex = animationIndex % RainEnum_Size;
 					windIndex = animationIndex % WindEnum_Size;
 				}
-				if (secondDelta > secondLimit)
+				if (deltas[second_1] > limits[second_1])
 				{
 					++gNodeIndex;
 					if (gNodeIndex >= NODE_LIMIT)
 					{
 						gNodeIndex = 0;
 					}
-					secondDelta -= secondLimit;
+					deltas[second_1] -= limits[second_1];
 				}
-				if (trisecondDelta > trisecondLimit)
+				if (deltas[second_3] > limits[second_3])
 				{
 					trisecondToggle = !trisecondToggle;
-					trisecondDelta -= trisecondLimit;
+					deltas[second_3] -= limits[second_3];
 				}
-				if (twelvesecondDelta > twelvesecondLimit)
+				if (deltas[second_12] > limits[minute_1])
 				{
 					twelvesecondToggle = !twelvesecondToggle;
-					twelvesecondDelta -= twelvesecondLimit;
+					deltas[second_12] -= limits[minute_1];
 				}
-				if (minuteDelta > minuteLimit)
+				if (deltas[minute_1] > limits[minute_1])
 				{
-					minuteDelta -= minuteLimit;
+					deltas[minute_1] -= limits[minute_1];
 				}
-				if (hourDelta > hourLimit)
+				for (int i = 0; i < TimerEnum_Size; ++i)
 				{
-					hourDelta -= hourLimit;
+					normals[i] = (double)deltas[i] / limits[i];
 				}
-				if (halfDayDelta > halfDayLimit)
-				{
-					halfDayDelta -= halfDayLimit;
-				}
-				if (fullDayDelta > fullDayLimit)
-				{
-					fullDayDelta -= fullDayLimit;
-				}
-				double animationNormal = (double)animationDelta / animationLimit;
-				double secondNormal = (double)secondDelta / secondLimit;
-				double trisecondNormal = (double)trisecondDelta / trisecondLimit;
-				double twelvesecondNormal = (double)twelvesecondDelta / twelvesecondLimit;
-				double minuteNormal = (double)minuteDelta / minuteLimit;
-				double starfallNormal = secondNormal;
 				for (int m = 0; m < gMiracleStarfallLimit; ++m)
 				{
-					gMiracleStarfallNormals[m] = (double)gMiracleStarfallDeltas[m] / secondLimit;
+					gMiracleStarfallNormals[m] = (double)gMiracleStarfallDeltas[m] / limits[second_1];
 					if (gMiracleStarfallNormals[m] > 1.0)
 					{
 						gMiracleStarfallDeltas[m] = 0L;
@@ -819,10 +785,9 @@ int main(int argc, char* argv[])
 							gMiracleStarfallModIndex = gMiracleStarfallIndex % 5;
 							gMiracleStarfallSpawns[gMiracleStarfallIndex] = true;
 							gMiracleStarfallDeltas[gMiracleStarfallIndex] = 0L;
-							gMiracleStarfallNormals[gMiracleStarfallIndex] = (double)gMiracleStarfallDeltas[gMiracleStarfallIndex] / secondLimit;
+							gMiracleStarfallNormals[gMiracleStarfallIndex] = (double)gMiracleStarfallDeltas[gMiracleStarfallIndex] / limits[second_1];
 							break;
 						case KEY_E:
-							//isSecondPointReady = true;
 							break;
 						default:
 							break;
@@ -850,28 +815,28 @@ int main(int argc, char* argv[])
 					switch (gDirection)
 					{
 					case BoxUp:
-						backgroundScrollingOffset = -textures[BackgroundBackground].GetHeight() * minuteNormal;
+						backgroundScrollingOffset = -textures[BackgroundBackground].GetHeight() * normals[minute_1];
 						if (backgroundScrollingOffset < -textures[BackgroundBackground].GetHeight())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
 					case BoxDown:
-						backgroundScrollingOffset = textures[BackgroundBackground].GetHeight() * minuteNormal;
+						backgroundScrollingOffset = textures[BackgroundBackground].GetHeight() * normals[minute_1];
 						if (backgroundScrollingOffset > textures[BackgroundBackground].GetHeight())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
 					case BoxLeft:
-						backgroundScrollingOffset = -textures[BackgroundBackground].GetWidth() * minuteNormal;
+						backgroundScrollingOffset = -textures[BackgroundBackground].GetWidth() * normals[minute_1];
 						if (backgroundScrollingOffset < -textures[BackgroundBackground].GetWidth())
 						{
 							backgroundScrollingOffset = 0;
 						}
 						break;
 					case BoxRight:
-						backgroundScrollingOffset = textures[BackgroundBackground].GetWidth() * minuteNormal;
+						backgroundScrollingOffset = textures[BackgroundBackground].GetWidth() * normals[minute_1];
 						if (backgroundScrollingOffset > textures[BackgroundBackground].GetWidth())
 						{
 							backgroundScrollingOffset = 0;
@@ -881,7 +846,7 @@ int main(int argc, char* argv[])
 						break;
 					}
 
-					minuteAngle = 360 * minuteNormal;
+					minuteAngle = 360 * normals[minute_1];
 
 					SDL_Rect backgroundViewport =
 					{
@@ -967,13 +932,13 @@ int main(int argc, char* argv[])
 					int verticalModifier = 0;
 					if (twelvesecondToggle)
 					{
-						horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * twelvesecondNormal;
-						verticalModifier = (gWindow.GetHeight() + viewports[v_fullscreen].h) * twelvesecondNormal;
+						horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * normals[second_12];
+						verticalModifier = (gWindow.GetHeight() + viewports[v_fullscreen].h) * normals[second_12];
 					}
 					else
 					{
-						horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * (1.0f - twelvesecondNormal);
-						verticalModifier = (gWindow.GetHeight() + viewports[v_fullscreen].h) * (1.0f - twelvesecondNormal);
+						horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * (1.0f - normals[second_12]);
+						verticalModifier = (gWindow.GetHeight() + viewports[v_fullscreen].h) * (1.0f - normals[second_12]);
 					}
 					SDL_Rect characterViewport =
 					{
@@ -985,7 +950,7 @@ int main(int argc, char* argv[])
 					textures[CharacterTownspersonMoonboy].Draw(&characterViewport);
 					textures[BackgroundForeground].Draw(&viewports[v_fullscreen]);
 					textures[CharacterTownspersonMoonboy_Hands].Draw(&characterViewport);
-					dot.Move(gWindow.GetWidth(), gWindow.GetHeight(), currentTime, trisecondLimit);
+					dot.Move(gWindow.GetWidth(), gWindow.GetHeight(), currentTime, limits[second_3]);
 					dot.SetIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ, (float)gWindow.GetWidth(), (float)gWindow.GetHeight(), ROW_SIZE);
 
 					SDL_Rect middleViewport =
@@ -995,7 +960,7 @@ int main(int argc, char* argv[])
 						middleViewport.w = 200,
 						middleViewport.h = 200
 					};
-					float normal = secondNormal;
+					float normal = normals[second_1];
 					float centerX = gWindow.GetWidth() * 0.15f;
 					float centerY = gWindow.GetHeight() * 0.5f;
 					int horizonI = 0;
@@ -1089,8 +1054,6 @@ int main(int argc, char* argv[])
 							}
 							if (i == 24 && dotJ == j)
 							{
-								//isOnFire[k] = true;
-								//tileViewport = middleViewport;
 								//textures[PlayerHighlight].Draw(&tileViewport);
 								farViewport.x = middleViewport.x;
 								farViewport.y = middleViewport.y;
@@ -1119,11 +1082,11 @@ int main(int argc, char* argv[])
 							}
 							if (i == ROW_SIZE - 1 && j == 0)
 							{
-								textures[CharacterFairySun].Draw(&middleViewport, 360 * secondNormal);
+								textures[CharacterFairySun].Draw(&middleViewport, 360 * normals[second_1]);
 							}
 							if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1)
 							{
-								textures[CharacterFairyMoon].Draw(&middleViewport, 360 * secondNormal);
+								textures[CharacterFairyMoon].Draw(&middleViewport, 360 * normals[second_1]);
 							}
 
 							SDL_Rect walkingSpriteViewport =
@@ -1193,15 +1156,15 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&point2Viewport, 360 * trisecondNormal);
+					//gMiracleStarfalls[0].Draw(&point2Viewport, 360 * normals[second_3]);
 					SDL_Rect townBuilderMiracleStarfallViewport =
 					{
-						point2.x + ((point1.x - point2.x) * (1.0f - starfallNormal)),
-						point1.y + ((point2.y - point1.y) * starfallNormal),
+						point2.x + ((point1.x - point2.x) * (1.0f - normals[second_1])),
+						point1.y + ((point2.y - point1.y) * normals[second_1]),
 						100,
 						100
 					};
-					if (gNodeIndex == 0) gMiracleStarfalls[0].Draw(&townBuilderMiracleStarfallViewport, 360 * trisecondNormal);
+					if (gNodeIndex == 0) gMiracleStarfalls[0].Draw(&townBuilderMiracleStarfallViewport, 360 * normals[second_3]);
 					SDL_Rect point1Viewport =
 					{
 						point1.x,
@@ -1209,27 +1172,22 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&point1Viewport, 360 * trisecondNormal);
+					//gMiracleStarfalls[0].Draw(&point1Viewport, 360 * normals[second_3]);
 					//RenderLine(gWindow.GetRenderer(), point1.x, point1.y, point2.x, point2.y);
 					//RenderLine(gWindow.GetRenderer(), point2.x, point2.y, point2.x + 100, point2.y);
 					//RenderLine(gWindow.GetRenderer(), point2.x + 100, point2.y, point2.x + 100, point2.y + 100);
 					//RenderLine(gWindow.GetRenderer(), point2.x + 100, point2.y + 100, point2.x, point2.y + 100);
 					//RenderLine(gWindow.GetRenderer(), point2.x, point2.y + 100, point2.x, point2.y);
-					//point1 = point2;
 					Point point4 =
 					{
 						tileViewport.x,
 						tileViewport.y
 					};
-					//point2.x = tileViewport.x;
-					//point2.y = tileViewport.y;
 					Point point3 =
 					{
 						point2.x,
 						point2.y
 					};
-					//point1Viewport.x = point1.x;
-					//point1Viewport.y = point1.y;
 					SDL_Rect point3Viewport =
 					{
 						point3.x,
@@ -1237,8 +1195,6 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//point2Viewport.x = point2.x;
-					//point2Viewport.y = point2.y;
 					SDL_Rect point4Viewport =
 					{
 						point4.x,
@@ -1249,15 +1205,15 @@ int main(int argc, char* argv[])
 					SDL_Rect secondViewport =
 					{
 						(point4.x < point3.x)
-							? point4.x + ((point3.x - point4.x) * (1.0f - starfallNormal))
-							: point3.x + ((point4.x - point3.x) * (starfallNormal)),
+							? point4.x + ((point3.x - point4.x) * (1.0f - normals[second_1]))
+							: point3.x + ((point4.x - point3.x) * (normals[second_1])),
 						(point4.y < point3.y)
-							? point4.y + ((point3.y - point4.y) * (1.0f - starfallNormal))
-							: point3.y + ((point4.y - point3.y) * starfallNormal),
+							? point4.y + ((point3.y - point4.y) * (1.0f - normals[second_1]))
+							: point3.y + ((point4.y - point3.y) * normals[second_1]),
 						100,
 						100
 					};
-					if (gNodeIndex == 1) gMiracleStarfalls[0].Draw(&secondViewport, 360 * trisecondNormal);
+					if (gNodeIndex == 1) gMiracleStarfalls[0].Draw(&secondViewport, 360 * normals[second_3]);
 					SDL_Rect secondStaticViewport =
 					{
 						point4.x,
@@ -1265,7 +1221,7 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&secondStaticViewport, 360 * trisecondNormal);
+					//gMiracleStarfalls[0].Draw(&secondStaticViewport, 360 * normals[second_3]);
 					//RenderLine(gWindow.GetRenderer(), point3.x, point3.y, point4.x, point4.y);
 					RenderLine(gWindow.GetRenderer(), point4.x, point4.y, point4.x + 100, point4.y);
 					RenderLine(gWindow.GetRenderer(), point4.x + 100, point4.y, point4.x + 100, point4.y + 100);
@@ -1284,13 +1240,13 @@ int main(int argc, char* argv[])
 					SDL_Rect thirdViewport =
 					{
 						(point6.x < point5.x)
-							? point6.x + ((point5.x - point6.x) * (1.0f - starfallNormal))
-							: point5.x + ((point6.x - point5.x) * starfallNormal),
-						point6.y + ((point5.y - point6.y) * (1.0f - starfallNormal)),
+							? point6.x + ((point5.x - point6.x) * (1.0f - normals[second_1]))
+							: point5.x + ((point6.x - point5.x) * normals[second_1]),
+						point6.y + ((point5.y - point6.y) * (1.0f - normals[second_1])),
 						100,
 						100
 					};
-					if (gNodeIndex == 2) gMiracleStarfalls[0].Draw(&thirdViewport, 360 * trisecondNormal);
+					if (gNodeIndex == 2) gMiracleStarfalls[0].Draw(&thirdViewport, 360 * normals[second_3]);
 					SDL_Rect thirdStaticViewport =
 					{
 						point6.x,
@@ -1298,7 +1254,7 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&thirdStaticViewport, 360 * trisecondNormal);
+					//gMiracleStarfalls[0].Draw(&thirdStaticViewport, 360 * normals[second_3]);
 					//RenderLine(gWindow.GetRenderer(), point5.x, point5.y, point6.x, point6.y);
 					RenderLine(gWindow.GetRenderer(), point6.x, point6.y, point6.x + 100, point6.y);
 					RenderLine(gWindow.GetRenderer(), point6.x + 100, point6.y, point6.x + 100, point6.y + 100);
@@ -1326,13 +1282,13 @@ int main(int argc, char* argv[])
 					SDL_Rect fourthViewport =
 					{
 						(point8.x < point7.x)
-							? point7.x - ((point7.x - point8.x) * starfallNormal)
-							: point7.x + ((point8.x - point7.x) * starfallNormal),
-						point8.y + ((point7.y - point8.y) * (1.0f - starfallNormal)),
+							? point7.x - ((point7.x - point8.x) * normals[second_1])
+							: point7.x + ((point8.x - point7.x) * normals[second_1]),
+						point8.y + ((point7.y - point8.y) * (1.0f - normals[second_1])),
 						100,
 						100
 					};
-					if (gNodeIndex == 3) gMiracleStarfalls[0].Draw(&fourthViewport, 360 * trisecondNormal);
+					if (gNodeIndex == 3) gMiracleStarfalls[0].Draw(&fourthViewport, 360 * normals[second_3]);
 					SDL_Rect fourthStaticViewport =
 					{
 						point8.x,
@@ -1340,7 +1296,7 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&fourthStaticViewport, 360 * trisecondNormal);
+					//gMiracleStarfalls[0].Draw(&fourthStaticViewport, 360 * normals[second_3]);
 					//RenderLine(gWindow.GetRenderer(), point7.x, point7.y, point8.x, point8.y);
 					RenderLine(gWindow.GetRenderer(), point8.x, point8.y, point8.x + 100, point8.y);
 					RenderLine(gWindow.GetRenderer(), point8.x + 100, point8.y, point8.x + 100, point8.y + 100);
@@ -1372,7 +1328,7 @@ int main(int argc, char* argv[])
 					}
 					for (int m = 0; m < gMiracleStarfallLimit; ++m)
 					{
-						if (gMiracleStarfallDeltas[m] > secondLimit)
+						if (gMiracleStarfallDeltas[m] > limits[second_1])
 						{
 							gMiracleStarfallDespawns[m] = false;
 						}
@@ -1384,7 +1340,7 @@ int main(int argc, char* argv[])
 								gMiracleStarfallViewports[m].w,
 								gMiracleStarfallViewports[m].h
 							};
-							gMiracleStarfalls[m].Draw(&currentStar, 360 * secondNormal);
+							gMiracleStarfalls[m].Draw(&currentStar, 360 * normals[second_1]);
 						}
 					}
 
