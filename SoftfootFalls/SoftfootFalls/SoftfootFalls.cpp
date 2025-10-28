@@ -9,22 +9,6 @@
 #include <vector>
 #include <cstdlib>
 
-#ifdef _WIN32
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_image.h>
-#include <Windows.h>
-#include <mmsystem.h>
-#pragma comment(lib, "winmm.lib")
-#elif __linux__
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <cstdlib>
-#endif
-#include "SDLInterface.h"
-#include "SDLWrapper.h"
-#include "Window.h"
-#include "Texture.h"
-
 #include "Load.h"
 #include "Container.h"
 
@@ -53,6 +37,8 @@ int gMiracleStarfallIndex = 0;
 int gMiracleStarfallModIndex = 0;
 const int gMiracleStarfallLimit = 120;
 bool gMiracleStarfallUpdateAtEndOfFrame = false;
+int gNodeIndex = 0;
+const int NODE_LIMIT = 4;
 Sint32 gData[TOTAL_DATA];
 BoxesEnum gDirection = BoxUp;
 
@@ -408,6 +394,7 @@ int main(int argc, char* argv[])
 	Timer* myTimer = new Timer(Timer::Print, 1);
 	const char* basePath = BasePath(argv[0]);
 	Load* load = new Load(basePath);
+	SDL_Rect viewports[ViewportsEnum_Size] = { -1, -1, -1, -1 };
 
 	gMiracleStarfalls = new Texture[gMiracleStarfallLimit]{};
 	SDL_Rect gMiracleStarfallViewports[gMiracleStarfallLimit]{};
@@ -440,7 +427,7 @@ int main(int argc, char* argv[])
 	}
 	Point point1 = { 0.0f, 0.0f };
 	Point point2 = { 0.0f, 0.0f };
-	bool isSecondPointReady = false;
+	//bool isSecondPointReady = false;
 
 	if (!SecondInit())
 	{
@@ -514,8 +501,13 @@ int main(int argc, char* argv[])
 			int rainCloudIndex = 0;
 			int rainIndex = 0;
 			int windIndex = 0;
+			SDL_Rect secondStarfallViewport = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
+			SDL_Rect farViewport = { defaultRect.x, defaultRect.y, defaultRect.w, defaultRect.h };
 			while (!quit)
 			{
+				//Uint64 now = SDL_GetPerformanceCounter();
+				//double deltaTime = (double)(now - lastTime) / SDL_GetPerformanceFrequency();
+				//lastTime = now;
 				long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 				animationDelta += currentTime - previousTime;
 				decisecondDelta += currentTime - previousTime;
@@ -567,6 +559,11 @@ int main(int argc, char* argv[])
 				}
 				if (secondDelta > secondLimit)
 				{
+					++gNodeIndex;
+					if (gNodeIndex >= NODE_LIMIT)
+					{
+						gNodeIndex = 0;
+					}
 					secondDelta -= secondLimit;
 				}
 				if (trisecondDelta > trisecondLimit)
@@ -600,6 +597,7 @@ int main(int argc, char* argv[])
 				double trisecondNormal = (double)trisecondDelta / trisecondLimit;
 				double twelvesecondNormal = (double)twelvesecondDelta / twelvesecondLimit;
 				double minuteNormal = (double)minuteDelta / minuteLimit;
+				double starfallNormal = secondNormal;
 				for (int m = 0; m < gMiracleStarfallLimit; ++m)
 				{
 					gMiracleStarfallNormals[m] = (double)gMiracleStarfallDeltas[m] / secondLimit;
@@ -824,9 +822,7 @@ int main(int argc, char* argv[])
 							gMiracleStarfallNormals[gMiracleStarfallIndex] = (double)gMiracleStarfallDeltas[gMiracleStarfallIndex] / secondLimit;
 							break;
 						case KEY_E:
-							point1.x = (float)gWindow.GetWidth();
-							point1.y = 0.0f;
-							isSecondPointReady = true;
+							//isSecondPointReady = true;
 							break;
 						default:
 							break;
@@ -963,36 +959,33 @@ int main(int argc, char* argv[])
 					case BoxesEnum_Size:
 						break;
 					}
-					SDL_Rect fullscreenViewport =
-					{
-						fullscreenViewport.x = 0,
-						fullscreenViewport.y = 0,
-						fullscreenViewport.w = gWindow.GetWidth(),
-						fullscreenViewport.h = gWindow.GetHeight()
-					};
+					viewports[v_fullscreen].x = 0;
+					viewports[v_fullscreen].y = 0;
+					viewports[v_fullscreen].w = gWindow.GetWidth();
+					viewports[v_fullscreen].h = gWindow.GetHeight();
 					int horizontalModifier = 0;
 					int verticalModifier = 0;
 					if (twelvesecondToggle)
 					{
-						horizontalModifier = (gWindow.GetWidth() + fullscreenViewport.w) * twelvesecondNormal;
-						verticalModifier = (gWindow.GetHeight() + fullscreenViewport.h) * twelvesecondNormal;
+						horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * twelvesecondNormal;
+						verticalModifier = (gWindow.GetHeight() + viewports[v_fullscreen].h) * twelvesecondNormal;
 					}
 					else
 					{
-						horizontalModifier = (gWindow.GetWidth() + fullscreenViewport.w) * (1.0f - twelvesecondNormal);
-						verticalModifier = (gWindow.GetHeight() + fullscreenViewport.h) * (1.0f - twelvesecondNormal);
+						horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * (1.0f - twelvesecondNormal);
+						verticalModifier = (gWindow.GetHeight() + viewports[v_fullscreen].h) * (1.0f - twelvesecondNormal);
 					}
 					SDL_Rect characterViewport =
 					{
-						characterViewport.x = fullscreenViewport.x - fullscreenViewport.w + horizontalModifier,
-						characterViewport.y = fullscreenViewport.y - (fullscreenViewport.h / 2),
-						characterViewport.w = fullscreenViewport.w,
-						characterViewport.h = fullscreenViewport.h
+						characterViewport.x = viewports[v_fullscreen].x - viewports[v_fullscreen].w + horizontalModifier,
+						characterViewport.y = viewports[v_fullscreen].y - (viewports[v_fullscreen].h / 2),
+						characterViewport.w = viewports[v_fullscreen].w,
+						characterViewport.h = viewports[v_fullscreen].h
 					};
 					textures[CharacterTownspersonMoonboy].Draw(&characterViewport);
-					textures[BackgroundForeground].Draw(&fullscreenViewport);
+					textures[BackgroundForeground].Draw(&viewports[v_fullscreen]);
 					textures[CharacterTownspersonMoonboy_Hands].Draw(&characterViewport);
-					dot.Move(gWindow.GetWidth(), gWindow.GetHeight(), currentTime, secondLimit);
+					dot.Move(gWindow.GetWidth(), gWindow.GetHeight(), currentTime, trisecondLimit);
 					dot.SetIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ, (float)gWindow.GetWidth(), (float)gWindow.GetHeight(), ROW_SIZE);
 
 					SDL_Rect middleViewport =
@@ -1009,6 +1002,7 @@ int main(int argc, char* argv[])
 					int roadI = 0;
 					int k = 0;
 					SDL_Rect dotBox = dot.GetBox();
+					SDL_Rect tileViewport = defaultRect;
 					for (int i = ROW_SIZE - 1; i >= 0 ; --i)
 					{
 						normal = (float)i / (float)ROW_SIZE;
@@ -1067,10 +1061,10 @@ int main(int argc, char* argv[])
 							};
 							SDL_Rect cloudsViewport =
 							{
-								middleViewport.x - (middleViewport.w * 0.5f),
-								middleViewport.y - (middleViewport.h * 1.1f),
-								middleViewport.w * 2.0f,
-								middleViewport.h * 2.0f
+								middleViewport.x - (middleViewport.w * 0.8f),
+								middleViewport.y - (middleViewport.h * 1.4f),
+								middleViewport.w * 2.6f,
+								middleViewport.h * 2.2f
 							};
 							int modI = (i % 2 == 0) ? 0 : 4;
 							horizons[modI + horizonI].Draw(&middleViewport);
@@ -1082,7 +1076,7 @@ int main(int argc, char* argv[])
 							modI = (i % 4 == 0);
 							roads[modI + roadI].Draw(&middleViewport);
 							++roadI;
-							clouds[cloudIndex].Draw(&middleViewport);
+							//clouds[cloudIndex].Draw(&middleViewport);
 							if (roadI > 3)
 							{
 								roadI = 0;
@@ -1090,7 +1084,18 @@ int main(int argc, char* argv[])
 							if (dotI == i && dotJ == j)
 							{
 								isOnFire[k] = true;
-								textures[PlayerHighlight].Draw(&middleViewport);
+								tileViewport = middleViewport;
+								textures[PlayerHighlight].Draw(&tileViewport);
+							}
+							if (i == 24 && dotJ == j)
+							{
+								//isOnFire[k] = true;
+								//tileViewport = middleViewport;
+								//textures[PlayerHighlight].Draw(&tileViewport);
+								farViewport.x = middleViewport.x;
+								farViewport.y = middleViewport.y;
+								farViewport.w = 100;
+								farViewport.h = 100;
 							}
 							if (isOnFire[k])
 							{
@@ -1136,19 +1141,23 @@ int main(int argc, char* argv[])
 								beamViewport.h = walkingSpriteViewport.h;
 								extraRaisedViewport.x = walkingSpriteViewport.x;
 								raisedViewport.x = walkingSpriteViewport.x;
-								cloudsViewport.x = walkingSpriteViewport.x;
+								cloudsViewport.x = walkingSpriteViewport.x - (cloudsViewport.w * 0.1f);
 								lightnings[lightningIndex].Draw(&raisedViewport);
 								gBox->Draw(&extraRaisedViewport);
-								redFire[fireIndex].Draw(&extraRaisedViewport);
-								winds[windIndex].Draw(&raisedViewport);
-								rainClouds[rainCloudIndex].Draw(&raisedViewport);
 								rains[rainIndex].Draw(&raisedViewport);
-								RenderLine(
-									gWindow.GetRenderer(),
-									dotBox.x + (dotBox.w * 2.5f),
-									dotBox.y + (dotBox.h * 2.5f),
-									extraRaisedViewport.x + (extraRaisedViewport.w * 0.5f),
-									extraRaisedViewport.y + (extraRaisedViewport.h * 0.5f));
+								//redFire[fireIndex].Draw(&extraRaisedViewport);
+								//winds[windIndex].Draw(&raisedViewport);
+								rainClouds[rainCloudIndex].Draw(&cloudsViewport);
+								secondStarfallViewport.x = dotBox.x + (dotBox.w * 2.5f);
+								secondStarfallViewport.y = dotBox.y + (dotBox.h * 2.5f);
+								secondStarfallViewport.w = extraRaisedViewport.w * 0.5f;
+								secondStarfallViewport.h = extraRaisedViewport.h * 0.5f;
+								//RenderLine(
+								//	gWindow.GetRenderer(),
+								//	dotBox.x + (dotBox.w * 2.5f),
+								//	dotBox.y + (dotBox.h * 2.5f),
+								//	extraRaisedViewport.x + (extraRaisedViewport.w * 0.5f),
+								//	extraRaisedViewport.y + (extraRaisedViewport.h * 0.5f));
 							}
 							++k;
 						}
@@ -1171,13 +1180,178 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					textures[CharacterFairyHopeful].Draw(&lineViewport);
+					//textures[CharacterFairyHopeful].Draw(&lineViewport);
+					point1.x = (float)gWindow.GetWidth() * 0.59f;
+					point1.y = (float)gWindow.GetHeight() * 0.28f;
+					point2.x = dot.GetBox().x;
+					point2.y = dot.GetBox().y;
+
+					SDL_Rect point2Viewport =
+					{
+						point2.x,
+						point2.y,
+						100,
+						100
+					};
+					//gMiracleStarfalls[0].Draw(&point2Viewport, 360 * trisecondNormal);
+					SDL_Rect townBuilderMiracleStarfallViewport =
+					{
+						point2.x + ((point1.x - point2.x) * (1.0f - starfallNormal)),
+						point1.y + ((point2.y - point1.y) * starfallNormal),
+						100,
+						100
+					};
+					if (gNodeIndex == 0) gMiracleStarfalls[0].Draw(&townBuilderMiracleStarfallViewport, 360 * trisecondNormal);
+					SDL_Rect point1Viewport =
+					{
+						point1.x,
+						point1.y,
+						100,
+						100
+					};
+					//gMiracleStarfalls[0].Draw(&point1Viewport, 360 * trisecondNormal);
+					//RenderLine(gWindow.GetRenderer(), point1.x, point1.y, point2.x, point2.y);
+					//RenderLine(gWindow.GetRenderer(), point2.x, point2.y, point2.x + 100, point2.y);
+					//RenderLine(gWindow.GetRenderer(), point2.x + 100, point2.y, point2.x + 100, point2.y + 100);
+					//RenderLine(gWindow.GetRenderer(), point2.x + 100, point2.y + 100, point2.x, point2.y + 100);
+					//RenderLine(gWindow.GetRenderer(), point2.x, point2.y + 100, point2.x, point2.y);
+					//point1 = point2;
+					Point point4 =
+					{
+						tileViewport.x,
+						tileViewport.y
+					};
+					//point2.x = tileViewport.x;
+					//point2.y = tileViewport.y;
+					Point point3 =
+					{
+						point2.x,
+						point2.y
+					};
+					//point1Viewport.x = point1.x;
+					//point1Viewport.y = point1.y;
+					SDL_Rect point3Viewport =
+					{
+						point3.x,
+						point3.y,
+						100,
+						100
+					};
+					//point2Viewport.x = point2.x;
+					//point2Viewport.y = point2.y;
+					SDL_Rect point4Viewport =
+					{
+						point4.x,
+						point4.y,
+						100,
+						100
+					};
+					SDL_Rect secondViewport =
+					{
+						(point4.x < point3.x)
+							? point4.x + ((point3.x - point4.x) * (1.0f - starfallNormal))
+							: point3.x + ((point4.x - point3.x) * (starfallNormal)),
+						(point4.y < point3.y)
+							? point4.y + ((point3.y - point4.y) * (1.0f - starfallNormal))
+							: point3.y + ((point4.y - point3.y) * starfallNormal),
+						100,
+						100
+					};
+					if (gNodeIndex == 1) gMiracleStarfalls[0].Draw(&secondViewport, 360 * trisecondNormal);
+					SDL_Rect secondStaticViewport =
+					{
+						point4.x,
+						point4.y,
+						100,
+						100
+					};
+					//gMiracleStarfalls[0].Draw(&secondStaticViewport, 360 * trisecondNormal);
+					//RenderLine(gWindow.GetRenderer(), point3.x, point3.y, point4.x, point4.y);
+					RenderLine(gWindow.GetRenderer(), point4.x, point4.y, point4.x + 100, point4.y);
+					RenderLine(gWindow.GetRenderer(), point4.x + 100, point4.y, point4.x + 100, point4.y + 100);
+					RenderLine(gWindow.GetRenderer(), point4.x + 100, point4.y + 100, point4.x, point4.y + 100);
+					RenderLine(gWindow.GetRenderer(), point4.x, point4.y + 100, point4.x, point4.y);
+					Point point5 =
+					{
+						point4.x,
+						point4.y
+					};
+					Point point6 =
+					{
+						farViewport.x,
+						farViewport.y
+					};
+					SDL_Rect thirdViewport =
+					{
+						(point6.x < point5.x)
+							? point6.x + ((point5.x - point6.x) * (1.0f - starfallNormal))
+							: point5.x + ((point6.x - point5.x) * starfallNormal),
+						point6.y + ((point5.y - point6.y) * (1.0f - starfallNormal)),
+						100,
+						100
+					};
+					if (gNodeIndex == 2) gMiracleStarfalls[0].Draw(&thirdViewport, 360 * trisecondNormal);
+					SDL_Rect thirdStaticViewport =
+					{
+						point6.x,
+						point6.y,
+						100,
+						100
+					};
+					//gMiracleStarfalls[0].Draw(&thirdStaticViewport, 360 * trisecondNormal);
+					//RenderLine(gWindow.GetRenderer(), point5.x, point5.y, point6.x, point6.y);
+					RenderLine(gWindow.GetRenderer(), point6.x, point6.y, point6.x + 100, point6.y);
+					RenderLine(gWindow.GetRenderer(), point6.x + 100, point6.y, point6.x + 100, point6.y + 100);
+					RenderLine(gWindow.GetRenderer(), point6.x + 100, point6.y + 100, point6.x, point6.y + 100);
+					RenderLine(gWindow.GetRenderer(), point6.x, point6.y + 100, point6.x, point6.y);
+					Point point7 =
+					{
+						point6.x,
+						point6.y
+					};
+					//Point point8 =
+					//{
+					//	(point6.x < point5.x)
+					//		? point7.x - (point5.x - point6.x)
+					//		: point7.x + (point6.x - point5.x),
+					//	point6.y - (point5.y - point6.y)
+					//};
+					Point point8 =
+					{
+						(point6.x < point5.x)
+							? point7.x - (point5.x - point6.x)
+							: point7.x + (point6.x - point5.x),
+						0
+					};
+					SDL_Rect fourthViewport =
+					{
+						(point8.x < point7.x)
+							? point7.x - ((point7.x - point8.x) * starfallNormal)
+							: point7.x + ((point8.x - point7.x) * starfallNormal),
+						point8.y + ((point7.y - point8.y) * (1.0f - starfallNormal)),
+						100,
+						100
+					};
+					if (gNodeIndex == 3) gMiracleStarfalls[0].Draw(&fourthViewport, 360 * trisecondNormal);
+					SDL_Rect fourthStaticViewport =
+					{
+						point8.x,
+						point8.y,
+						100,
+						100
+					};
+					//gMiracleStarfalls[0].Draw(&fourthStaticViewport, 360 * trisecondNormal);
+					//RenderLine(gWindow.GetRenderer(), point7.x, point7.y, point8.x, point8.y);
+					RenderLine(gWindow.GetRenderer(), point8.x, point8.y, point8.x + 100, point8.y);
+					RenderLine(gWindow.GetRenderer(), point8.x + 100, point8.y, point8.x + 100, point8.y + 100);
+					RenderLine(gWindow.GetRenderer(), point8.x + 100, point8.y + 100, point8.x, point8.y + 100);
+					RenderLine(gWindow.GetRenderer(), point8.x, point8.y + 100, point8.x, point8.y);
 					SDL_Rect monsterViewport =
 					{
-						monsterViewport.x = fullscreenViewport.x,
-						monsterViewport.y = fullscreenViewport.y - fullscreenViewport.h + verticalModifier,
-						monsterViewport.w = fullscreenViewport.w,
-						monsterViewport.h = fullscreenViewport.h
+						monsterViewport.x = viewports[v_fullscreen].x,
+						monsterViewport.y = viewports[v_fullscreen].y - viewports[v_fullscreen].h + verticalModifier,
+						monsterViewport.w = viewports[v_fullscreen].w,
+						monsterViewport.h = viewports[v_fullscreen].h
 					};
 					SDL_Rect palaceViewport
 					{
@@ -1213,24 +1387,7 @@ int main(int argc, char* argv[])
 							gMiracleStarfalls[m].Draw(&currentStar, 360 * secondNormal);
 						}
 					}
-					if (isSecondPointReady)
-					{
-						point2.x = beamPoint.x;
-						point2.y = beamPoint.y;
-						isSecondPointReady = false;
-					}
-					SDL_Rect townBuilderMiracleStarfallViewport =
-					{
-						(point1.x + point2.x) * secondNormal,
-						(point1.y + point2.y) * secondNormal,
-						100,
-						100
-					};
-					RenderLine(gWindow.GetRenderer(), point1.x, point1.y, point2.x, point2.y);
-					RenderLine(gWindow.GetRenderer(), point2.x, point2.y, point2.x + 100, point2.y);
-					RenderLine(gWindow.GetRenderer(), point2.x + 100, point2.y, point2.x + 100, point2.y + 100);
-					RenderLine(gWindow.GetRenderer(), point2.x + 100, point2.y + 100, point2.x, point2.y + 100);
-					RenderLine(gWindow.GetRenderer(), point2.x, point2.y + 100, point2.x, point2.y);
+
 					float palaceHighlightPercent = 0.75f;
 					SDL_Rect palaceHighlightBottomViewport =
 					{
@@ -1239,8 +1396,8 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					blueFire[fireIndex].Draw(&palaceHighlightBottomViewport);
-					textures[PalaceHighlightBottom].Draw(&palaceHighlightBottomViewport);
+					//blueFire[fireIndex].Draw(&palaceHighlightBottomViewport);
+					//textures[PalaceHighlightBottom].Draw(&palaceHighlightBottomViewport);
 					SDL_Rect palaceHighlightTopViewport =
 					{
 						palaceViewport.x,
@@ -1248,7 +1405,7 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					textures[PalaceHighlightTop].Draw(&palaceHighlightTopViewport);
+					//textures[PalaceHighlightTop].Draw(&palaceHighlightTopViewport);
 					SDL_Rect palaceHighlightLeftViewport =
 					{
 						palaceViewport.x + (palaceViewport.w * palaceHighlightPercent),
@@ -1256,7 +1413,7 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					textures[PalaceHighlightLeft].Draw(&palaceHighlightLeftViewport);
+					//textures[PalaceHighlightLeft].Draw(&palaceHighlightLeftViewport);
 					SDL_Rect palaceHighlightRightViewport =
 					{
 						palaceViewport.x - (palaceViewport.w * palaceHighlightPercent),
@@ -1264,58 +1421,56 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					textures[PalaceHighlightRight].Draw(&palaceHighlightRightViewport);
+					//textures[PalaceHighlightRight].Draw(&palaceHighlightRightViewport);
 
+					//rains[rainIndex].Draw(NULL);
+					textures[Loadstone].Draw(&viewports[v_fullscreen]);
 					SDL_Rect menuTopViewport =
 					{
-						fullscreenViewport.x,
-						fullscreenViewport.y - (fullscreenViewport.h * 0.4f),
-						fullscreenViewport.w,
-						fullscreenViewport.h
+						viewports[v_fullscreen].x,
+						viewports[v_fullscreen].y - (viewports[v_fullscreen].h * 0.4f),
+						viewports[v_fullscreen].w,
+						viewports[v_fullscreen].h
 					};
 					textures[MenuTop].Draw(&menuTopViewport);
 
 					if (isIdle)
 					{
-						textures[Crest].Draw(&fullscreenViewport);
+						textures[Crest].Draw(&viewports[v_fullscreen]);
 					}
 
 					if (isHome)
 					{
 						SDL_Rect menuBottomViewport =
 						{
-							fullscreenViewport.x,
-							fullscreenViewport.h - (fullscreenViewport.h * 0.7f),
-							fullscreenViewport.w,
-							fullscreenViewport.h
+							viewports[v_fullscreen].x,
+							viewports[v_fullscreen].h - (viewports[v_fullscreen].h * 0.7f),
+							viewports[v_fullscreen].w,
+							viewports[v_fullscreen].h
 						};
 						textures[MenuBottom].Draw(&menuBottomViewport);
 						SDL_Rect menuRightTopViewport =
 						{
-							fullscreenViewport.w * 0.5f,
-							fullscreenViewport.h - (fullscreenViewport.h * 0.95f),
-							fullscreenViewport.w * 0.5f,
-							fullscreenViewport.h * 0.6f
+							viewports[v_fullscreen].w * 0.5f,
+							viewports[v_fullscreen].h - (viewports[v_fullscreen].h * 0.95f),
+							viewports[v_fullscreen].w * 0.5f,
+							viewports[v_fullscreen].h * 0.6f
 						};
 						textures[MenuRightTop].Draw(&menuRightTopViewport);
 						SDL_Rect menuRightBottomViewport =
 						{
-							fullscreenViewport.w * 0.5f,
-							fullscreenViewport.h - (fullscreenViewport.h * 0.75f),
-							fullscreenViewport.w * 0.5f,
-							fullscreenViewport.h * 0.6f
+							viewports[v_fullscreen].w * 0.5f,
+							viewports[v_fullscreen].h - (viewports[v_fullscreen].h * 0.75f),
+							viewports[v_fullscreen].w * 0.5f,
+							viewports[v_fullscreen].h * 0.6f
 						};
 						textures[MenuRightBottom].Draw(&menuRightBottomViewport);
-						SDL_Rect menuLeftViewport =
-						{
-							fullscreenViewport.x,
-							fullscreenViewport.h - (fullscreenViewport.h * 0.9f),
-							fullscreenViewport.w * 0.5f,
-							fullscreenViewport.h * 0.6f
-						};
-						textures[MenuLeft].Draw(&menuLeftViewport);
+						viewports[v_menuLeft].x = viewports[v_fullscreen].x;
+						viewports[v_menuLeft].y = viewports[v_fullscreen].h - (viewports[v_fullscreen].h * 0.9f);
+						viewports[v_menuLeft].w = viewports[v_fullscreen].w * 0.5f;
+						viewports[v_menuLeft].h = viewports[v_fullscreen].h * 0.6f;
+						textures[MenuLeft].Draw(&viewports[v_menuLeft]);
 					}
-					rains[rainIndex].Draw(NULL);
 					SDL_RenderPresent(gWindow.GetRenderer());
 				}
 				if (gMiracleStarfallUpdateAtEndOfFrame)

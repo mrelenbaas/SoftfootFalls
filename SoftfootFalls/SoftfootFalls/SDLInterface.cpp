@@ -28,7 +28,7 @@ bool FirstInit()
 	bool result = NULL;
 
 #ifdef _WIN32
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO))
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_RENDERER_VSYNC_ADAPTIVE | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO))
 	{
 		result = true;
 	}
@@ -45,6 +45,7 @@ bool FirstInit()
 void SecondInit(const char* title, int width, int height, SDL_Window** window, SDL_Renderer** renderer)
 {
 #ifdef _WIN32
+	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "direct3d11");
 	SDL_CreateWindowAndRenderer(title, width, height, SDL_WINDOW_RESIZABLE, window, renderer);
 	SDL_SetRenderVSync(*renderer, 1);
 #elif __linux__

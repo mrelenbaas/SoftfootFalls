@@ -12,6 +12,38 @@
 #include <iostream>
 #include <string>
 
+#ifdef _WIN32
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_image.h>
+#include <Windows.h>
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
+#elif __linux__
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <cstdlib>
+#endif
+#include "SDLInterface.h"
+#include "SDLWrapper.h"
+#include "Window.h"
+#include "Texture.h"
+
+
+///////////////////////////////////////////////////////////////////////
+//  Viewports  ////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+enum ViewportsEnum
+{
+	v_default,
+	v_fullscreen,
+	v_menuLeft,
+	ViewportsEnum_Size
+};
+
+///////////////////////////////////////////////////////////////////////
+//  PATHS  ////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN32
 const char SEPARATOR = '\\';
@@ -35,6 +67,7 @@ enum PathEnum
 	Crest,
 	BackgroundBackground,
 	BackgroundForeground,
+	Loadstone,
 	IconCursor,
 	CharacterFairySun,
 	CharacterFairyMoon,
@@ -61,6 +94,7 @@ const char* Paths[] =
 	"Crest_2048x2048_000.png",
 	"bg.png",
 	"Landscape_Moon_3300x2550.png",
+	"Loadstone_000_2048x2048.png",
 	"IconCursor.png",
 	"CharacterFairySun_000_256x256.png",
 	"CharacterFairyMoon_000_256x256.png",
