@@ -394,14 +394,14 @@ int main(int argc, char* argv[])
 	Timer* myTimer = new Timer(Timer::Print, 1);
 	const char* basePath = BasePath(argv[0]);
 	Load* load = new Load(basePath);
-	long long deltas[TimerEnum_Size];
+	long long deltas[TimerEnum_Size]{};
 	for (int i = 0; i < TimerEnum_Size; ++i) deltas[i] = 0L;
 	double normals[TimerEnum_Size]{};
 	for (int i = 0; i < TimerEnum_Size; ++i) normals[i] = 0.0;
 	double limits[TimerEnum_Size]{};
 	limits[second_1] = 1'000'000'000.0;
 	limits[second_3] = 3'000'000'000.0;
-	limits[second_12] = 12'000'000'000.0;
+	limits[second_12] = 6'000'000'000.0;
 	limits[minute_1] = 60'000'000'000.0;
 	const double ANIMATION_LIMIT = 12.0;
 	limits[animation] = limits[second_1] / ANIMATION_LIMIT;
@@ -551,10 +551,10 @@ int main(int argc, char* argv[])
 					trisecondToggle = !trisecondToggle;
 					deltas[second_3] -= limits[second_3];
 				}
-				if (deltas[second_12] > limits[minute_1])
+				if (deltas[second_12] > limits[second_12])
 				{
 					twelvesecondToggle = !twelvesecondToggle;
-					deltas[second_12] -= limits[minute_1];
+					deltas[second_12] -= limits[second_12];
 				}
 				if (deltas[minute_1] > limits[minute_1])
 				{
@@ -1041,7 +1041,6 @@ int main(int argc, char* argv[])
 							modI = (i % 4 == 0);
 							roads[modI + roadI].Draw(&middleViewport);
 							++roadI;
-							//clouds[cloudIndex].Draw(&middleViewport);
 							if (roadI > 3)
 							{
 								roadI = 0;
@@ -1054,7 +1053,6 @@ int main(int argc, char* argv[])
 							}
 							if (i == 24 && dotJ == j)
 							{
-								//textures[PlayerHighlight].Draw(&tileViewport);
 								farViewport.x = middleViewport.x;
 								farViewport.y = middleViewport.y;
 								farViewport.w = 100;
@@ -1084,6 +1082,46 @@ int main(int argc, char* argv[])
 							{
 								textures[CharacterFairySun].Draw(&middleViewport, 360 * normals[second_1]);
 							}
+							if (i == ROW_SIZE - 1 && j == 1)
+							{
+								blueFire[fireIndex].Draw(&middleViewport);
+							}
+							if (i == ROW_SIZE - 1 && j == 2)
+							{
+								textures[CharacterFairyHopeful].Draw(&middleViewport);
+							}
+							if (i == ROW_SIZE - 1 && j == 3)
+							{
+								clouds[cloudIndex].Draw(&middleViewport);
+							}
+							if (i == ROW_SIZE - 1 && j == 4)
+							{
+								textures[PlayerHighlight].Draw(&middleViewport);
+							}
+							if (i == ROW_SIZE - 1 && j == 5)
+							{
+								redFire[fireIndex].Draw(&middleViewport);
+							}
+							if (i == ROW_SIZE - 1 && j == 6)
+							{
+								winds[windIndex].Draw(&middleViewport);
+							}
+							if (i == ROW_SIZE - 1 && j == 7)
+							{
+								textures[PalaceHighlightBottom].Draw(&middleViewport);
+							}
+							if (i == ROW_SIZE - 1 && j == 8)
+							{
+								textures[PalaceHighlightTop].Draw(&middleViewport);
+							}
+							if (i == ROW_SIZE - 1 && j == 9)
+							{
+								textures[PalaceHighlightLeft].Draw(&middleViewport);
+							}
+							if (i == ROW_SIZE - 1 && j == 10)
+							{
+								textures[PalaceHighlightRight].Draw(&middleViewport);
+							}
 							if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1)
 							{
 								textures[CharacterFairyMoon].Draw(&middleViewport, 360 * normals[second_1]);
@@ -1108,19 +1146,11 @@ int main(int argc, char* argv[])
 								lightnings[lightningIndex].Draw(&raisedViewport);
 								gBox->Draw(&extraRaisedViewport);
 								rains[rainIndex].Draw(&raisedViewport);
-								//redFire[fireIndex].Draw(&extraRaisedViewport);
-								//winds[windIndex].Draw(&raisedViewport);
 								rainClouds[rainCloudIndex].Draw(&cloudsViewport);
 								secondStarfallViewport.x = dotBox.x + (dotBox.w * 2.5f);
 								secondStarfallViewport.y = dotBox.y + (dotBox.h * 2.5f);
 								secondStarfallViewport.w = extraRaisedViewport.w * 0.5f;
 								secondStarfallViewport.h = extraRaisedViewport.h * 0.5f;
-								//RenderLine(
-								//	gWindow.GetRenderer(),
-								//	dotBox.x + (dotBox.w * 2.5f),
-								//	dotBox.y + (dotBox.h * 2.5f),
-								//	extraRaisedViewport.x + (extraRaisedViewport.w * 0.5f),
-								//	extraRaisedViewport.y + (extraRaisedViewport.h * 0.5f));
 							}
 							++k;
 						}
@@ -1143,7 +1173,6 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//textures[CharacterFairyHopeful].Draw(&lineViewport);
 					point1.x = (float)gWindow.GetWidth() * 0.59f;
 					point1.y = (float)gWindow.GetHeight() * 0.28f;
 					point2.x = dot.GetBox().x;
@@ -1156,7 +1185,6 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&point2Viewport, 360 * normals[second_3]);
 					SDL_Rect townBuilderMiracleStarfallViewport =
 					{
 						point2.x + ((point1.x - point2.x) * (1.0f - normals[second_1])),
@@ -1172,12 +1200,6 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&point1Viewport, 360 * normals[second_3]);
-					//RenderLine(gWindow.GetRenderer(), point1.x, point1.y, point2.x, point2.y);
-					//RenderLine(gWindow.GetRenderer(), point2.x, point2.y, point2.x + 100, point2.y);
-					//RenderLine(gWindow.GetRenderer(), point2.x + 100, point2.y, point2.x + 100, point2.y + 100);
-					//RenderLine(gWindow.GetRenderer(), point2.x + 100, point2.y + 100, point2.x, point2.y + 100);
-					//RenderLine(gWindow.GetRenderer(), point2.x, point2.y + 100, point2.x, point2.y);
 					Point point4 =
 					{
 						tileViewport.x,
@@ -1221,8 +1243,6 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&secondStaticViewport, 360 * normals[second_3]);
-					//RenderLine(gWindow.GetRenderer(), point3.x, point3.y, point4.x, point4.y);
 					RenderLine(gWindow.GetRenderer(), point4.x, point4.y, point4.x + 100, point4.y);
 					RenderLine(gWindow.GetRenderer(), point4.x + 100, point4.y, point4.x + 100, point4.y + 100);
 					RenderLine(gWindow.GetRenderer(), point4.x + 100, point4.y + 100, point4.x, point4.y + 100);
@@ -1254,8 +1274,6 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&thirdStaticViewport, 360 * normals[second_3]);
-					//RenderLine(gWindow.GetRenderer(), point5.x, point5.y, point6.x, point6.y);
 					RenderLine(gWindow.GetRenderer(), point6.x, point6.y, point6.x + 100, point6.y);
 					RenderLine(gWindow.GetRenderer(), point6.x + 100, point6.y, point6.x + 100, point6.y + 100);
 					RenderLine(gWindow.GetRenderer(), point6.x + 100, point6.y + 100, point6.x, point6.y + 100);
@@ -1265,13 +1283,6 @@ int main(int argc, char* argv[])
 						point6.x,
 						point6.y
 					};
-					//Point point8 =
-					//{
-					//	(point6.x < point5.x)
-					//		? point7.x - (point5.x - point6.x)
-					//		: point7.x + (point6.x - point5.x),
-					//	point6.y - (point5.y - point6.y)
-					//};
 					Point point8 =
 					{
 						(point6.x < point5.x)
@@ -1296,8 +1307,6 @@ int main(int argc, char* argv[])
 						100,
 						100
 					};
-					//gMiracleStarfalls[0].Draw(&fourthStaticViewport, 360 * normals[second_3]);
-					//RenderLine(gWindow.GetRenderer(), point7.x, point7.y, point8.x, point8.y);
 					RenderLine(gWindow.GetRenderer(), point8.x, point8.y, point8.x + 100, point8.y);
 					RenderLine(gWindow.GetRenderer(), point8.x + 100, point8.y, point8.x + 100, point8.y + 100);
 					RenderLine(gWindow.GetRenderer(), point8.x + 100, point8.y + 100, point8.x, point8.y + 100);
@@ -1352,8 +1361,6 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					//blueFire[fireIndex].Draw(&palaceHighlightBottomViewport);
-					//textures[PalaceHighlightBottom].Draw(&palaceHighlightBottomViewport);
 					SDL_Rect palaceHighlightTopViewport =
 					{
 						palaceViewport.x,
@@ -1361,7 +1368,6 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					//textures[PalaceHighlightTop].Draw(&palaceHighlightTopViewport);
 					SDL_Rect palaceHighlightLeftViewport =
 					{
 						palaceViewport.x + (palaceViewport.w * palaceHighlightPercent),
@@ -1369,7 +1375,6 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					//textures[PalaceHighlightLeft].Draw(&palaceHighlightLeftViewport);
 					SDL_Rect palaceHighlightRightViewport =
 					{
 						palaceViewport.x - (palaceViewport.w * palaceHighlightPercent),
@@ -1377,9 +1382,7 @@ int main(int argc, char* argv[])
 						palaceViewport.w,
 						palaceViewport.h
 					};
-					//textures[PalaceHighlightRight].Draw(&palaceHighlightRightViewport);
 
-					//rains[rainIndex].Draw(NULL);
 					textures[Loadstone].Draw(&viewports[v_fullscreen]);
 					SDL_Rect menuTopViewport =
 					{
