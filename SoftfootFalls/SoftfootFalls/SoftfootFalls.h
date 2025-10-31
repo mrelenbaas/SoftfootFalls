@@ -51,7 +51,12 @@ enum ViewportsEnum
 {
 	v_default,
 	v_fullscreen,
-	v_menuLeft,
+	v_menu,
+	v_tile,
+	v_backTile,
+	v_leftTile,
+	v_palace,
+	v_boss,
 	ViewportsEnum_Size
 };
 
