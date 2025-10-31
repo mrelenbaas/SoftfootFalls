@@ -32,13 +32,7 @@
     <ClCompile Include="SoftfootFalls.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Clock.cpp">
-      <Filter>Source Files\System Calls</Filter>
-    </ClCompile>
     <ClCompile Include="Print.cpp">
-      <Filter>Source Files\System Calls</Filter>
-    </ClCompile>
-    <ClCompile Include="Timer.cpp">
       <Filter>Source Files\System Calls</Filter>
     </ClCompile>
     <ClCompile Include="Time.cpp">
@@ -67,16 +61,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Clock.h">
-      <Filter>Header Files\System Calls</Filter>
-    </ClInclude>
     <ClInclude Include="Print.h">
       <Filter>Header Files\System Calls</Filter>
     </ClInclude>
     <ClInclude Include="Time.h">
-      <Filter>Header Files\System Calls</Filter>
-    </ClInclude>
-    <ClInclude Include="Timer.h">
       <Filter>Header Files\System Calls</Filter>
     </ClInclude>
     <ClInclude Include="SoftfootFalls.h">

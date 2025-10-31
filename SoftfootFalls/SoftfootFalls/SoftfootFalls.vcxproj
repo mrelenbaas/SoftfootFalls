@@ -128,7 +128,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Clock.cpp" />
     <ClCompile Include="Container.cpp" />
     <ClCompile Include="Load.cpp" />
     <ClCompile Include="Node.cpp" />
@@ -138,11 +137,9 @@
     <ClCompile Include="SoftfootFalls.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Time.cpp" />
-    <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Clock.h" />
     <ClInclude Include="Container.h" />
     <ClInclude Include="Load.h" />
     <ClInclude Include="Node.h" />
@@ -152,7 +149,6 @@
     <ClInclude Include="SoftfootFalls.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Time.h" />
-    <ClInclude Include="Timer.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
