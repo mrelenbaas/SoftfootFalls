@@ -77,28 +77,6 @@ bool IsResized(SDL_Event& event)
 }
 
 ///////////////////////////////////////////////////////////////////////
-//  INPUT  ////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-
-void StartTextInput(SDL_Window* window)
-{
-#ifdef _WIN32
-	SDL_StartTextInput(window);
-#elif __linux__
-	SDL_StartTextInput();
-#endif
-}
-
-void StopTextInput(SDL_Window* window)
-{
-#ifdef _WIN32
-	SDL_StopTextInput(window);
-#elif __linux__
-	SDL_StopTextInput();
-#endif
-}
-
-///////////////////////////////////////////////////////////////////////
 //  SURFACE  //////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
@@ -126,12 +104,16 @@ void RenderLine(SDL_Renderer* renderer, float x, float y, float w, float h)
 #endif
 }
 
+#ifdef _WIN32
 void RenderTexture(SDL_Renderer* renderer, SDL_Texture* texture, double angle, SDL_FlipMode flipMode)
+#elif __linux__
+void RenderTexture(SDL_Renderer* renderer, SDL_Texture* texture, double angle, SDL_RendererFlip flipMode)
+#endif
 {
 #ifdef _WIN32
 	SDL_RenderTextureRotated(renderer, texture, NULL, NULL, angle, NULL, flipMode);
 #elif __linux__
-	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_RenderCopyEx(renderer, texture, NULL, NULL, angle, NULL, flipMode);
 #endif
 }
 

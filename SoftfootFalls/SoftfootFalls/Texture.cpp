@@ -70,7 +70,11 @@ bool Texture::LoadFromPixels()
 	return texture != NULL;
 }
 
+#ifdef _WIN32
 void Texture::Draw(SDL_Rect* viewport, double angle, SDL_FlipMode flipMode)
+#elif __linux__
+void Texture::Draw(SDL_Rect* viewport, double angle, SDL_RendererFlip flipMode)
+#endif
 {
 	SetRenderViewport(renderer, viewport);
 	RenderTexture(renderer, texture, angle, flipMode);

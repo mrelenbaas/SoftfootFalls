@@ -390,6 +390,7 @@ int main(int argc, char* argv[])
 	const int ROW_SIZE = 25;
 	const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 	int framesPerSecond = 0;
+	if (argc < 1) return 1;
 	const char* basePath = BasePath(argv[0]);
 	Load* load = new Load(basePath);
 	long long deltas[TimerEnum_Size]{};
@@ -408,7 +409,7 @@ int main(int argc, char* argv[])
 	int x = 0;
 	int y = 0;
 	int w = 0;
-	int h = 0;
+	//int h = 0;
 	BoxesEnum playerDirection = BoxUp;
 	BoxesEnum backgroundDirection = BoxUp;
 	bool isUp = false;
@@ -453,8 +454,6 @@ int main(int argc, char* argv[])
 	{
 		gMiracleStarfallNormals[i] = 0;
 	}
-	Point point1 = { 0.0f, 0.0f };
-	Point point2 = { 0.0f, 0.0f };
 
 	if (!SecondInit())
 	{
@@ -492,14 +491,12 @@ int main(int argc, char* argv[])
 			int backgroundScrollingOffset = 0;
 			std::string inputText = "Input";
 			int currentData = 0;
-			double minuteAngle = 0;
 			bool isHome = false;
 			bool isInput = false;
 
 			long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 			bool trisecondToggle = false;
 			bool twelvesecondToggle = false;
-			int gridCounter = 0;
 			int dotI = 0;
 			int dotJ = 0;
 			float dotNormalI = 0.0f;
@@ -533,9 +530,6 @@ int main(int argc, char* argv[])
 					gMiracleStarfallDeltas[m] += currentTime - previousTime;
 				}
 
-				double hourLimit = 3'600'000'000'000;
-				double halfDayLimit = 43'200'000'000'000.0;
-				double fullDayLimit = 86'400'000'000'000.0;
 				if (deltas[animation] > limits[animation])
 				{
 					deltas[animation] -= limits[animation];
@@ -742,8 +736,6 @@ int main(int argc, char* argv[])
 						{
 						case SDLK_HOME:
 							isHome = !isHome;
-							if (isInput) StopTextInput(gWindow.GetWindow());
-							else StartTextInput(gWindow.GetWindow());
 							isInput = !isInput;
 							break;
 						case SDLK_END:
@@ -836,10 +828,10 @@ int main(int argc, char* argv[])
 				{
 					SDL_RenderClear(gWindow.GetRenderer());
 
-					double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / PI);
+					//double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / PI);
 					if (xDir == 0 && yDir == 0)
 					{
-						joystickAngle = 0;
+						//joystickAngle = 0;
 					}
 
 					switch (playerDirection)
@@ -875,8 +867,6 @@ int main(int argc, char* argv[])
 					case BoxesEnum_Size:
 						break;
 					}
-
-					minuteAngle = 360 * normals[minute_1];
 
 					viewports[v_background].w = textures[BackgroundBackground].GetWidth();
 					viewports[v_background].h = textures[BackgroundBackground].GetHeight();
@@ -954,16 +944,13 @@ int main(int argc, char* argv[])
 					viewports[v_fullscreen].w = gWindow.GetWidth();
 					viewports[v_fullscreen].h = gWindow.GetHeight();
 					int horizontalModifier = 0;
-					int verticalModifier = 0;
 					if (twelvesecondToggle)
 					{
 						horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * normals[second_12];
-						verticalModifier = (gWindow.GetHeight() + viewports[v_fullscreen].h) * normals[second_12];
 					}
 					else
 					{
 						horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * (1.0f - normals[second_12]);
-						verticalModifier = (gWindow.GetHeight() + viewports[v_fullscreen].h) * (1.0f - normals[second_12]);
 					}
 					viewports[v_boss].x = viewports[v_fullscreen].x - viewports[v_fullscreen].w + horizontalModifier;
 					viewports[v_boss].y = viewports[v_fullscreen].y - (viewports[v_fullscreen].h / 2);
@@ -1069,7 +1056,6 @@ int main(int argc, char* argv[])
 							{
 								gFires[animationIndex].Draw(&viewports[v_tile]);
 							}
-							Distance distance = { (float)viewports[v_tile].w, (float)viewports[v_tile].h };
 							if (j == 0)
 							{
 								viewports[v_farLeftTile].x = viewports[v_tile].x;
@@ -1243,13 +1229,13 @@ int main(int argc, char* argv[])
 
 					Point point5 =
 					{
-						viewports[v_player].x,
-						viewports[v_player].y
+						(float)viewports[v_player].x,
+						(float)viewports[v_player].y
 					};
 					Point point6 =
 					{
-						viewports[v_farTopTile].x,
-						viewports[v_farTopTile].y
+						(float)viewports[v_farTopTile].x,
+						(float)viewports[v_farTopTile].y
 					};
 					viewports[v_playerStarTileToGrid].x = (point6.x < point5.x)
 						? point6.x + ((point5.x - point6.x) * (1.0f - normals[second_1]))

@@ -36,7 +36,11 @@ public:
 	bool LoadFromFile(const char*);
 	bool LoadPixelsFromFile(const char*);
 	bool LoadFromPixels();
+#ifdef _WIN32
 	void Draw(SDL_Rect*, double angle = 0.0, SDL_FlipMode flipMode = SDL_FLIP_NONE);
+#elif __linux__
+	void Draw(SDL_Rect*, double angle = 0.0, SDL_RendererFlip flipMode = SDL_FLIP_NONE);
+#endif
 	int GetWidth() const { return width; };
 	int GetHeight() const { return height; };
 	Uint32 GetPixel32(Uint32, Uint32);

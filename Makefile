@@ -7,8 +7,6 @@ SOURCES = \
     ./SoftfootFalls/SoftfootFalls/SoftfootFalls.cpp \
 	./SoftfootFalls/SoftfootFalls/Print.cpp \
 	./SoftfootFalls/SoftfootFalls/Time.cpp \
-	./SoftfootFalls/SoftfootFalls/Clock.cpp \
-	./SoftfootFalls/SoftfootFalls/Timer.cpp \
 	./SoftfootFalls/SoftfootFalls/Load.cpp \
 	./SoftfootFalls/SoftfootFalls/Node.cpp \
 	./SoftfootFalls/SoftfootFalls/SDLInterface.cpp \
