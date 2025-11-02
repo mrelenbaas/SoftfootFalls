@@ -144,6 +144,28 @@ void RenderTextureRotated(SDL_Renderer* renderer, SDL_Texture* texture, SDL_Rect
 ///////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN32
+SDL_IOStream* IOFromFile(const char* file, const char* mode)
+#elif __linux__
+SDL_RWops* IOFromFile(const char* file, const char* mode)
+#endif
+{
+	return SDL_IOFromFile(file, mode);
+}
+
+#ifdef _WIN32
+void ReadIO(SDL_IOStream* file, void* data)
+#elif __linux__
+void ReadIO(SDL_RWops* file, void* data)
+#endif
+{
+#ifdef _WIN32
+	SDL_ReadIO(file, data, sizeof(Sint32));
+#elif __linux__
+	SDL_RWread(file, data, sizeof(Sint32), 1);
+#endif
+}
+
+#ifdef _WIN32
 void WriteIO(SDL_IOStream* file, const void* data)
 #elif __linux__
 void WriteIO(SDL_RWops* file, const void* data)

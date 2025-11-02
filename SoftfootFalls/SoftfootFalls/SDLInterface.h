@@ -140,6 +140,18 @@ void SetRenderViewport(SDL_Renderer*, SDL_Rect*);
 ///////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN32
+SDL_IOStream* IOFromFile(const char*, const char*);
+#elif __linux__
+SDL_RWops* IOFromFile(const char*, const char*);
+#endif
+
+#ifdef _WIN32
+void ReadIO(SDL_IOStream*, void*);
+#elif __linux__
+void ReadIO(SDL_RWops*, void*);
+#endif
+
+#ifdef _WIN32
 void WriteIO(SDL_IOStream*, const void*);
 #elif __linux__
 void WriteIO(SDL_RWops*, const void*);

@@ -98,19 +98,11 @@ int main(int argc, char* argv[])
 #elif __linux__
 	SDL_RWops* file;
 #endif
-#ifdef _WIN32
-	file = SDL_IOFromFile("nums.bin", "r+b");
-#elif __linux__
-	file = SDL_RWFromFile(load->Path("nums.bin"), "r+b");
-#endif
+	file = IOFromFile(load->Path("nums.bin"), "r+b");
 	if (file == NULL)
 	{
 		SDL_Log("Warning: Unable to open file! SDL Error: %s\n", SDL_GetError());
-#ifdef _WIN32
-		file = SDL_IOFromFile("nums.bin", "w+b");
-#elif __linux__
-		file = SDL_RWFromFile(load->Path("nums.bin"), "w+b");
-#endif
+		file = IOFromFile(load->Path("nums.bin"), "w+b");
 		if (file != NULL)
 		{
 			SDL_Log("New file created!\n");
@@ -132,11 +124,7 @@ int main(int argc, char* argv[])
 		SDL_Log("Reading file...!\n");
 		for (int i = 0; i < TOTAL_DATA; ++i)
 		{
-#ifdef _WIN32
-			SDL_ReadIO(file, &gData[i], sizeof(Sint32));
-#elif __linux__
-			SDL_RWread(file, &gData[i], sizeof(Sint32), 1);
-#endif
+			ReadIO(file, &gData[i]);
 		}
 		CloseIO(file);
 	}
@@ -956,11 +944,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
 	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Free();
 	for (int i = 0; i < miracleStarfallLimit; ++i) miracleStarfalls[i].Free();
-#ifdef _WIN32
-	file = SDL_IOFromFile("nums.bin", "w+b");
-#elif __linux__
-	file = SDL_RWFromFile(load->Path("nums.bin"), "w+b");
-#endif
+	file = IOFromFile(load->Path("nums.bin"), "w+b");
 	if (file != NULL)
 	{
 		for (int i = 0; i < TOTAL_DATA; ++i)
