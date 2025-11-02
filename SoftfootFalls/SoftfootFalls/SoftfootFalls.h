@@ -67,6 +67,9 @@ enum ViewportsEnum
 	v_farTopTile,
 	v_farLeftTile,
 	v_palace,
+	v_palaceRight,
+	v_palaceRightDown,
+	v_palaceRightDownDown,
 	v_boss,
 	ViewportsEnum_Size
 };
@@ -475,4 +478,22 @@ const char* houseHauntsPaths[] =
 	"HouseHaunt_002_Normal_Half_256x256.png",
 	"HouseHaunt_003_Normal_Half_256x256.png",
 	"HouseHaunt_004_Normal_Half_256x256.png"
+};
+
+enum CharacterFairyWistfulsEnum
+{
+	CharacterFairyWistful_000,
+	CharacterFairyWistful_001,
+	CharacterFairyWistful_002,
+	CharacterFairyWistful_003,
+	CharacterFairyWistful_004,
+	CharacterFairyWistfulsEnum_Size
+};
+const char* CharacterFairyWistfulsPaths[] =
+{
+	"CharacterFairyWistful_000_64x64.png",
+	"CharacterFairyWistful_001_64x64.png",
+	"CharacterFairyWistful_002_64x64.png",
+	"CharacterFairyWistful_003_64x64.png",
+	"CharacterFairyWistful_004_64x64.png"
 };
