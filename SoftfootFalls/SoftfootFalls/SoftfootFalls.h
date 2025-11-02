@@ -56,8 +56,6 @@ enum ViewportsEnum
 	v_player,
 	v_playerBox,
 	v_playerStarCurrent,
-	v_playerStarLoadstoneToPalace,
-	v_playerStarPalaceToTile,
 	v_playerStarTileToGrid,
 	v_playerStarGridToSky,
 	v_playerClouds,
@@ -65,8 +63,9 @@ enum ViewportsEnum
 	v_row,
 	v_column,
 	v_tile,
-	v_backTile,
-	v_leftTile,
+	v_tileMiracle,
+	v_farTopTile,
+	v_farLeftTile,
 	v_palace,
 	v_boss,
 	ViewportsEnum_Size
@@ -96,6 +95,7 @@ static const char* BasePath(const char* filePath)
 enum PathEnum
 {
 	Crest,
+	Landscape_Hall,
 	BackgroundBackground,
 	BackgroundForeground,
 	Loadstone,
@@ -123,6 +123,7 @@ enum PathEnum
 const char* Paths[] =
 {
 	"Crest_2048x2048_000.png",
+	"Landscape_Hall_3300x2550.png",
 	"bg.png",
 	"Landscape_Moon_3300x2550.png",
 	"Loadstone_000_2048x2048.png",
@@ -369,4 +370,105 @@ const char* firesPaths[] =
 	"Fire_002_64x64_002.png",
 	"Fire_002_64x64_003.png",
 	"Fire_002_64x64_004.png",
+};
+
+enum HouseDenPillarsEnum
+{
+	HouseDenPillar_000,
+	HouseDenPillar_001,
+	HouseDenPillar_002,
+	HouseDenPillar_003,
+	HouseDenPillar_004,
+	HouseDenPillar_005,
+	HouseDenPillar_006,
+	HouseDenPillar_007,
+	HouseDenPillar_008,
+	HouseDenPillar_009,
+	HouseDenPillar_010,
+	HouseDenPillar_011,
+	HouseDenPillarsEnum_Size
+};
+const char* houseDenPillarsPaths[] =
+{
+	"HouseDenPillar_000.png",
+	"HouseDenPillar_001.png",
+	"HouseDenPillar_002.png",
+	"HouseDenPillar_003.png",
+	"HouseDenPillar_004.png",
+	"HouseDenPillar_005.png",
+	"HouseDenPillar_006.png",
+	"HouseDenPillar_007.png",
+	"HouseDenPillar_008.png",
+	"HouseDenPillar_009.png",
+	"HouseDenPillar_010.png",
+	"HouseDenPillar_011.png",
+	"HouseDenPillar_012.png"
+};
+
+enum HouseHauntsEnum
+{
+	HouseHaunt_000_Alt_Empty,
+	HouseHaunt_001_Alt_Empty,
+	HouseHaunt_002_Alt_Empty,
+	HouseHaunt_003_Alt_Empty,
+	HouseHaunt_004_Alt_Empty,
+	HouseHaunt_000_Alt_Full,
+	HouseHaunt_001_Alt_Full,
+	HouseHaunt_002_Alt_Full,
+	HouseHaunt_003_Alt_Full,
+	HouseHaunt_004_Alt_Full,
+	HouseHaunt_000_Alt_Half,
+	HouseHaunt_001_Alt_Half,
+	HouseHaunt_002_Alt_Half,
+	HouseHaunt_003_Alt_Half,
+	HouseHaunt_004_Alt_Half,
+	HouseHaunt_000_Normal_Empty,
+	HouseHaunt_001_Normal_Empty,
+	HouseHaunt_002_Normal_Empty,
+	HouseHaunt_003_Normal_Empty,
+	HouseHaunt_004_Normal_Empty,
+	HouseHaunt_000_Normal_Full,
+	HouseHaunt_001_Normal_Full,
+	HouseHaunt_002_Normal_Full,
+	HouseHaunt_003_Normal_Full,
+	HouseHaunt_004_Normal_Full,
+	HouseHaunt_000_Normal_Half,
+	HouseHaunt_001_Normal_Half,
+	HouseHaunt_002_Normal_Half,
+	HouseHaunt_003_Normal_Half,
+	HouseHaunt_004_Normal_Half,
+	HouseHauntsEnum_Size
+};
+const char* houseHauntsPaths[] =
+{
+	"HouseHaunt_000_Alt_Empty_256x256.png",
+	"HouseHaunt_001_Alt_Empty_256x256.png",
+	"HouseHaunt_002_Alt_Empty_256x256.png",
+	"HouseHaunt_003_Alt_Empty_256x256.png",
+	"HouseHaunt_004_Alt_Empty_256x256.png",
+	"HouseHaunt_000_Alt_Full_256x256.png",
+	"HouseHaunt_001_Alt_Full_256x256.png",
+	"HouseHaunt_002_Alt_Full_256x256.png",
+	"HouseHaunt_003_Alt_Full_256x256.png",
+	"HouseHaunt_004_Alt_Full_256x256.png",
+	"HouseHaunt_000_Alt_Half_256x256.png",
+	"HouseHaunt_001_Alt_Half_256x256.png",
+	"HouseHaunt_002_Alt_Half_256x256.png",
+	"HouseHaunt_003_Alt_Half_256x256.png",
+	"HouseHaunt_004_Alt_Half_256x256.png",
+	"HouseHaunt_000_Normal_Empty_256x256.png",
+	"HouseHaunt_001_Normal_Empty_256x256.png",
+	"HouseHaunt_002_Normal_Empty_256x256.png",
+	"HouseHaunt_003_Normal_Empty_256x256.png",
+	"HouseHaunt_004_Normal_Empty_256x256.png",
+	"HouseHaunt_000_Normal_Full_256x256.png",
+	"HouseHaunt_001_Normal_Full_256x256.png",
+	"HouseHaunt_002_Normal_Full_256x256.png",
+	"HouseHaunt_003_Normal_Full_256x256.png",
+	"HouseHaunt_004_Normal_Full_256x256.png",
+	"HouseHaunt_000_Normal_Half_256x256.png",
+	"HouseHaunt_001_Normal_Half_256x256.png",
+	"HouseHaunt_002_Normal_Half_256x256.png",
+	"HouseHaunt_003_Normal_Half_256x256.png",
+	"HouseHaunt_004_Normal_Half_256x256.png"
 };

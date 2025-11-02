@@ -70,10 +70,10 @@ bool Texture::LoadFromPixels()
 	return texture != NULL;
 }
 
-void Texture::Draw(SDL_Rect* viewport, double angle)
+void Texture::Draw(SDL_Rect* viewport, double angle, SDL_FlipMode flipMode)
 {
 	SetRenderViewport(renderer, viewport);
-	RenderTexture(renderer, texture, angle);
+	RenderTexture(renderer, texture, angle, flipMode);
 }
 
 Uint32 Texture::GetPixel32(Uint32 x, Uint32 y)

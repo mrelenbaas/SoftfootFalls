@@ -119,7 +119,7 @@ void DestroySurface(SDL_Surface*);
 
 void RenderLine(SDL_Renderer*, float, float, float, float);
 
-void RenderTexture(SDL_Renderer*, SDL_Texture*, double angle = 0.0);
+void RenderTexture(SDL_Renderer*, SDL_Texture*, double angle, SDL_FlipMode flipMode);
 
 void SetRenderViewport(SDL_Renderer*, SDL_Rect*);
 

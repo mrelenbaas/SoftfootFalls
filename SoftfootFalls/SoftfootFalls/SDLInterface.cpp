@@ -126,11 +126,10 @@ void RenderLine(SDL_Renderer* renderer, float x, float y, float w, float h)
 #endif
 }
 
-void RenderTexture(SDL_Renderer* renderer, SDL_Texture* texture, double angle)
+void RenderTexture(SDL_Renderer* renderer, SDL_Texture* texture, double angle, SDL_FlipMode flipMode)
 {
 #ifdef _WIN32
-	//SDL_RenderTexture(renderer, texture, NULL, NULL);
-	SDL_RenderTextureRotated(renderer, texture, NULL, NULL, angle, NULL, SDL_FLIP_NONE);
+	SDL_RenderTextureRotated(renderer, texture, NULL, NULL, angle, NULL, flipMode);
 #elif __linux__
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
 #endif

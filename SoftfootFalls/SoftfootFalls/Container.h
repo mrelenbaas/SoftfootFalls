@@ -15,12 +15,6 @@ struct Index
 	int j;
 };
 
-struct Point
-{
-	float x;
-	float y;
-};
-
 class Container
 {
 protected:

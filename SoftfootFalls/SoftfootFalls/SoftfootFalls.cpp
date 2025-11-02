@@ -7,8 +7,10 @@
 #include <vector>
 #include <cstdlib>
 
+#include "Point.h"
 #include "Load.h"
 #include "Container.h"
+#include "Star.h"
 
 
 const int JOYSTICK_DEAD_ZONE = 8000;
@@ -16,7 +18,7 @@ const int TOTAL_DATA = 10;
 const double PI = 3.14159265358979323846;
 
 bool SecondInit();
-bool loadMedia(Load*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*);
+bool loadMedia(Load*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*);
 void close(Load*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*);
 
 Window gWindow;
@@ -35,8 +37,6 @@ int gMiracleStarfallIndex = 0;
 int gMiracleStarfallModIndex = 0;
 const int gMiracleStarfallLimit = 50;
 bool gMiracleStarfallUpdateAtEndOfFrame = false;
-int gNodeIndex = 0;
-const int NODE_LIMIT = 4;
 Sint32 gData[TOTAL_DATA];
 
 bool SecondInit()
@@ -197,7 +197,7 @@ bool SecondInit()
 	return success;
 }
 
-bool loadMedia(Load* load, Texture* textures, Texture* horizons, Texture* roads, Texture* redFire, Texture* blueFire, Texture* lightnings, Texture* clouds, Texture* rainClouds, Texture* rains, Texture* winds, Texture* boxes)
+bool loadMedia(Load* load, Texture* textures, Texture* horizons, Texture* roads, Texture* redFire, Texture* blueFire, Texture* lightnings, Texture* clouds, Texture* rainClouds, Texture* rains, Texture* winds, Texture* houseDenPillars, Texture* houseHaunts, Texture* boxes)
 {
 	using namespace std;
 	bool success = true;
@@ -278,6 +278,8 @@ bool loadMedia(Load* load, Texture* textures, Texture* horizons, Texture* roads,
 	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Init(gWindow.GetRenderer(), load->Path(rainCloudsPaths[i]));
 	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Init(gWindow.GetRenderer(), load->Path(rainPaths[i]));
 	for (int i = 0; i < WindEnum_Size; ++i) winds[i].Init(gWindow.GetRenderer(), load->Path(windPaths[i]));
+	for (int i = 0; i < HouseDenPillarsEnum_Size; ++i) houseDenPillars[i].Init(gWindow.GetRenderer(), load->Path(houseDenPillarsPaths[i]));
+	for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Init(gWindow.GetRenderer(), load->Path(houseHauntsPaths[i]));
 	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Init(gWindow.GetRenderer(), load->Path(boxesPaths[i]));
 	for (int i = 0; i < gMiracleStarfallLimit; ++i)
 	{
@@ -409,6 +411,18 @@ int main(int argc, char* argv[])
 	int h = 0;
 	BoxesEnum playerDirection = BoxUp;
 	BoxesEnum backgroundDirection = BoxUp;
+	bool isUp = false;
+	bool isDown = false;
+	bool isLeft = false;
+	bool isRight = false;
+	bool isA = false;
+	bool isB = false;
+	bool isX = false;
+	bool isY = false;
+	bool isLeftBumper = false;
+	bool isRightBumper = false;
+	bool isStart = false;
+	bool isSelect = false;
 
 	gMiracleStarfalls = new Texture[gMiracleStarfallLimit]{};
 	SDL_Rect gMiracleStarfallViewports[gMiracleStarfallLimit]{};
@@ -458,9 +472,11 @@ int main(int argc, char* argv[])
 		Texture rainClouds[RainCloudsEnum_Size];
 		Texture rains[RainEnum_Size];
 		Texture winds[WindEnum_Size];
+		Texture houseDenPillars[HouseDenPillarsEnum_Size];
+		Texture houseHaunts[HouseHauntsEnum_Size];
 		Texture boxes[BoxesEnum_Size];
 		Texture* box = &boxes[BoxUp];
-		if (!loadMedia(load, textures, horizons, roads, redFire, blueFire, lightnings, clouds, rainClouds, rains, winds, boxes))
+		if (!loadMedia(load, textures, horizons, roads, redFire, blueFire, lightnings, clouds, rainClouds, rains, winds, houseDenPillars, houseHaunts, boxes))
 		{
 			SDL_Log("Failed to load media!\n");
 		}
@@ -537,11 +553,6 @@ int main(int argc, char* argv[])
 				}
 				if (deltas[second_1] > limits[second_1])
 				{
-					++gNodeIndex;
-					if (gNodeIndex >= NODE_LIMIT)
-					{
-						gNodeIndex = 0;
-					}
 					printf("%i\n", framesPerSecond);
 					framesPerSecond = 0;
 					deltas[second_1] -= limits[second_1];
@@ -692,18 +703,28 @@ int main(int argc, char* argv[])
 						case SDLK_UP:
 						case KEY_W:
 							dot.SetUp(false);
+							isUp = false;
 							break;
 						case SDLK_DOWN:
 						case KEY_S:
 							dot.SetDown(false);
+							isDown = false;
 							break;
 						case SDLK_LEFT:
 						case KEY_A:
 							dot.SetLeft(false);
+							isLeft = false;
 							break;
 						case SDLK_RIGHT:
 						case KEY_D:
 							dot.SetRight(false);
+							isRight = false;
+							break;
+						case KEY_Q:
+							isY = false;
+							break;
+						case KEY_E:
+							isX = false;
 							break;
 						}
 					}
@@ -758,6 +779,7 @@ int main(int argc, char* argv[])
 								currentData = TOTAL_DATA - 1;
 							}
 							dot.SetUp(true);
+							isUp = true;
 							break;
 						case SDLK_DOWN:
 						case KEY_S:
@@ -768,6 +790,7 @@ int main(int argc, char* argv[])
 								currentData = 0;
 							}
 							dot.SetDown(true);
+							isDown = true;
 							break;
 						case SDLK_LEFT:
 						case KEY_A:
@@ -775,6 +798,7 @@ int main(int argc, char* argv[])
 							--gData[currentData];
 							degrees -= 60;
 							dot.SetLeft(true);
+							isLeft = true;
 							break;
 						case SDLK_RIGHT:
 						case KEY_D:
@@ -782,6 +806,7 @@ int main(int argc, char* argv[])
 							++gData[currentData];
 							degrees += 60;
 							dot.SetRight(true);
+							isRight = true;
 							break;
 						case KEY_Q:
 							gMiracleStarfallUpdateAtEndOfFrame = true;
@@ -789,8 +814,10 @@ int main(int argc, char* argv[])
 							gMiracleStarfallSpawns[gMiracleStarfallIndex] = true;
 							gMiracleStarfallDeltas[gMiracleStarfallIndex] = 0L;
 							gMiracleStarfallNormals[gMiracleStarfallIndex] = (double)gMiracleStarfallDeltas[gMiracleStarfallIndex] / limits[second_1];
+							isY = true;
 							break;
 						case KEY_E:
+							isX = true;
 							break;
 						default:
 							break;
@@ -1033,85 +1060,178 @@ int main(int argc, char* argv[])
 							}
 							if (i == 24 && dotJ == j)
 							{
-								viewports[v_backTile].x = viewports[v_tile].x;
-								viewports[v_backTile].y = viewports[v_tile].y;
-								viewports[v_backTile].w = 100;
-								viewports[v_backTile].h = 100;
+								viewports[v_farTopTile].x = viewports[v_tile].x;
+								viewports[v_farTopTile].y = viewports[v_tile].y;
+								viewports[v_farTopTile].w = viewports[v_tile].w;
+								viewports[v_farTopTile].h = viewports[v_tile].h;
 							}
 							if (isOnFire[k])
 							{
 								gFires[animationIndex].Draw(&viewports[v_tile]);
 							}
 							Distance distance = { (float)viewports[v_tile].w, (float)viewports[v_tile].h };
-							if (i == 0 && j == 0)
-							{
-								textures[IconCursor].Draw(&viewports[v_tile]);
-							}
 							if (j == 0)
 							{
-								viewports[v_leftTile].x = viewports[v_tile].x;
-								viewports[v_leftTile].y = viewports[v_tile].y;
-								viewports[v_leftTile].w = viewports[v_tile].w;
-								viewports[v_leftTile].h = viewports[v_tile].h;
+								viewports[v_farLeftTile].x = viewports[v_tile].x;
+								viewports[v_farLeftTile].y = viewports[v_tile].y;
+								viewports[v_farLeftTile].w = viewports[v_tile].w;
+								viewports[v_farLeftTile].h = viewports[v_tile].h;
 							}
-							if (i == 0 && j == ROW_SIZE - 1)
+							x = viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w);
+							viewports[v_playerBox].x = x;
+							viewports[v_playerMiracle].x = x;
+							viewports[v_playerClouds].x = x - (viewports[v_playerClouds].w * 0.1f);
+							if (i == 0 && j == 0) houseHaunts[HouseHaunt_000_Alt_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 1) houseHaunts[HouseHaunt_001_Alt_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 2) houseHaunts[HouseHaunt_002_Alt_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 3) houseHaunts[HouseHaunt_003_Alt_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 4) houseHaunts[HouseHaunt_004_Alt_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 5) houseHaunts[HouseHaunt_000_Alt_Full].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 6) houseHaunts[HouseHaunt_001_Alt_Full].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 7) houseHaunts[HouseHaunt_002_Alt_Full].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 8) houseHaunts[HouseHaunt_003_Alt_Full].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 9) houseHaunts[HouseHaunt_004_Alt_Full].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 10) houseHaunts[HouseHaunt_000_Alt_Half].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 11) houseHaunts[HouseHaunt_001_Alt_Half].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 12) houseHaunts[HouseHaunt_002_Alt_Half].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 13) houseHaunts[HouseHaunt_003_Alt_Half].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 14) houseHaunts[HouseHaunt_004_Alt_Half].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 15) houseHaunts[HouseHaunt_000_Normal_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 16) houseHaunts[HouseHaunt_001_Normal_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 17) houseHaunts[HouseHaunt_002_Normal_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 18) houseHaunts[HouseHaunt_003_Normal_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 19) houseHaunts[HouseHaunt_004_Normal_Empty].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 20) houseHaunts[HouseHaunt_000_Normal_Full].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 21) houseHaunts[HouseHaunt_001_Normal_Full].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 22) houseHaunts[HouseHaunt_002_Normal_Full].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 23) houseHaunts[HouseHaunt_003_Normal_Full].Draw(&viewports[v_tile]);
+							if (i == 0 && j == 24) houseHaunts[HouseHaunt_004_Normal_Full].Draw(&viewports[v_tile]);
+							if (i == 1 && j == 0) houseHaunts[HouseHaunt_000_Normal_Half].Draw(&viewports[v_tile]);
+							if (i == 1 && j == 1) houseHaunts[HouseHaunt_001_Normal_Half].Draw(&viewports[v_tile]);
+							if (i == 1 && j == 2) houseHaunts[HouseHaunt_002_Normal_Half].Draw(&viewports[v_tile]);
+							if (i == 1 && j == 3) houseHaunts[HouseHaunt_003_Normal_Half].Draw(&viewports[v_tile]);
+							if (i == 1 && j == 4) houseHaunts[HouseHaunt_004_Normal_Half].Draw(&viewports[v_tile]);
+							if (i == 24 && j == 0) textures[CharacterFairySun].Draw(&viewports[v_tile], 360 * normals[second_1]);
+							if (i == 24 && j == 1) clouds[cloudIndex].Draw(&viewports[v_tile]);
+							if (i == 24 && j == 2) textures[PlayerHighlight].Draw(&viewports[v_tile]);
+							if (i == 24 && j == 3) textures[PalaceHighlightBottom].Draw(&viewports[v_tile]);
+							if (i == 24 && j == 4) textures[PalaceHighlightTop].Draw(&viewports[v_tile]);
+							if (i == 24 && j == 5) textures[PalaceHighlightLeft].Draw(&viewports[v_tile]);
+							if (i == 24 && j == 6) textures[PalaceHighlightRight].Draw(&viewports[v_tile]);
+							if (i == 24 && j == 7) textures[Landscape_Hall].Draw(&viewports[v_tile]);
+							if (i == 24 && j == 8) textures[CharacterFairyHopeful].Draw(&viewports[v_tile]);
+
+							viewports[v_tileMiracle].x = viewports[v_tile].x;
+							viewports[v_tileMiracle].y = viewports[v_tile].y - viewports[v_tile].h;
+							viewports[v_tileMiracle].w = viewports[v_tile].w;
+							viewports[v_tileMiracle].h = viewports[v_tile].h;
+
+							if (i == 2 && j == 10)
 							{
-								textures[IconCursor].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_000].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isLeft)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 0)
+							if (i == 1 && j == 11)
 							{
-								textures[CharacterFairySun].Draw(&viewports[v_tile], 360 * normals[second_1]);
+								houseDenPillars[HouseDenPillar_001].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isDown)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 1)
+							if (i == 2 && j == 12)
 							{
-								blueFire[fireIndex].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_002].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isRight)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 2)
+							if (i == 5 && j == 11)
 							{
-								textures[CharacterFairyHopeful].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_003].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isUp)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 3)
+
+							if (i == 2 && j == 17)
 							{
-								clouds[cloudIndex].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_004].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isY)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 4)
+							if (i == 1 && j == 18)
 							{
-								textures[PlayerHighlight].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_005].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isB)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 5)
+							if (i == 2 && j == 19)
 							{
-								redFire[fireIndex].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_006].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isA)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 6)
+							if (i == 5 && j == 18)
 							{
-								winds[windIndex].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_007].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isX)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 7)
+
+							if (i == 2 && j == 14)
 							{
-								textures[PalaceHighlightBottom].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_008].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isSelect)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 8)
+							if (i == 2 && j == 15)
 							{
-								textures[PalaceHighlightTop].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_009].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isStart)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 9)
+
+							if (i == 9 && j == 10)
 							{
-								textures[PalaceHighlightLeft].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_010].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isLeftBumper)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
-							if (i == ROW_SIZE - 1 && j == 10)
+							if (i == 9 && j == 19)
 							{
-								textures[PalaceHighlightRight].Draw(&viewports[v_tile]);
+								houseDenPillars[HouseDenPillar_011].Draw(&viewports[v_tile]);
+								winds[windIndex].Draw(&viewports[v_tileMiracle], 30.0, SDL_FLIP_HORIZONTAL);
+								(isRightBumper)
+									? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+									: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 							}
+
 							if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1)
 							{
 								textures[CharacterFairyMoon].Draw(&viewports[v_tile], 360 * normals[second_1]);
 							}
 							if (dotI == i)
 							{
-								x = viewports[v_leftTile].x + ((viewports[v_leftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_leftTile].w);
-								viewports[v_playerBox].x = x;
-								viewports[v_playerMiracle].x = x;
-								viewports[v_playerClouds].x = x - (viewports[v_playerClouds].w * 0.1f);
 								lightnings[lightningIndex].Draw(&viewports[v_playerMiracle]);
 								box->Draw(&viewports[v_playerBox]);
 								rains[rainIndex].Draw(&viewports[v_playerMiracle]);
@@ -1121,60 +1241,24 @@ int main(int argc, char* argv[])
 						}
 					}
 
-					point1.x = (float)gWindow.GetWidth() * 0.59f;
-					point1.y = (float)gWindow.GetHeight() * 0.28f;
-					point2.x = dot.GetBox().x;
-					point2.y = dot.GetBox().y;
-
-					viewports[v_playerStarLoadstoneToPalace].x = point2.x + ((point1.x - point2.x) * (1.0f - normals[second_1]));
-					viewports[v_playerStarLoadstoneToPalace].y = point1.y + ((point2.y - point1.y) * normals[second_1]);
-					viewports[v_playerStarLoadstoneToPalace].w = 100;
-					viewports[v_playerStarLoadstoneToPalace].h = 100;
-					if (gNodeIndex == 0) gMiracleStarfalls[0].Draw(&viewports[v_playerStarLoadstoneToPalace], 360 * normals[second_3]);
-					Point point4 =
+					Point point5 =
 					{
 						viewports[v_player].x,
 						viewports[v_player].y
 					};
-					Point point3 =
-					{
-						point2.x,
-						point2.y
-					};
-					viewports[v_playerStarPalaceToTile].x = (point4.x < point3.x)
-						? point4.x + ((point3.x - point4.x) * (1.0f - normals[second_1]))
-						: point3.x + ((point4.x - point3.x) * (normals[second_1]));
-					viewports[v_playerStarPalaceToTile].y = (point4.y < point3.y)
-						? point4.y + ((point3.y - point4.y) * (1.0f - normals[second_1]))
-						: point3.y + ((point4.y - point3.y) * normals[second_1]);
-					viewports[v_playerStarPalaceToTile].w = 100;
-					viewports[v_playerStarPalaceToTile].h = 100;
-					if (gNodeIndex == 1) gMiracleStarfalls[0].Draw(&viewports[v_playerStarPalaceToTile], 360 * normals[second_3]);
-					RenderLine(gWindow.GetRenderer(), point4.x, point4.y, point4.x + 100, point4.y);
-					RenderLine(gWindow.GetRenderer(), point4.x + 100, point4.y, point4.x + 100, point4.y + 100);
-					RenderLine(gWindow.GetRenderer(), point4.x + 100, point4.y + 100, point4.x, point4.y + 100);
-					RenderLine(gWindow.GetRenderer(), point4.x, point4.y + 100, point4.x, point4.y);
-					Point point5 =
-					{
-						point4.x,
-						point4.y
-					};
 					Point point6 =
 					{
-						viewports[v_backTile].x,
-						viewports[v_backTile].y
+						viewports[v_farTopTile].x,
+						viewports[v_farTopTile].y
 					};
 					viewports[v_playerStarTileToGrid].x = (point6.x < point5.x)
 						? point6.x + ((point5.x - point6.x) * (1.0f - normals[second_1]))
 						: point5.x + ((point6.x - point5.x) * normals[second_1]);
 					viewports[v_playerStarTileToGrid].y = point6.y + ((point5.y - point6.y) * (1.0f - normals[second_1]));
-					viewports[v_playerStarTileToGrid].w = 100;
-					viewports[v_playerStarTileToGrid].h = 100;
-					if (gNodeIndex == 2) gMiracleStarfalls[0].Draw(&viewports[v_playerStarTileToGrid], 360 * normals[second_3]);
-					RenderLine(gWindow.GetRenderer(), point6.x, point6.y, point6.x + 100, point6.y);
-					RenderLine(gWindow.GetRenderer(), point6.x + 100, point6.y, point6.x + 100, point6.y + 100);
-					RenderLine(gWindow.GetRenderer(), point6.x + 100, point6.y + 100, point6.x, point6.y + 100);
-					RenderLine(gWindow.GetRenderer(), point6.x, point6.y + 100, point6.x, point6.y);
+					viewports[v_playerStarTileToGrid].w = viewports[v_player].w - ((viewports[v_player].w - viewports[v_farTopTile].w) * normals[second_1]);
+					viewports[v_playerStarTileToGrid].h = viewports[v_player].h - ((viewports[v_player].h - viewports[v_farTopTile].h) * normals[second_1]);
+					textures[IconCursor].Draw(&viewports[v_playerStarTileToGrid]);
+
 					Point point7 =
 					{
 						point6.x,
@@ -1193,15 +1277,13 @@ int main(int argc, char* argv[])
 					viewports[v_playerStarGridToSky].y = point8.y + ((point7.y - point8.y) * (1.0f - normals[second_1]));
 					viewports[v_playerStarGridToSky].h = 100;
 					viewports[v_playerStarGridToSky].w = 100;
-					if (gNodeIndex == 3) gMiracleStarfalls[0].Draw(&viewports[v_playerStarGridToSky], 360 * normals[second_3]);
-					RenderLine(gWindow.GetRenderer(), point8.x, point8.y, point8.x + 100, point8.y);
-					RenderLine(gWindow.GetRenderer(), point8.x + 100, point8.y, point8.x + 100, point8.y + 100);
-					RenderLine(gWindow.GetRenderer(), point8.x + 100, point8.y + 100, point8.x, point8.y + 100);
-					RenderLine(gWindow.GetRenderer(), point8.x, point8.y + 100, point8.x, point8.y);
+					gMiracleStarfalls[0].Draw(&viewports[v_playerStarGridToSky], 360 * normals[second_3]);
+
 					viewports[v_palace].x = dot.GetBox().x - (dot.GetBox().w / 4 * 10);
 					viewports[v_palace].y = dot.GetBox().y - (dot.GetBox().h / 4 * 10);
 					viewports[v_palace].w = dot.GetBox().w * 10;
 					viewports[v_palace].h = dot.GetBox().h * 10;
+					textures[Loadstone].Draw(&viewports[v_palace]);
 					textures[BoxFront].Draw(&viewports[v_palace]);
 					if (gMiracleStarfallSpawns[gMiracleStarfallIndex])
 					{
@@ -1228,7 +1310,6 @@ int main(int argc, char* argv[])
 						}
 					}
 
-					textures[Loadstone].Draw(&viewports[v_fullscreen]);
 					viewports[v_menu].x = viewports[v_fullscreen].x;
 					viewports[v_menu].y = viewports[v_fullscreen].y - (viewports[v_fullscreen].h * 0.4f);
 					viewports[v_menu].w = viewports[v_fullscreen].w;
