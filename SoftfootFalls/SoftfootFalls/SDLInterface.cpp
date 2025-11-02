@@ -149,7 +149,11 @@ SDL_IOStream* IOFromFile(const char* file, const char* mode)
 SDL_RWops* IOFromFile(const char* file, const char* mode)
 #endif
 {
+#ifdef _WIN32
 	return SDL_IOFromFile(file, mode);
+#elif __linux__
+	return SDL_RWFromFile(file, mode);
+#endif
 }
 
 #ifdef _WIN32
