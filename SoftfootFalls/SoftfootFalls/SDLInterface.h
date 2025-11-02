@@ -135,8 +135,12 @@ void RenderTexture(SDL_Renderer*, SDL_Texture*, double angle, SDL_RendererFlip f
 
 void SetRenderViewport(SDL_Renderer*, SDL_Rect*);
 
-//#ifdef _WIN32
-//	void RenderTextureRotated(SDL_Renderer*, SDL_Texture*, SDL_FRect*, SDL_FRect*, double, SDL_FPoint*, SDL_FlipMode);
-//#elif __linux__
-//	void RenderTextureRotated(SDL_Renderer*, SDL_Texture*, SDL_Rect*, SDL_Rect*, double, SDL_Point*, SDL_RendererFlip);
-//#endif
+///////////////////////////////////////////////////////////////////////
+//  FILE I/O  /////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+#ifdef _WIN32
+void CloseIO(SDL_IOStream*);
+#elif __linux__
+void CloseIO(SDL_RWops*);
+#endif

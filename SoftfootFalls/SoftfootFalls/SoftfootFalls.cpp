@@ -123,11 +123,7 @@ int main(int argc, char* argv[])
 				SDL_RWwrite(file, &gData[i], sizeof(Sint32), 1);
 #endif
 			}
-#ifdef _WIN32
-			SDL_CloseIO(file);
-#elif __linux__
-			SDL_RWclose(file);
-#endif
+			CloseIO(file);
 		}
 		else
 		{
@@ -146,11 +142,7 @@ int main(int argc, char* argv[])
 			SDL_RWread(file, &gData[i], sizeof(Sint32), 1);
 #endif
 		}
-#ifdef _WIN32
-		SDL_CloseIO(file);
-#elif __linux__
-		SDL_RWclose(file);
-#endif
+		CloseIO(file);
 	}
 #ifdef __linux__
 	if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
@@ -983,11 +975,7 @@ int main(int argc, char* argv[])
 			SDL_RWwrite(file, &gData[i], sizeof(Sint32), 1);
 #endif
 		}
-#ifdef _WIN32
-		SDL_CloseIO(file);
-#elif __linux__
-		SDL_RWclose(file);
-#endif
+		CloseIO(file);
 	}
 	else
 	{

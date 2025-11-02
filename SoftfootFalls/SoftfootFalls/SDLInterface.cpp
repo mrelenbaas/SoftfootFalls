@@ -138,3 +138,20 @@ void RenderTextureRotated(SDL_Renderer* renderer, SDL_Texture* texture, SDL_Rect
 	SDL_RenderCopyEx(renderer, texture, clip, renderQuad, angle, center, flip);
 #endif
 }
+
+///////////////////////////////////////////////////////////////////////
+//  FILE I/O  /////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+#ifdef _WIN32
+void CloseIO(SDL_IOStream* file)
+#elif __linux__
+void CloseIO(SDL_RWops* file)
+#endif
+{
+#ifdef _WIN32
+	SDL_CloseIO(file);
+#elif __linux__
+	SDL_RWclose(file);
+#endif
+}
