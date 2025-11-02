@@ -117,11 +117,7 @@ int main(int argc, char* argv[])
 			for (int i = 0; i < TOTAL_DATA; ++i)
 			{
 				gData[i] = 0;
-#ifdef _WIN32
-				SDL_WriteIO(file, &gData[i], sizeof(Sint32));
-#elif __linux__
-				SDL_RWwrite(file, &gData[i], sizeof(Sint32), 1);
-#endif
+				WriteIO(file, &gData[i]);
 			}
 			CloseIO(file);
 		}
@@ -969,11 +965,7 @@ int main(int argc, char* argv[])
 	{
 		for (int i = 0; i < TOTAL_DATA; ++i)
 		{
-#ifdef _WIN32
-			SDL_WriteIO(file, &gData[i], sizeof(Sint32));
-#elif __linux__
-			SDL_RWwrite(file, &gData[i], sizeof(Sint32), 1);
-#endif
+			WriteIO(file, &gData);
 		}
 		CloseIO(file);
 	}
