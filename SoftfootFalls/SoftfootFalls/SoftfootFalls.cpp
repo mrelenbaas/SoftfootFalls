@@ -13,7 +13,6 @@
 #include "Star.h"
 
 
-const int JOYSTICK_DEAD_ZONE = 8000;
 const int TOTAL_DATA = 10;
 const double PI = 3.14159265358979323846;
 
@@ -22,21 +21,6 @@ bool loadMedia(Load*);
 void close(Load*);
 
 Window gWindow;
-#ifdef _WIN32
-SDL_Gamepad* gGameController;
-#elif __linux__
-SDL_GameController* gGameController;
-#endif
-SDL_Joystick* gJoystick = NULL;
-SDL_Haptic* gJoyHaptic = NULL;
-const int FIRE_SIZE = 3;
-const int FIRES_SIZE = 12;
-Texture gFires[FIRES_SIZE];
-Texture* gMiracleStarfalls;
-int gMiracleStarfallIndex = 0;
-int gMiracleStarfallModIndex = 0;
-const int gMiracleStarfallLimit = 5;
-bool gMiracleStarfallUpdateAtEndOfFrame = false;
 Sint32 gData[TOTAL_DATA];
 
 bool SecondInit()
@@ -50,120 +34,10 @@ bool SecondInit()
 	}
 	else
 	{
-#ifdef _WIN32
-		SDL_JoystickID joystickID = 0;
-		SDL_JoystickID* joysticks = SDL_GetJoysticks(NULL);
-		if (joysticks)
-		{
-			joystickID = joysticks[0];
-			SDL_free(joysticks);
-		}
-		if (joystickID == 0)
-		{
-			SDL_Log("Warning: No joysticks connected!\n");
-		}
-		else
-		{
-			if (!SDL_IsGamepad(joystickID))
-			{
-				SDL_Log("Warning: Joystick is not game controller interface compatible! SDL Error: %s\n", SDL_GetError());
-			}
-			else
-			{
-				gGameController = SDL_OpenGamepad(joystickID);
-				if (!SDL_GetBooleanProperty(SDL_GetGamepadProperties(gGameController), SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN, false))
-				{
-					SDL_Log("Warning: Game controller does not have rumble! SDL Error: %s\n", SDL_GetError());
-				}
-			}
-			if (gGameController == NULL)
-			{
-				gJoystick = SDL_OpenJoystick(joystickID);
-				if (gJoystick == NULL)
-				{
-					SDL_Log("Warning: Unable to open joystick! SDL Error: %s\n", SDL_GetError());
-				}
-				else
-				{
-					if (!SDL_GetBooleanProperty(SDL_GetJoystickProperties(gJoystick), SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN, false))
-					{
-
-					}
-					if (!SDL_IsJoystickHaptic(gJoystick))
-					{
-						SDL_Log("Warning: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
-					}
-					else
-					{
-						gJoyHaptic = SDL_OpenHapticFromJoystick(gJoystick);
-						if (gJoyHaptic == NULL)
-						{
-							SDL_Log("Warning: Unable to get joystick haptics! SDL Error: %s\n", SDL_GetError());
-						}
-						else
-						{
-							if (!SDL_InitHapticRumble(gJoyHaptic))
-							{
-								SDL_Log("Warning: Unable to initialize haptic rumble! SDL Error: %s\n", SDL_GetError());
-							}
-						}
-					}
-				}
-			}
-		}
-#elif __linux__
+#ifdef __linux__
 		if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
 		{
 			printf("Warning: Linear texture filtering not enabled!\n");
-		}
-		if (SDL_NumJoysticks() < 1)
-		{
-			printf("Warning: No joysticks connected!\n");
-		}
-		else
-		{
-			if (!SDL_IsGameController(0))
-			{
-				printf("Warning: joystick is not game controller interface compatible! SDL Error: %s\n", SDL_GetError());
-			}
-			else
-			{
-				gGameController = SDL_GameControllerOpen(0);
-				if (!SDL_GameControllerHasRumble(gGameController))
-				{
-					printf("Warning: Game controller does not have rumble! SDL Error: %s\n", SDL_GetError());
-				}
-			}
-			if (gGameController == NULL)
-			{
-				gJoystick = SDL_JoystickOpen(0);
-				if (gJoystick == NULL)
-				{
-					printf("Warning: Unable to open joystick! SDL Error: %s\n", SDL_GetError());
-				}
-				else
-				{
-					if (!SDL_JoystickIsHaptic(gJoystick))
-					{
-						printf("Warning: Controller does not support haptics! SDL Error: %s\n", SDL_GetError());
-					}
-					else
-					{
-						gJoyHaptic = SDL_HapticOpenFromJoystick(gJoystick);
-						if (gJoyHaptic == NULL)
-						{
-							printf("Warning: Unable to get joystick haptics! SDL Error: %s\n", SDL_GetError());
-						}
-						else
-						{
-							if (SDL_HapticRumbleInit(gJoyHaptic) < 0)
-							{
-								printf("Warning: Unable to initialize haptic rumble! SDL Error: %s\n", SDL_GetError());
-							}
-						}
-					}
-				}
-			}
 		}
 #endif
 		if (!gWindow.Init())
@@ -260,30 +134,6 @@ bool loadMedia(Load* load)
 
 void close(Load* load)
 {
-	if (gGameController != NULL)
-	{
-#ifdef _WIN32
-		SDL_CloseGamepad(gGameController);
-#elif __linux__
-		SDL_GameControllerClose(gGameController);
-#endif
-	}
-	if (gJoyHaptic != NULL)
-	{
-#ifdef _WIN32
-		SDL_CloseHaptic(gJoyHaptic);
-#elif __linux__
-		SDL_HapticClose(gJoyHaptic);
-#endif
-	}
-	if (gJoystick != NULL)
-	{
-#ifdef _WIN32
-		SDL_CloseJoystick(gJoystick);
-#elif __linux__
-		SDL_JoystickClose(gJoystick);
-#endif
-	}
 #ifdef _WIN32
 	SDL_IOStream* file = SDL_IOFromFile("nums.bin", "w+b");
 #elif __linux__
@@ -309,9 +159,6 @@ void close(Load* load)
 	{
 		printf("Error: Unable to save file! %s\n", SDL_GetError());
 	}
-	gGameController = NULL;
-	gJoystick = NULL;
-	gJoyHaptic = NULL;
 	gWindow.Free();
 	SDL_Quit();
 }
@@ -342,7 +189,6 @@ int main(int argc, char* argv[])
 	int w = 0;
 	//int h = 0;
 	BoxesEnum playerDirection = BoxUp;
-	BoxesEnum backgroundDirection = BoxUp;
 	bool isUp = false;
 	bool isDown = false;
 	bool isLeft = false;
@@ -357,33 +203,39 @@ int main(int argc, char* argv[])
 	bool isSelect = false;
 	bool isOverHall = false;
 	double windAngle = 30.0;
+	const int FIRE_SIZE = 3;
+	Texture* miracleStarfalls;
+	int miracleStarfallIndex = 0;
+	int miracleStarfallModIndex = 0;
+	const int miracleStarfallLimit = 5;
+	bool miracleStarfallUpdateAtEndOfFrame = false;
 
-	gMiracleStarfalls = new Texture[gMiracleStarfallLimit]{};
-	SDL_Rect gMiracleStarfallViewports[gMiracleStarfallLimit]{};
-	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	miracleStarfalls = new Texture[miracleStarfallLimit]{};
+	SDL_Rect gMiracleStarfallViewports[miracleStarfallLimit]{};
+	for (int i = 0; i < miracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallViewports[i].x = 0;
 		gMiracleStarfallViewports[i].y = 0;
 		gMiracleStarfallViewports[i].w = 0;
 		gMiracleStarfallViewports[i].h = 0;
 	}
-	bool gMiracleStarfallSpawns[gMiracleStarfallLimit]{};
-	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	bool gMiracleStarfallSpawns[miracleStarfallLimit]{};
+	for (int i = 0; i < miracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallSpawns[i] = false;
 	}
-	bool gMiracleStarfallDespawns[gMiracleStarfallLimit]{};
-	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	bool gMiracleStarfallDespawns[miracleStarfallLimit]{};
+	for (int i = 0; i < miracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallDespawns[i] = false;
 	}
-	long long gMiracleStarfallDeltas[gMiracleStarfallLimit]{};
-	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	long long gMiracleStarfallDeltas[miracleStarfallLimit]{};
+	for (int i = 0; i < miracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallDeltas[i] = 0L;
 	}
-	double gMiracleStarfallNormals[gMiracleStarfallLimit]{};
-	for (int i = 0; i < gMiracleStarfallLimit; ++i)
+	double gMiracleStarfallNormals[miracleStarfallLimit]{};
+	for (int i = 0; i < miracleStarfallLimit; ++i)
 	{
 		gMiracleStarfallNormals[i] = 0;
 	}
@@ -399,6 +251,7 @@ int main(int argc, char* argv[])
 		Texture roads[RoadsEnum_Size];
 		Texture redFire[RedFireEnum_Size];
 		Texture blueFire[BlueFireEnum_Size];
+		Texture fires[FiresEnum_Size];
 		Texture lightnings[LightningEnum_Size];
 		Texture clouds[CloudsEnum_Size];
 		Texture rainClouds[RainCloudsEnum_Size];
@@ -420,19 +273,7 @@ int main(int argc, char* argv[])
 			for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Init(gWindow.GetRenderer(), load->Path(HorizonsPaths[i]));
 			for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Init(gWindow.GetRenderer(), load->Path(redFirePaths[i]));
 			for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Init(gWindow.GetRenderer(), load->Path(blueFirePaths[i]));
-			std::string preName = "Fire_00";
-			std::string middleName = "_64x64_00";
-			std::string postName = ".png";
-			int k = 0;
-			for (int i = 0; i < FIRE_SIZE; ++i)
-			{
-				for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
-				{
-					std::string name = preName + std::to_string(i) + middleName + std::to_string(j) + postName;
-					gFires[k].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
-					++k;
-				}
-			}
+			for (int i = 0; i < FiresEnum_Size; ++i) fires[i].Init(gWindow.GetRenderer(), load->Path(firesPaths[i]));
 			for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Init(gWindow.GetRenderer(), load->Path(lightningsPaths[i]));
 			for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Init(gWindow.GetRenderer(), load->Path(cloudsPaths[i]));
 			for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Init(gWindow.GetRenderer(), load->Path(rainCloudsPaths[i]));
@@ -441,36 +282,33 @@ int main(int argc, char* argv[])
 			for (int i = 0; i < HouseDenPillarsEnum_Size; ++i) houseDenPillars[i].Init(gWindow.GetRenderer(), load->Path(houseDenPillarsPaths[i]));
 			for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Init(gWindow.GetRenderer(), load->Path(houseHauntsPaths[i]));
 			for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Init(gWindow.GetRenderer(), load->Path(boxesPaths[i]));
-			for (int i = 0; i < gMiracleStarfallLimit; ++i)
+			for (int i = 0; i < miracleStarfallLimit; ++i)
 			{
 				int j = i % 5;
 				if (j == 0)
 				{
-					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_000_1024x1024.png"));
+					miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_000_1024x1024.png"));
 				}
 				else if (j == 1)
 				{
-					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_001_1024x1024.png"));
+					miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_001_1024x1024.png"));
 				}
 				else if (j == 2)
 				{
-					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_002_1024x1024.png"));
+					miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_002_1024x1024.png"));
 				}
 				else if (j == 3)
 				{
-					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_003_1024x1024.png"));
+					miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_003_1024x1024.png"));
 				}
 				else if (j == 4)
 				{
-					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_004_1024x1024.png"));
+					miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_004_1024x1024.png"));
 				}
 			}
 			for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Init(gWindow.GetRenderer(), load->Path(CharacterFairyWistfulsPaths[i]));
 			bool quit = false;
 			SDL_Event e;
-			double degrees = 0;
-			int xDir = 0;
-			int yDir = 0;
 			int countedFrames = 0;
 			Dot dot;
 			int backgroundScrollingOffset = 0;
@@ -517,7 +355,7 @@ int main(int argc, char* argv[])
 				deltas[second_3] += currentTime - previousTime;
 				deltas[second_12] += currentTime - previousTime;
 				deltas[minute_1] += currentTime - previousTime;
-				for (int m = 0; m < gMiracleStarfallLimit; ++m)
+				for (int m = 0; m < miracleStarfallLimit; ++m)
 				{
 					gMiracleStarfallDeltas[m] += currentTime - previousTime;
 				}
@@ -565,7 +403,7 @@ int main(int argc, char* argv[])
 				{
 					normals[i] = (double)deltas[i] / limits[i];
 				}
-				for (int m = 0; m < gMiracleStarfallLimit; ++m)
+				for (int m = 0; m < miracleStarfallLimit; ++m)
 				{
 					gMiracleStarfallNormals[m] = (double)gMiracleStarfallDeltas[m] / limits[second_1];
 					if (gMiracleStarfallNormals[m] > 1.0)
@@ -579,129 +417,24 @@ int main(int argc, char* argv[])
 				while (SDL_PollEvent(&e) != 0)
 				{
 					if (IsWindowQuit(e)) quit = true;
-					else if (e.type == EVENT_JOYSTICK_BUTTON_DOWN)
-					{
-						if (gGameController != NULL)
-						{
-#ifdef _WIN32
-							if (!SDL_RumbleGamepad(gGameController, 0xFFFF * 3 / 4, 0xFFFF * 3 / 4, 500))
-#elif __linux__
-							if (SDL_GameControllerRumble(gGameController, 0xFFFF * 3 / 4, 0xFFFF * 3 / 4, 500) != 0)
-#endif
-							{
-								SDL_Log("Warning: Unable to play game controller rumble! %s\n", SDL_GetError());
-							}
-						}
-						else if (gJoyHaptic != NULL)
-						{
-#ifdef _WIN32
-							if (!SDL_PlayHapticRumble(gJoyHaptic, 0.75, 500))
-#elif __linux__
-							if (SDL_HapticRumblePlay(gJoyHaptic, 0.75, 500) != 0)
-#endif
-							{
-								SDL_Log("Warning: Unable to play haptic rumble! %s\n", SDL_GetError());
-							}
-						}
-					}
-#ifdef _WIN32
-					else if (e.type == SDL_EVENT_JOYSTICK_AXIS_MOTION)
-#elif __linux__
-					else if (e.type == SDL_JOYAXISMOTION)
-#endif
-					{
-						//if (event.jaxis.which == 0)
-						//{
-						if (e.jaxis.axis == 0)
-						{
-							if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
-							{
-								box = &boxes[BoxLeft];
-								--gData[currentData];
-								degrees -= 60;
-								dot.SetLeft(true);
-								xDir = -1;
-							}
-							else
-							{
-								dot.SetLeft(false);
-								xDir = 0;
-							}
-							if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
-							{
-								box = &boxes[BoxRight];
-								++gData[currentData];
-								degrees += 60;
-								dot.SetRight(true);
-								xDir = 1;
-							}
-							else
-							{
-								dot.SetRight(false);
-								xDir = 0;
-							}
-						}
-						else if (e.jaxis.axis == 1)
-						{
-							if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
-							{
-								box = &boxes[BoxUp];
-								--currentData;
-								if (currentData < 0)
-								{
-									currentData = TOTAL_DATA - 1;
-								}
-								dot.SetUp(true);
-								yDir = -1;
-							}
-							else
-							{
-								dot.SetUp(false);
-								yDir = 0;
-							}
-							if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
-							{
-								box = &boxes[BoxDown];
-								++currentData;
-								if (currentData == TOTAL_DATA)
-								{
-									currentData = 0;
-								}
-								dot.SetDown(true);
-								yDir = 1;
-							}
-							else
-							{
-								dot.SetDown(false);
-								yDir = 0;
-							}
-						}
-						//}
-						//printf("%i, %i\n", xDir, yDir);
-					}
 					else if (e.type == KEY_RELEASED)
 					{
 						switch (Key(e))
 						{
 						case SDLK_HOME:
 							break;
-
-						case SDLK_UP:
 						case KEY_W:
 							dot.SetUp(false);
 							isUp = false;
 							break;
-						case SDLK_DOWN:
 						case KEY_S:
 							dot.SetDown(false);
 							isDown = false;
 							break;
-						case SDLK_LEFT:
 						case KEY_A:
 							dot.SetLeft(false);
 							isLeft = false;
 							break;
-						case SDLK_RIGHT:
 						case KEY_D:
 							dot.SetRight(false);
 							isRight = false;
@@ -744,30 +477,12 @@ int main(int argc, char* argv[])
 							isInput = !isInput;
 							break;
 						case SDLK_END:
-							switch (backgroundDirection)
-							{
-							case BoxUp:
-								backgroundDirection = BoxDown;
-								break;
-							case BoxDown:
-								backgroundDirection = BoxLeft;
-								break;
-							case BoxLeft:
-								backgroundDirection = BoxRight;
-								break;
-							case BoxRight:
-								backgroundDirection = BoxUp;
-								break;
-							case BoxesEnum_Size:
-								break;
-							}
 #ifdef _WIN32
 							PlaySound(wideString.c_str(), NULL, SND_FILENAME | SND_ASYNC);
 #elif __linux__
 							system("aplay ~/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav");
 #endif
 							break;
-						case SDLK_UP:
 						case KEY_W:
 							box = &boxes[BoxUp];
 							--currentData;
@@ -778,7 +493,6 @@ int main(int argc, char* argv[])
 							dot.SetUp(true);
 							isUp = true;
 							break;
-						case SDLK_DOWN:
 						case KEY_S:
 							box = &boxes[BoxDown];
 							++currentData;
@@ -789,28 +503,24 @@ int main(int argc, char* argv[])
 							dot.SetDown(true);
 							isDown = true;
 							break;
-						case SDLK_LEFT:
 						case KEY_A:
 							box = &boxes[BoxLeft];
 							--gData[currentData];
-							degrees -= 60;
 							dot.SetLeft(true);
 							isLeft = true;
 							break;
-						case SDLK_RIGHT:
 						case KEY_D:
 							box = &boxes[BoxRight];
 							++gData[currentData];
-							degrees += 60;
 							dot.SetRight(true);
 							isRight = true;
 							break;
 						case KEY_Q:
-							gMiracleStarfallUpdateAtEndOfFrame = true;
-							gMiracleStarfallModIndex = gMiracleStarfallIndex % 5;
-							gMiracleStarfallSpawns[gMiracleStarfallIndex] = true;
-							gMiracleStarfallDeltas[gMiracleStarfallIndex] = 0L;
-							gMiracleStarfallNormals[gMiracleStarfallIndex] = (double)gMiracleStarfallDeltas[gMiracleStarfallIndex] / limits[second_1];
+							miracleStarfallUpdateAtEndOfFrame = true;
+							miracleStarfallModIndex = miracleStarfallIndex % 5;
+							gMiracleStarfallSpawns[miracleStarfallIndex] = true;
+							gMiracleStarfallDeltas[miracleStarfallIndex] = 0L;
+							gMiracleStarfallNormals[miracleStarfallIndex] = (double)gMiracleStarfallDeltas[miracleStarfallIndex] / limits[second_1];
 							isY = true;
 							break;
 						case KEY_E:
@@ -845,13 +555,6 @@ int main(int argc, char* argv[])
 				if (!gWindow.IsMinimized())
 				{
 					SDL_RenderClear(gWindow.GetRenderer());
-
-					//double joystickAngle = atan2((double)yDir, (double)xDir) * (180.0 / PI);
-					if (xDir == 0 && yDir == 0)
-					{
-						//joystickAngle = 0;
-					}
-
 					switch (playerDirection)
 					{
 					case BoxUp:
@@ -885,78 +588,22 @@ int main(int argc, char* argv[])
 					case BoxesEnum_Size:
 						break;
 					}
-
 					viewports[v_background].w = textures[BackgroundBackground].GetWidth();
 					viewports[v_background].h = textures[BackgroundBackground].GetHeight();
-					switch (playerDirection)
-					{
-					case BoxUp:
-						viewports[v_background].x = 0;
-						viewports[v_background].y = backgroundScrollingOffset;
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].y = backgroundScrollingOffset + (textures[BackgroundBackground].GetHeight() * 2);
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = textures[BackgroundBackground].GetWidth();
-						viewports[v_background].y = backgroundScrollingOffset;
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].y = backgroundScrollingOffset + (textures[BackgroundBackground].GetHeight() * 2);
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						break;
-					case BoxDown:
-						viewports[v_background].x = 0;
-						viewports[v_background].y = backgroundScrollingOffset;
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].y = backgroundScrollingOffset - textures[BackgroundBackground].GetHeight();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = textures[BackgroundBackground].GetWidth();
-						viewports[v_background].y = backgroundScrollingOffset;
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].y = backgroundScrollingOffset - textures[BackgroundBackground].GetHeight();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						break;
-					case BoxLeft:
-						viewports[v_background].x = backgroundScrollingOffset;
-						viewports[v_background].y = 0;
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset + (textures[BackgroundBackground].GetWidth() * 2);
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset;
-						viewports[v_background].y = textures[BackgroundBackground].GetHeight();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset + (textures[BackgroundBackground].GetWidth() * 2);
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						break;
-					case BoxRight:
-						viewports[v_background].x = backgroundScrollingOffset;
-						viewports[v_background].y = 0;
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset - textures[BackgroundBackground].GetWidth();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset;
-						viewports[v_background].y = textures[BackgroundBackground].GetHeight();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset + textures[BackgroundBackground].GetWidth();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						viewports[v_background].x = backgroundScrollingOffset - textures[BackgroundBackground].GetWidth();
-						textures[BackgroundBackground].Draw(&viewports[v_background]);
-						break;
-					case BoxesEnum_Size:
-						break;
-					}
+					viewports[v_background].x = 0;
+					viewports[v_background].y = backgroundScrollingOffset;
+					textures[BackgroundBackground].Draw(&viewports[v_background]);
+					viewports[v_background].y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
+					textures[BackgroundBackground].Draw(&viewports[v_background]);
+					viewports[v_background].y = backgroundScrollingOffset + (textures[BackgroundBackground].GetHeight() * 2);
+					textures[BackgroundBackground].Draw(&viewports[v_background]);
+					viewports[v_background].x = textures[BackgroundBackground].GetWidth();
+					viewports[v_background].y = backgroundScrollingOffset;
+					textures[BackgroundBackground].Draw(&viewports[v_background]);
+					viewports[v_background].y = backgroundScrollingOffset + textures[BackgroundBackground].GetHeight();
+					textures[BackgroundBackground].Draw(&viewports[v_background]);
+					viewports[v_background].y = backgroundScrollingOffset + (textures[BackgroundBackground].GetHeight() * 2);
+					textures[BackgroundBackground].Draw(&viewports[v_background]);
 					viewports[v_fullscreen].x = 0;
 					viewports[v_fullscreen].y = 0;
 					viewports[v_fullscreen].w = gWindow.GetWidth();
@@ -1082,7 +729,7 @@ int main(int argc, char* argv[])
 								windBox.h = viewports[v_tileMiracle].h;
 								altWindAngle = 125.0;
 							}
-							gMiracleStarfalls[0].Draw(&starBox, 360 * normals[second_3]);
+							miracleStarfalls[0].Draw(&starBox, 360 * normals[second_3]);
 							clouds[cloudIndex].Draw(&windBox);
 							winds[windIndex].Draw(&windBox, altWindAngle, SDL_FLIP_HORIZONTAL);
 							if (i == 24 && dotJ == j)
@@ -1095,7 +742,7 @@ int main(int argc, char* argv[])
 							}
 							if (isOnFire[k])
 							{
-								gFires[animationIndex].Draw(&viewports[v_tile]);
+								fires[animationIndex].Draw(&viewports[v_tile]);
 							}
 							if (j == 0)
 							{
@@ -1155,12 +802,10 @@ int main(int argc, char* argv[])
 							{
 								isOverHall = false;
 							}
-
 							viewports[v_tileMiracle].x = viewports[v_tile].x;
 							viewports[v_tileMiracle].y = viewports[v_tile].y - viewports[v_tile].h;
 							viewports[v_tileMiracle].w = viewports[v_tile].w;
 							viewports[v_tileMiracle].h = viewports[v_tile].h;
-
 							if (i == 2 && j == 10)
 							{
 								houseDenPillars[HouseDenPillar_000].Draw(&viewports[v_tile]);
@@ -1275,7 +920,6 @@ int main(int argc, char* argv[])
 							++k;
 						}
 					}
-
 					viewports[v_playerStarTileToGrid].x = ((float)viewports[v_farTopTile].x < (float)viewports[v_player].x)
 						? (float)viewports[v_farTopTile].x + (((float)viewports[v_player].x - (float)viewports[v_farTopTile].x) * (1.0f - normals[second_1]))
 						: (float)viewports[v_player].x + (((float)viewports[v_farTopTile].x - (float)viewports[v_player].x) * normals[second_1]);
@@ -1283,7 +927,6 @@ int main(int argc, char* argv[])
 					viewports[v_playerStarTileToGrid].w = viewports[v_player].w - ((viewports[v_player].w - viewports[v_farTopTile].w) * normals[second_1]);
 					viewports[v_playerStarTileToGrid].h = viewports[v_player].h - ((viewports[v_player].h - viewports[v_farTopTile].h) * normals[second_1]);
 					textures[IconCursor].Draw(&viewports[v_playerStarTileToGrid], 0.0, SDL_FLIP_VERTICAL);
-
 					viewports[v_palace].x = dot.GetBox().x - (dot.GetBox().w / 4 * 10);
 					viewports[v_palace].y = dot.GetBox().y - (dot.GetBox().h / 4 * 10);
 					viewports[v_palace].w = dot.GetBox().w * 10;
@@ -1308,16 +951,16 @@ int main(int argc, char* argv[])
 						textures[PalaceHighlightTop].Draw(&viewports[v_palaceRightDown]);
 						textures[PalaceHighlightRight].Draw(&viewports[v_palaceRightDownDown]);
 					}
-					if (gMiracleStarfallSpawns[gMiracleStarfallIndex])
+					if (gMiracleStarfallSpawns[miracleStarfallIndex])
 					{
-						gMiracleStarfallViewports[gMiracleStarfallIndex].x = viewports[v_palace].x;
-						gMiracleStarfallViewports[gMiracleStarfallIndex].y = viewports[v_palace].y;
-						gMiracleStarfallViewports[gMiracleStarfallIndex].w = viewports[v_palace].w;
-						gMiracleStarfallViewports[gMiracleStarfallIndex].h = viewports[v_palace].h;
-						gMiracleStarfallDespawns[gMiracleStarfallIndex] = true;
-						gMiracleStarfallSpawns[gMiracleStarfallIndex] = false;
+						gMiracleStarfallViewports[miracleStarfallIndex].x = viewports[v_palace].x;
+						gMiracleStarfallViewports[miracleStarfallIndex].y = viewports[v_palace].y;
+						gMiracleStarfallViewports[miracleStarfallIndex].w = viewports[v_palace].w;
+						gMiracleStarfallViewports[miracleStarfallIndex].h = viewports[v_palace].h;
+						gMiracleStarfallDespawns[miracleStarfallIndex] = true;
+						gMiracleStarfallSpawns[miracleStarfallIndex] = false;
 					}
-					for (int m = 0; m < gMiracleStarfallLimit; ++m)
+					for (int m = 0; m < miracleStarfallLimit; ++m)
 					{
 						if (gMiracleStarfallDeltas[m] > limits[second_1])
 						{
@@ -1329,11 +972,9 @@ int main(int argc, char* argv[])
 							viewports[v_playerStarCurrent].y = gMiracleStarfallViewports[m].y + (gWindow.GetHeight() * gMiracleStarfallNormals[m]);
 							viewports[v_playerStarCurrent].w = gMiracleStarfallViewports[m].w;
 							viewports[v_playerStarCurrent].h = gMiracleStarfallViewports[m].h;
-							//gMiracleStarfalls[m].Draw(&viewports[v_playerStarCurrent], 360 * normals[second_1]);
 							characterFairyWistfuls[m].Draw(&viewports[v_playerStarCurrent]);
 						}
 					}
-
 					viewports[v_menu].x = viewports[v_fullscreen].x;
 					viewports[v_menu].y = viewports[v_fullscreen].y - (viewports[v_fullscreen].h * 0.4f);
 					viewports[v_menu].w = viewports[v_fullscreen].w;
@@ -1368,14 +1009,14 @@ int main(int argc, char* argv[])
 					}
 					SDL_RenderPresent(gWindow.GetRenderer());
 				}
-				if (gMiracleStarfallUpdateAtEndOfFrame)
+				if (miracleStarfallUpdateAtEndOfFrame)
 				{
-					++gMiracleStarfallIndex;
-					if (gMiracleStarfallIndex >= gMiracleStarfallLimit)
+					++miracleStarfallIndex;
+					if (miracleStarfallIndex >= miracleStarfallLimit)
 					{
-						gMiracleStarfallIndex = 0;
+						miracleStarfallIndex = 0;
 					}
-					gMiracleStarfallUpdateAtEndOfFrame = false;
+					miracleStarfallUpdateAtEndOfFrame = false;
 				}
 				++countedFrames;
 			}
@@ -1385,28 +1026,19 @@ int main(int argc, char* argv[])
 		for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Free();
 		for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Free();
 		for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Free();
-		int k = 0;
-		for (int i = 0; i < FIRE_SIZE; ++i)
-			for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
-			{
-				gFires[k].Free();
-				++k;
-			}
+		for (int i = 0; i < FiresEnum_Size; ++i) fires[i].Free();
 		for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Free();
 		for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Free();
 		for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Free();
 		for (int i = 0; i < RainEnum_Size; ++i) rains[i].Free();
 		for (int i = 0; i < WindEnum_Size; ++i) winds[i].Free();
 		for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
-		for (int i = 0; i < gMiracleStarfallLimit; ++i) gMiracleStarfalls[i].Free();
 		for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Free();
+		for (int i = 0; i < miracleStarfallLimit; ++i) miracleStarfalls[i].Free();
 		close(load);
 	}
-
-	delete[] gMiracleStarfalls;
-
+	delete[] miracleStarfalls;
 	delete load;
 	delete[] basePath;
-	//delete myTimer;
 	return 0;
 }
