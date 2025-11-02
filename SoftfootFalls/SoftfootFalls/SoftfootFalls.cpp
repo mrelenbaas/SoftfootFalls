@@ -18,8 +18,8 @@ const int TOTAL_DATA = 10;
 const double PI = 3.14159265358979323846;
 
 bool SecondInit();
-bool loadMedia(Load*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*);
-void close(Load*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*, Texture*);
+bool loadMedia(Load*);
+void close(Load*);
 
 Window gWindow;
 #ifdef _WIN32
@@ -197,7 +197,7 @@ bool SecondInit()
 	return success;
 }
 
-bool loadMedia(Load* load, Texture* textures, Texture* horizons, Texture* roads, Texture* redFire, Texture* blueFire, Texture* lightnings, Texture* clouds, Texture* rainClouds, Texture* rains, Texture* winds, Texture* houseDenPillars, Texture* houseHaunts, Texture* boxes)
+bool loadMedia(Load* load)
 {
 	using namespace std;
 	bool success = true;
@@ -255,60 +255,10 @@ bool loadMedia(Load* load, Texture* textures, Texture* horizons, Texture* roads,
 		SDL_RWclose(file);
 #endif
 	}
-	for (int i = 0; i < PathEnum_Size; ++i) success = textures[i].Init(gWindow.GetRenderer(), load->Path(Paths[i]));
-	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(gWindow.GetRenderer(), load->Path(RoadsPaths[i]));
-	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Init(gWindow.GetRenderer(), load->Path(HorizonsPaths[i]));
-	for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Init(gWindow.GetRenderer(), load->Path(redFirePaths[i]));
-	for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Init(gWindow.GetRenderer(), load->Path(blueFirePaths[i]));
-	std::string preName = "Fire_00";
-	std::string middleName = "_64x64_00";
-	std::string postName = ".png";
-	int k = 0;
-	for (int i = 0; i < FIRE_SIZE; ++i)
-	{
-		for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
-		{
-			std::string name = preName + std::to_string(i) + middleName + std::to_string(j) + postName;
-			success = gFires[k].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
-			++k;
-		}
-	}
-	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Init(gWindow.GetRenderer(), load->Path(lightningsPaths[i]));
-	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Init(gWindow.GetRenderer(), load->Path(cloudsPaths[i]));
-	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Init(gWindow.GetRenderer(), load->Path(rainCloudsPaths[i]));
-	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Init(gWindow.GetRenderer(), load->Path(rainPaths[i]));
-	for (int i = 0; i < WindEnum_Size; ++i) winds[i].Init(gWindow.GetRenderer(), load->Path(windPaths[i]));
-	for (int i = 0; i < HouseDenPillarsEnum_Size; ++i) houseDenPillars[i].Init(gWindow.GetRenderer(), load->Path(houseDenPillarsPaths[i]));
-	for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Init(gWindow.GetRenderer(), load->Path(houseHauntsPaths[i]));
-	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Init(gWindow.GetRenderer(), load->Path(boxesPaths[i]));
-	for (int i = 0; i < gMiracleStarfallLimit; ++i)
-	{
-		int j = i % 5;
-		if (j == 0)
-		{
-			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_000_1024x1024.png"));
-		}
-		else if (j == 1)
-		{
-			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_001_1024x1024.png"));
-		}
-		else if (j == 2)
-		{
-			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_002_1024x1024.png"));
-		}
-		else if (j == 3)
-		{
-			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_003_1024x1024.png"));
-		}
-		else if (j == 4)
-		{
-			success = gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_004_1024x1024.png"));
-		}
-	}
 	return success;
 }
 
-void close(Load* load, Texture* textures, Texture* horizons, Texture* roads, Texture* redFire, Texture* blueFire, Texture* lightnings, Texture* clouds, Texture* rainClouds, Texture* rains, Texture* winds, Texture* boxes)
+void close(Load* load)
 {
 	if (gGameController != NULL)
 	{
@@ -362,25 +312,6 @@ void close(Load* load, Texture* textures, Texture* horizons, Texture* roads, Tex
 	gGameController = NULL;
 	gJoystick = NULL;
 	gJoyHaptic = NULL;
-	for (int i = 0; i < PathEnum_Size; ++i) textures[i].Free();
-	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Free();
-	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Free();
-	for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Free();
-	for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Free();
-	int k = 0;
-	for (int i = 0; i < FIRE_SIZE; ++i)
-		for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
-		{
-			gFires[k].Free();
-			++k;
-		}
-	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Free();
-	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Free();
-	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Free();
-	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Free();
-	for (int i = 0; i < WindEnum_Size; ++i) winds[i].Free();
-	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
-	for (int i = 0; i < gMiracleStarfallLimit; ++i) gMiracleStarfalls[i].Free();
 	gWindow.Free();
 	SDL_Quit();
 }
@@ -478,12 +409,62 @@ int main(int argc, char* argv[])
 		Texture characterFairyWistfuls[CharacterFairyWistfulsEnum_Size];
 		Texture boxes[BoxesEnum_Size];
 		Texture* box = &boxes[BoxUp];
-		if (!loadMedia(load, textures, horizons, roads, redFire, blueFire, lightnings, clouds, rainClouds, rains, winds, houseDenPillars, houseHaunts, boxes))
+		if (!loadMedia(load))
 		{
 			SDL_Log("Failed to load media!\n");
 		}
 		else
 		{
+			for (int i = 0; i < PathEnum_Size; ++i) textures[i].Init(gWindow.GetRenderer(), load->Path(Paths[i]));
+			for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(gWindow.GetRenderer(), load->Path(RoadsPaths[i]));
+			for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Init(gWindow.GetRenderer(), load->Path(HorizonsPaths[i]));
+			for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Init(gWindow.GetRenderer(), load->Path(redFirePaths[i]));
+			for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Init(gWindow.GetRenderer(), load->Path(blueFirePaths[i]));
+			std::string preName = "Fire_00";
+			std::string middleName = "_64x64_00";
+			std::string postName = ".png";
+			int k = 0;
+			for (int i = 0; i < FIRE_SIZE; ++i)
+			{
+				for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
+				{
+					std::string name = preName + std::to_string(i) + middleName + std::to_string(j) + postName;
+					gFires[k].Init(gWindow.GetRenderer(), load->Path(name.c_str()));
+					++k;
+				}
+			}
+			for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Init(gWindow.GetRenderer(), load->Path(lightningsPaths[i]));
+			for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Init(gWindow.GetRenderer(), load->Path(cloudsPaths[i]));
+			for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Init(gWindow.GetRenderer(), load->Path(rainCloudsPaths[i]));
+			for (int i = 0; i < RainEnum_Size; ++i) rains[i].Init(gWindow.GetRenderer(), load->Path(rainPaths[i]));
+			for (int i = 0; i < WindEnum_Size; ++i) winds[i].Init(gWindow.GetRenderer(), load->Path(windPaths[i]));
+			for (int i = 0; i < HouseDenPillarsEnum_Size; ++i) houseDenPillars[i].Init(gWindow.GetRenderer(), load->Path(houseDenPillarsPaths[i]));
+			for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Init(gWindow.GetRenderer(), load->Path(houseHauntsPaths[i]));
+			for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Init(gWindow.GetRenderer(), load->Path(boxesPaths[i]));
+			for (int i = 0; i < gMiracleStarfallLimit; ++i)
+			{
+				int j = i % 5;
+				if (j == 0)
+				{
+					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_000_1024x1024.png"));
+				}
+				else if (j == 1)
+				{
+					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_001_1024x1024.png"));
+				}
+				else if (j == 2)
+				{
+					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_002_1024x1024.png"));
+				}
+				else if (j == 3)
+				{
+					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_003_1024x1024.png"));
+				}
+				else if (j == 4)
+				{
+					gMiracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_004_1024x1024.png"));
+				}
+			}
 			for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Init(gWindow.GetRenderer(), load->Path(CharacterFairyWistfulsPaths[i]));
 			bool quit = false;
 			SDL_Event e;
@@ -1399,8 +1380,27 @@ int main(int argc, char* argv[])
 				++countedFrames;
 			}
 		}
+		for (int i = 0; i < PathEnum_Size; ++i) textures[i].Free();
+		for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Free();
+		for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Free();
+		for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Free();
+		for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Free();
+		int k = 0;
+		for (int i = 0; i < FIRE_SIZE; ++i)
+			for (int j = 0; j < FIRES_SIZE / FIRE_SIZE; ++j)
+			{
+				gFires[k].Free();
+				++k;
+			}
+		for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Free();
+		for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Free();
+		for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Free();
+		for (int i = 0; i < RainEnum_Size; ++i) rains[i].Free();
+		for (int i = 0; i < WindEnum_Size; ++i) winds[i].Free();
+		for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
+		for (int i = 0; i < gMiracleStarfallLimit; ++i) gMiracleStarfalls[i].Free();
 		for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Free();
-		close(load, textures, horizons, roads, redFire, blueFire, lightnings, clouds, rainClouds, rains, winds, boxes);
+		close(load);
 	}
 
 	delete[] gMiracleStarfalls;
