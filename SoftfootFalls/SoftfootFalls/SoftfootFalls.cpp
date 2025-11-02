@@ -1032,6 +1032,8 @@ int main(int argc, char* argv[])
 		for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Free();
 		for (int i = 0; i < RainEnum_Size; ++i) rains[i].Free();
 		for (int i = 0; i < WindEnum_Size; ++i) winds[i].Free();
+		for (int i = 0; i < HouseDenPillarsEnum_Size; ++i) houseDenPillars[i].Free();
+		for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Free();
 		for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
 		for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Free();
 		for (int i = 0; i < miracleStarfallLimit; ++i) miracleStarfalls[i].Free();
