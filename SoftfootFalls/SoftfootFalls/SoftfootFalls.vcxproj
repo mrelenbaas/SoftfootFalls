@@ -128,28 +128,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Container.cpp" />
     <ClCompile Include="Load.cpp" />
     <ClCompile Include="Node.cpp" />
-    <ClCompile Include="Print.cpp" />
     <ClCompile Include="SDLInterface.cpp" />
     <ClCompile Include="SDLWrapper.cpp" />
     <ClCompile Include="SoftfootFalls.cpp" />
-    <ClCompile Include="Star.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Time.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Container.h" />
     <ClInclude Include="Load.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="Point.h" />
-    <ClInclude Include="Print.h" />
     <ClInclude Include="SDLInterface.h" />
     <ClInclude Include="SDLWrapper.h" />
     <ClInclude Include="SoftfootFalls.h" />
-    <ClInclude Include="Star.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Window.h" />

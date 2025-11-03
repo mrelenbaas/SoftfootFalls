@@ -35,9 +35,6 @@
     <ClCompile Include="SoftfootFalls.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Print.cpp">
-      <Filter>Source Files\System Calls</Filter>
-    </ClCompile>
     <ClCompile Include="Time.cpp">
       <Filter>Source Files\System Calls</Filter>
     </ClCompile>
@@ -50,9 +47,6 @@
     <ClCompile Include="SDLInterface.cpp">
       <Filter>Source Files\SDL</Filter>
     </ClCompile>
-    <ClCompile Include="Container.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SDLWrapper.cpp">
       <Filter>Source Files\SDL</Filter>
     </ClCompile>
@@ -62,14 +56,8 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files\SDL</Filter>
     </ClCompile>
-    <ClCompile Include="Star.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Print.h">
-      <Filter>Header Files\System Calls</Filter>
-    </ClInclude>
     <ClInclude Include="Time.h">
       <Filter>Header Files\System Calls</Filter>
     </ClInclude>
@@ -85,9 +73,6 @@
     <ClInclude Include="SDLInterface.h">
       <Filter>Header Files\SDL</Filter>
     </ClInclude>
-    <ClInclude Include="Container.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SDLWrapper.h">
       <Filter>Header Files\SDL</Filter>
     </ClInclude>
@@ -96,9 +81,6 @@
     </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Header Files\SDL</Filter>
-    </ClInclude>
-    <ClInclude Include="Star.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Point.h">
       <Filter>Header Files\Structs</Filter>

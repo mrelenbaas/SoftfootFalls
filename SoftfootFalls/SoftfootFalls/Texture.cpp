@@ -1,8 +1,6 @@
 #include "Texture.h"
 #include "SDLInterface.h"
 
-#include "Print.h"
-
 
 Texture::~Texture()
 {
@@ -33,12 +31,8 @@ void Texture::Free()
 
 bool Texture::LoadFromFile(const char* path)
 {
-	if (!LoadPixelsFromFile(path))
-		Print::WithClassName("ERROR: Failed to load pixels: ", path);
-	else if (!LoadFromPixels())
-		Print::WithClassName(
-			"ERROR: Failed to make texture from pixels from: ",
-			path);
+	if (!LoadPixelsFromFile(path)) {}
+	else LoadFromPixels();
 	return texture != NULL;
 }
 
@@ -46,24 +40,17 @@ bool Texture::LoadPixelsFromFile(const char* path)
 {
 	Free();
 	surface = IMG_Load(path);
-	if (surface == NULL)
-		Print::WithClassName("ERROR: Failed to load image:", path);
-	else SetWidthAndHeight();
+	SetWidthAndHeight();
 	return surface != NULL;
 }
 
 bool Texture::LoadFromPixels()
 {
-	if (surface == NULL)
-		Print::WithClassName("ERROR: No pixels loaded.", SDL_GetError());
+	if (surface == NULL) {}
 	else
 	{
 		texture = SDL_CreateTextureFromSurface(renderer, surface);
-		if (texture == NULL)
-			Print::WithClassName(
-				"ERROR: Failed to create texture from loaded pixels:",
-				SDL_GetError());
-		else SetWidthAndHeight();
+		SetWidthAndHeight();
 		DestroySurface(surface);
 		surface = NULL;
 	}

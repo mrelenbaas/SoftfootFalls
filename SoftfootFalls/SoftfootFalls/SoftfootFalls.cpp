@@ -1,6 +1,5 @@
 #include "SoftfootFalls.h"
 
-#include "Print.h"
 #include "Time.h"
 #include <sstream>
 #include <iomanip>
@@ -9,8 +8,6 @@
 
 #include "Point.h"
 #include "Load.h"
-#include "Container.h"
-#include "Star.h"
 
 
 int main(int argc, char* argv[])
@@ -77,11 +74,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < miracleStarfallLimit; ++i) gMiracleStarfallDeltas[i] = 0L;
 	double gMiracleStarfallNormals[miracleStarfallLimit]{};
 	for (int i = 0; i < miracleStarfallLimit; ++i) gMiracleStarfallNormals[i] = 0;
-#ifdef _WIN32
-	SDL_IOStream* file;
-#elif __linux__
-	SDL_RWops* file;
-#endif
+	auto file = GetFile();
 	file = IOFromFile(load->Path("nums.bin"), "r+b");
 	if (file == NULL)
 	{
@@ -109,9 +102,6 @@ int main(int argc, char* argv[])
 		for (int i = 0; i < TOTAL_DATA; ++i) ReadIO(file, &data[i]);
 		CloseIO(file);
 	}
-#ifdef __linux__
-	if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1")) printf("Warning: Linear texture filtering not enabled!\n");
-#endif
 	if (!gWindow.Init())
 	{
 		SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -119,24 +109,11 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-#ifdef __linux__
-		gWindow.SetRenderer(SDL_CreateRenderer(gWindow.GetWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC));
-		if (gWindow.GetRenderer() == NULL)
+		SDL_Renderer* linuxRenderer = SetLinuxRenderer(gWindow.GetWindow());
+		if (linuxRenderer)
 		{
-			printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
-			return 1;
+			gWindow.SetRenderer(linuxRenderer);
 		}
-		else
-		{
-			SDL_SetRenderDrawColor(gWindow.GetRenderer(), 0xFF, 0xFF, 0xFF, 0xFF);
-			int imgFlags = IMG_INIT_PNG;
-			if (!(IMG_Init(imgFlags) & imgFlags))
-			{
-				printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-				return 1;
-			}
-		}
-#endif
 	}
 	Texture textures[PathEnum_Size];
 	Texture horizons[HorizonsEnum_Size];
@@ -186,7 +163,6 @@ int main(int argc, char* argv[])
 	std::string inputText = "Input";
 	int currentData = 0;
 	bool isHome = false;
-	bool isInput = false;
 	long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	bool trisecondToggle = false;
 	bool twelvesecondToggle = false;
@@ -310,25 +286,10 @@ int main(int argc, char* argv[])
 			else if (e.type == KEY_PRESSED)
 			{
 				isIdle = false;
-#ifdef _WIN32
-				size_t requiredSize;
-				mbstowcs_s(&requiredSize, nullptr, 0, load->Path("medium.wav"), _TRUNCATE);
-				std::vector<wchar_t> wideBuffer(requiredSize);
-				mbstowcs_s(&requiredSize, wideBuffer.data(), requiredSize, load->Path("medium.wav"), _TRUNCATE);
-				std::wstring wideString(wideBuffer.data());
-#endif
 				switch (Key(e))
 				{
 				case SDLK_HOME:
 					isHome = !isHome;
-					isInput = !isInput;
-					break;
-				case SDLK_END:
-#ifdef _WIN32
-					PlaySound(wideString.c_str(), NULL, SND_FILENAME | SND_ASYNC);
-#elif __linux__
-					system("aplay ~/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav");
-#endif
 					break;
 				case KEY_W:
 					box = &boxes[BoxUp];
@@ -357,6 +318,7 @@ int main(int argc, char* argv[])
 					isRight = true;
 					break;
 				case KEY_Q:
+					PlaySFX(load->Path("medium.wav"));
 					miracleStarfallUpdateAtEndOfFrame = true;
 					miracleStarfallModIndex = miracleStarfallIndex % 5;
 					gMiracleStarfallSpawns[miracleStarfallIndex] = true;

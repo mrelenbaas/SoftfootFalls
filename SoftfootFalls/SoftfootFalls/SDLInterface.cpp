@@ -1,5 +1,17 @@
+#include <stdio.h>
+#include <vector>
+
 #include "SDLInterface.h"
-#include "Container.h"
+
+#ifdef _WIN32
+#include <Windows.h>
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
+#elif __linux__
+#include <cstdlib>
+#endif
+#include <string>
+
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -49,6 +61,7 @@ void SecondInit(const char* title, int width, int height, SDL_Window** window, S
 	SDL_CreateWindowAndRenderer(title, width, height, SDL_WINDOW_RESIZABLE, window, renderer);
 	SDL_SetRenderVSync(*renderer, 1);
 #elif __linux__
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 	*window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 #endif
 }
@@ -92,6 +105,30 @@ void DestroySurface(SDL_Surface* surface)
 ///////////////////////////////////////////////////////////////////////
 //  RENDER  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
+
+SDL_Renderer* SetLinuxRenderer(SDL_Window* window)
+{
+	SDL_Renderer* renderer = NULL;
+#ifdef __linux__
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	if (renderer == NULL)
+	{
+		printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
+		return 1;
+	}
+	else
+	{
+		SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+		int imgFlags = IMG_INIT_PNG;
+		if (!(IMG_Init(imgFlags) & imgFlags))
+		{
+			printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+			return 1;
+		}
+	}
+#endif
+	return renderer;
+}
 
 void RenderLine(SDL_Renderer* renderer, float x, float y, float w, float h)
 {
@@ -144,6 +181,20 @@ void RenderTextureRotated(SDL_Renderer* renderer, SDL_Texture* texture, SDL_Rect
 ///////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN32
+SDL_IOStream* GetFile()
+#elif __linux__
+SDL_RWops* GetFile()
+#endif
+{
+#ifdef _WIN32
+	SDL_IOStream* file = NULL;
+#elif __linux__
+	SDL_RWops* file = NULL;
+#endif
+	return file;
+}
+
+#ifdef _WIN32
 SDL_IOStream* IOFromFile(const char* file, const char* mode)
 #elif __linux__
 SDL_RWops* IOFromFile(const char* file, const char* mode)
@@ -192,5 +243,23 @@ void CloseIO(SDL_RWops* file)
 	SDL_CloseIO(file);
 #elif __linux__
 	SDL_RWclose(file);
+#endif
+}
+
+///////////////////////////////////////////////////////////////////////
+//  SFX  //////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+void PlaySFX(const char* path)
+{
+#ifdef _WIN32
+	size_t requiredSize;
+	mbstowcs_s(&requiredSize, nullptr, 0, path, _TRUNCATE);
+	std::vector<wchar_t> wideBuffer(requiredSize);
+	mbstowcs_s(&requiredSize, wideBuffer.data(), requiredSize, path, _TRUNCATE);
+	std::wstring wideString(wideBuffer.data());
+	PlaySound(wideString.c_str(), NULL, SND_FILENAME | SND_ASYNC);
+#elif __linux__
+	system("aplay ~/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav");
 #endif
 }
