@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 	const int TOTAL_DATA = 10;
 	const double PI = 3.14159265358979323846;
 	Window gWindow;
-	Sint32 gData[TOTAL_DATA];
+	Sint32 data[TOTAL_DATA]{};
 	const int ROW_SIZE = 25;
 	const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 	int framesPerSecond = 0;
@@ -39,10 +39,6 @@ int main(int argc, char* argv[])
 	limits[animation] = limits[second_1] / ANIMATION_LIMIT;
 	SDL_Rect viewports[ViewportsEnum_Size]{};
 	for (int i = 0; i < ViewportsEnum_Size; ++i) viewports[i] = { 0, 0, 0, 0 };
-	int x = 0;
-	int y = 0;
-	int w = 0;
-	//int h = 0;
 	BoxesEnum playerDirection = BoxUp;
 	bool isUp = false;
 	bool isDown = false;
@@ -74,25 +70,13 @@ int main(int argc, char* argv[])
 		gMiracleStarfallViewports[i].h = 0;
 	}
 	bool gMiracleStarfallSpawns[miracleStarfallLimit]{};
-	for (int i = 0; i < miracleStarfallLimit; ++i)
-	{
-		gMiracleStarfallSpawns[i] = false;
-	}
+	for (int i = 0; i < miracleStarfallLimit; ++i) gMiracleStarfallSpawns[i] = false;
 	bool gMiracleStarfallDespawns[miracleStarfallLimit]{};
-	for (int i = 0; i < miracleStarfallLimit; ++i)
-	{
-		gMiracleStarfallDespawns[i] = false;
-	}
+	for (int i = 0; i < miracleStarfallLimit; ++i) gMiracleStarfallDespawns[i] = false;
 	long long gMiracleStarfallDeltas[miracleStarfallLimit]{};
-	for (int i = 0; i < miracleStarfallLimit; ++i)
-	{
-		gMiracleStarfallDeltas[i] = 0L;
-	}
+	for (int i = 0; i < miracleStarfallLimit; ++i) gMiracleStarfallDeltas[i] = 0L;
 	double gMiracleStarfallNormals[miracleStarfallLimit]{};
-	for (int i = 0; i < miracleStarfallLimit; ++i)
-	{
-		gMiracleStarfallNormals[i] = 0;
-	}
+	for (int i = 0; i < miracleStarfallLimit; ++i) gMiracleStarfallNormals[i] = 0;
 #ifdef _WIN32
 	SDL_IOStream* file;
 #elif __linux__
@@ -108,8 +92,8 @@ int main(int argc, char* argv[])
 			SDL_Log("New file created!\n");
 			for (int i = 0; i < TOTAL_DATA; ++i)
 			{
-				gData[i] = 0;
-				WriteIO(file, &gData[i]);
+				data[i] = 0;
+				WriteIO(file, &data[i]);
 			}
 			CloseIO(file);
 		}
@@ -122,17 +106,11 @@ int main(int argc, char* argv[])
 	else
 	{
 		SDL_Log("Reading file...!\n");
-		for (int i = 0; i < TOTAL_DATA; ++i)
-		{
-			ReadIO(file, &gData[i]);
-		}
+		for (int i = 0; i < TOTAL_DATA; ++i) ReadIO(file, &data[i]);
 		CloseIO(file);
 	}
 #ifdef __linux__
-	if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
-	{
-		printf("Warning: Linear texture filtering not enabled!\n");
-	}
+	if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1")) printf("Warning: Linear texture filtering not enabled!\n");
 #endif
 	if (!gWindow.Init())
 	{
@@ -193,26 +171,11 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < miracleStarfallLimit; ++i)
 	{
 		int j = i % 5;
-		if (j == 0)
-		{
-			miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_000_1024x1024.png"));
-		}
-		else if (j == 1)
-		{
-			miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_001_1024x1024.png"));
-		}
-		else if (j == 2)
-		{
-			miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_002_1024x1024.png"));
-		}
-		else if (j == 3)
-		{
-			miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_003_1024x1024.png"));
-		}
-		else if (j == 4)
-		{
-			miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_004_1024x1024.png"));
-		}
+		if (j == 0) miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_000_1024x1024.png"));
+		else if (j == 1) miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_001_1024x1024.png"));
+		else if (j == 2) miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_002_1024x1024.png"));
+		else if (j == 3) miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_003_1024x1024.png"));
+		else if (j == 4) miracleStarfalls[i].Init(gWindow.GetRenderer(), load->Path("MiracleStarfall_004_1024x1024.png"));
 	}
 	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Init(gWindow.GetRenderer(), load->Path(CharacterFairyWistfulsPaths[i]));
 	bool quit = false;
@@ -224,7 +187,6 @@ int main(int argc, char* argv[])
 	int currentData = 0;
 	bool isHome = false;
 	bool isInput = false;
-
 	long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	bool trisecondToggle = false;
 	bool twelvesecondToggle = false;
@@ -242,10 +204,7 @@ int main(int argc, char* argv[])
 	int starI = 0;
 	int starJ = 0;
 	bool isOnFire[GRID_SIZE]{};
-	for (int i = 0; i < GRID_SIZE; ++i)
-	{
-		isOnFire[i] = false;
-	}
+	for (int i = 0; i < GRID_SIZE; ++i) isOnFire[i] = false;
 	bool isIdle = true;
 	int lightningIndex = 0;
 	int cloudIndex = 0;
@@ -254,28 +213,18 @@ int main(int argc, char* argv[])
 	int windIndex = 0;
 	while (!quit)
 	{
-		//Uint64 now = SDL_GetPerformanceCounter();
-		//double deltaTime = (double)(now - lastTime) / SDL_GetPerformanceFrequency();
-		//lastTime = now;
 		long long currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		deltas[second_1] += currentTime - previousTime;
 		deltas[animation] += currentTime - previousTime;
 		deltas[second_3] += currentTime - previousTime;
 		deltas[second_12] += currentTime - previousTime;
 		deltas[minute_1] += currentTime - previousTime;
-		for (int m = 0; m < miracleStarfallLimit; ++m)
-		{
-			gMiracleStarfallDeltas[m] += currentTime - previousTime;
-		}
-
+		for (int m = 0; m < miracleStarfallLimit; ++m) gMiracleStarfallDeltas[m] += currentTime - previousTime;
 		if (deltas[animation] > limits[animation])
 		{
 			deltas[animation] -= limits[animation];
 			++animationIndex;
-			if (animationIndex >= ANIMATION_LIMIT)
-			{
-				animationIndex = 0;
-			}
+			if (animationIndex >= ANIMATION_LIMIT) animationIndex = 0;
 			fireIndex = animationIndex % FIRE_SIZE;
 			lightningIndex = animationIndex % LightningEnum_Size;
 			cloudIndex = animationIndex % CloudsEnum_Size;
@@ -289,10 +238,7 @@ int main(int argc, char* argv[])
 			framesPerSecond = 0;
 			deltas[second_1] -= limits[second_1];
 		}
-		else
-		{
-			++framesPerSecond;
-		}
+		else ++framesPerSecond;
 		if (deltas[second_3] > limits[second_3])
 		{
 			trisecondToggle = !trisecondToggle;
@@ -303,14 +249,8 @@ int main(int argc, char* argv[])
 			twelvesecondToggle = !twelvesecondToggle;
 			deltas[second_12] -= limits[second_12];
 		}
-		if (deltas[minute_1] > limits[minute_1])
-		{
-			deltas[minute_1] -= limits[minute_1];
-		}
-		for (int i = 0; i < TimerEnum_Size; ++i)
-		{
-			normals[i] = (double)deltas[i] / limits[i];
-		}
+		if (deltas[minute_1] > limits[minute_1]) deltas[minute_1] -= limits[minute_1];
+		for (int i = 0; i < TimerEnum_Size; ++i) normals[i] = (double)deltas[i] / limits[i];
 		for (int m = 0; m < miracleStarfallLimit; ++m)
 		{
 			gMiracleStarfallNormals[m] = (double)gMiracleStarfallDeltas[m] / limits[second_1];
@@ -321,7 +261,6 @@ int main(int argc, char* argv[])
 			}
 		}
 		previousTime = currentTime;
-
 		while (SDL_PollEvent(&e) != 0)
 		{
 			if (IsWindowQuit(e)) quit = true;
@@ -394,32 +333,26 @@ int main(int argc, char* argv[])
 				case KEY_W:
 					box = &boxes[BoxUp];
 					--currentData;
-					if (currentData < 0)
-					{
-						currentData = TOTAL_DATA - 1;
-					}
+					if (currentData < 0) currentData = TOTAL_DATA - 1;
 					dot.SetUp(true);
 					isUp = true;
 					break;
 				case KEY_S:
 					box = &boxes[BoxDown];
 					++currentData;
-					if (currentData == TOTAL_DATA)
-					{
-						currentData = 0;
-					}
+					if (currentData == TOTAL_DATA) currentData = 0;
 					dot.SetDown(true);
 					isDown = true;
 					break;
 				case KEY_A:
 					box = &boxes[BoxLeft];
-					--gData[currentData];
+					--data[currentData];
 					dot.SetLeft(true);
 					isLeft = true;
 					break;
 				case KEY_D:
 					box = &boxes[BoxRight];
-					++gData[currentData];
+					++data[currentData];
 					dot.SetRight(true);
 					isRight = true;
 					break;
@@ -451,13 +384,7 @@ int main(int argc, char* argv[])
 					break;
 				}
 			}
-			if (e.type == KEY_PRESSED)
-			{
-				if (Key(e) == SDLK_BACKSPACE && inputText.length() > 0)
-				{
-					inputText.pop_back();
-				}
-			}
+			if (e.type == KEY_PRESSED) if (Key(e) == SDLK_BACKSPACE && inputText.length() > 0) inputText.pop_back();
 			gWindow.HandleEvent(e);
 		}
 		if (!gWindow.IsMinimized())
@@ -467,31 +394,19 @@ int main(int argc, char* argv[])
 			{
 			case BoxUp:
 				backgroundScrollingOffset = -textures[BackgroundBackground].GetHeight() * normals[minute_1];
-				if (backgroundScrollingOffset < -textures[BackgroundBackground].GetHeight())
-				{
-					backgroundScrollingOffset = 0;
-				}
+				if (backgroundScrollingOffset < -textures[BackgroundBackground].GetHeight()) backgroundScrollingOffset = 0;
 				break;
 			case BoxDown:
 				backgroundScrollingOffset = textures[BackgroundBackground].GetHeight() * normals[minute_1];
-				if (backgroundScrollingOffset > textures[BackgroundBackground].GetHeight())
-				{
-					backgroundScrollingOffset = 0;
-				}
+				if (backgroundScrollingOffset > textures[BackgroundBackground].GetHeight()) backgroundScrollingOffset = 0;
 				break;
 			case BoxLeft:
 				backgroundScrollingOffset = -textures[BackgroundBackground].GetWidth() * normals[minute_1];
-				if (backgroundScrollingOffset < -textures[BackgroundBackground].GetWidth())
-				{
-					backgroundScrollingOffset = 0;
-				}
+				if (backgroundScrollingOffset < -textures[BackgroundBackground].GetWidth()) backgroundScrollingOffset = 0;
 				break;
 			case BoxRight:
 				backgroundScrollingOffset = textures[BackgroundBackground].GetWidth() * normals[minute_1];
-				if (backgroundScrollingOffset > textures[BackgroundBackground].GetWidth())
-				{
-					backgroundScrollingOffset = 0;
-				}
+				if (backgroundScrollingOffset > textures[BackgroundBackground].GetWidth()) backgroundScrollingOffset = 0;
 				break;
 			case BoxesEnum_Size:
 				break;
@@ -517,14 +432,8 @@ int main(int argc, char* argv[])
 			viewports[v_fullscreen].w = gWindow.GetWidth();
 			viewports[v_fullscreen].h = gWindow.GetHeight();
 			int horizontalModifier = 0;
-			if (twelvesecondToggle)
-			{
-				horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * normals[second_12];
-			}
-			else
-			{
-				horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * (1.0f - normals[second_12]);
-			}
+			if (twelvesecondToggle) horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * normals[second_12];
+			else horizontalModifier = (gWindow.GetWidth() + viewports[v_fullscreen].w) * (1.0f - normals[second_12]);
 			viewports[v_boss].x = viewports[v_fullscreen].x - viewports[v_fullscreen].w + horizontalModifier;
 			viewports[v_boss].y = viewports[v_fullscreen].y - (viewports[v_fullscreen].h / 2);
 			viewports[v_boss].w = viewports[v_fullscreen].w;
@@ -534,7 +443,6 @@ int main(int argc, char* argv[])
 			textures[CharacterTownspersonMoonboy_Hands].Draw(&viewports[v_boss]);
 			dot.Move(gWindow.GetWidth(), gWindow.GetHeight(), currentTime, limits[second_3]);
 			dot.SetIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ, (float)gWindow.GetWidth(), (float)gWindow.GetHeight(), ROW_SIZE);
-
 			viewports[v_tile].x = (gWindow.GetWidth() * 0.5f) - 100;
 			viewports[v_tile].y = (gWindow.GetHeight() * 0.5f) - 100;
 			viewports[v_tile].w = 200;
@@ -548,39 +456,23 @@ int main(int argc, char* argv[])
 			for (int i = ROW_SIZE - 1; i >= 0 ; --i)
 			{
 				normal = (float)i / (float)ROW_SIZE;
-				x = (0 + centerX) * normal;
 				viewports[v_tile].w = centerX / ROW_SIZE;
 				viewports[v_tile].h = centerY / ROW_SIZE;
-				y = 
-					gWindow.GetHeight()
-					- viewports[v_tile].h
-					- ((0 + centerY) * normal);
-				viewports[v_tile].x = x;
-				viewports[v_tile].y = y;
+				viewports[v_tile].x = ((0 + centerX) * normal);
+				viewports[v_tile].y = (gWindow.GetHeight() - viewports[v_tile].h - ((0 + centerY) * normal));
 				viewports[v_row] = viewports[v_tile];
-				x = gWindow.GetWidth() - viewports[v_tile].w - ((0 + centerX) * normal);
 				viewports[v_tile].w = centerX / ROW_SIZE;
 				viewports[v_tile].h = centerY / ROW_SIZE;
-				y = 
-					gWindow.GetHeight()
-					- viewports[v_tile].h
-					- ((0 + centerY) * normal);
-				viewports[v_tile].x = x;
-				viewports[v_tile].y = y;
+				viewports[v_tile].x = (gWindow.GetWidth() - viewports[v_tile].w - ((0 + centerX) * normal));
+				viewports[v_tile].y = (gWindow.GetHeight() - viewports[v_tile].h - ((0 + centerY) * normal));
 				viewports[v_column] = viewports[v_tile];
 				for (int j = 0; j < ROW_SIZE; ++j)
 				{
-					w = viewports[v_column].x + viewports[v_column].w - viewports[v_row].x;
-					float xStep = (float)w / ROW_SIZE;
-					x = viewports[v_row].x + (j * xStep);
-					viewports[v_tile].w = w / ROW_SIZE;
+					float xStep = (float)(viewports[v_column].x + viewports[v_column].w - viewports[v_row].x) / ROW_SIZE;
+					viewports[v_tile].w = (viewports[v_column].x + viewports[v_column].w - viewports[v_row].x) / ROW_SIZE;
 					viewports[v_tile].h = viewports[v_tile].w;
-					y = 
-						gWindow.GetHeight()
-						- viewports[v_tile].h
-						- ((0 + centerY) * normal);
-					viewports[v_tile].x = x;
-					viewports[v_tile].y = y;
+					viewports[v_tile].x = (viewports[v_row].x + (j * xStep));
+					viewports[v_tile].y = (gWindow.GetHeight() - viewports[v_tile].h - ((0 + centerY) * normal));
 					if (viewports[v_tile].x < 0) viewports[v_tile].x = 0;
 					if (viewports[v_tile].y < 0) viewports[v_tile].y = 0;
 					if (viewports[v_tile].w < 0) viewports[v_tile].w = 0;
@@ -601,17 +493,11 @@ int main(int argc, char* argv[])
 					int modI = (i % 2 == 0) ? 0 : 4;
 					horizons[modI + horizonI].Draw(&viewports[v_tile]);
 					++horizonI;
-					if (horizonI > 3)
-					{
-						horizonI = 0;
-					}
+					if (horizonI > 3) horizonI = 0;
 					modI = (i % 4 == 0);
 					roads[modI + roadI].Draw(&viewports[v_tile]);
 					++roadI;
-					if (roadI > 3)
-					{
-						roadI = 0;
-					}
+					if (roadI > 3) roadI = 0;
 					if (dotI == i && dotJ == j)
 					{
 						if (isLightningActive) isOnFire[k] = true;
@@ -648,10 +534,7 @@ int main(int argc, char* argv[])
 						viewports[v_farTopTile].h = viewports[v_tile].h;
 						textures[PalaceHighlightBottom].Draw(&viewports[v_farTopTile]);
 					}
-					if (isOnFire[k])
-					{
-						fires[animationIndex].Draw(&viewports[v_tile]);
-					}
+					if (isOnFire[k]) fires[animationIndex].Draw(&viewports[v_tile]);
 					if (j == 0)
 					{
 						viewports[v_farLeftTile].x = viewports[v_tile].x;
@@ -659,11 +542,10 @@ int main(int argc, char* argv[])
 						viewports[v_farLeftTile].w = viewports[v_tile].w;
 						viewports[v_farLeftTile].h = viewports[v_tile].h;
 					}
-					x = viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w);
 					if (i == dotI) textures[PalaceHighlightLeft].Draw(&viewports[v_farLeftTile]);
-					viewports[v_playerBox].x = x;
-					viewports[v_playerMiracle].x = x;
-					viewports[v_playerClouds].x = x - (viewports[v_playerClouds].w * 0.1f);
+					viewports[v_playerBox].x = (viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w));
+					viewports[v_playerMiracle].x = (viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w));
+					viewports[v_playerClouds].x = (viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w)) - (viewports[v_playerClouds].w * 0.1f);
 					if (i == 0 && j == 0) houseHaunts[HouseHaunt_000_Alt_Empty].Draw(&viewports[v_tile]);
 					if (i == 0 && j == 1) houseHaunts[HouseHaunt_001_Alt_Empty].Draw(&viewports[v_tile]);
 					if (i == 0 && j == 2) houseHaunts[HouseHaunt_002_Alt_Empty].Draw(&viewports[v_tile]);
@@ -698,18 +580,9 @@ int main(int argc, char* argv[])
 					if (i == 24 && j == 1) textures[CharacterFairyHopeful].Draw(&viewports[v_tile]);
 					int hallI = 12;
 					int hallJ = 11;
-					if (i == hallI && j == hallJ)
-					{
-						textures[Landscape_Hall].Draw(&viewports[v_tile]);
-					}
-					if (hallI == dotI && hallJ == dotJ)
-					{
-						isOverHall = true;
-					}
-					else
-					{
-						isOverHall = false;
-					}
+					if (i == hallI && j == hallJ) textures[Landscape_Hall].Draw(&viewports[v_tile]);
+					if (hallI == dotI && hallJ == dotJ) isOverHall = true;
+					else isOverHall = false;
 					viewports[v_tileMiracle].x = viewports[v_tile].x;
 					viewports[v_tileMiracle].y = viewports[v_tile].y - viewports[v_tile].h;
 					viewports[v_tileMiracle].w = viewports[v_tile].w;
@@ -746,7 +619,6 @@ int main(int argc, char* argv[])
 							? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
 							: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 					}
-
 					if (i == 2 && j == 17)
 					{
 						houseDenPillars[HouseDenPillar_004].Draw(&viewports[v_tile]);
@@ -779,7 +651,6 @@ int main(int argc, char* argv[])
 							? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
 							: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 					}
-
 					if (i == 2 && j == 14)
 					{
 						houseDenPillars[HouseDenPillar_008].Draw(&viewports[v_tile]);
@@ -796,7 +667,6 @@ int main(int argc, char* argv[])
 							? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
 							: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 					}
-
 					if (i == 9 && j == 10)
 					{
 						houseDenPillars[HouseDenPillar_010].Draw(&viewports[v_tile]);
@@ -813,11 +683,7 @@ int main(int argc, char* argv[])
 							? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
 							: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 					}
-
-					if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1)
-					{
-						textures[CharacterFairyMoon].Draw(&viewports[v_tile], 360 * normals[second_1]);
-					}
+					if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1) textures[CharacterFairyMoon].Draw(&viewports[v_tile], 360 * normals[second_1]);
 					if (dotI == i)
 					{
 						if (isLightningActive) lightnings[lightningIndex].Draw(&viewports[v_playerMiracle]);
@@ -870,10 +736,7 @@ int main(int argc, char* argv[])
 			}
 			for (int m = 0; m < miracleStarfallLimit; ++m)
 			{
-				if (gMiracleStarfallDeltas[m] > limits[second_1])
-				{
-					gMiracleStarfallDespawns[m] = false;
-				}
+				if (gMiracleStarfallDeltas[m] > limits[second_1]) gMiracleStarfallDespawns[m] = false;
 				if (gMiracleStarfallDespawns[m])
 				{
 					viewports[v_playerStarCurrent].x = gMiracleStarfallViewports[m].x;
@@ -888,10 +751,7 @@ int main(int argc, char* argv[])
 			viewports[v_menu].w = viewports[v_fullscreen].w;
 			viewports[v_menu].h = viewports[v_fullscreen].h;
 			textures[MenuTop].Draw(&viewports[v_menu]);
-			if (isIdle)
-			{
-				textures[Crest].Draw(&viewports[v_fullscreen]);
-			}
+			if (isIdle) textures[Crest].Draw(&viewports[v_fullscreen]);
 			if (isHome)
 			{
 				viewports[v_menu].x = viewports[v_fullscreen].x;
@@ -920,10 +780,7 @@ int main(int argc, char* argv[])
 		if (miracleStarfallUpdateAtEndOfFrame)
 		{
 			++miracleStarfallIndex;
-			if (miracleStarfallIndex >= miracleStarfallLimit)
-			{
-				miracleStarfallIndex = 0;
-			}
+			if (miracleStarfallIndex >= miracleStarfallLimit) miracleStarfallIndex = 0;
 			miracleStarfallUpdateAtEndOfFrame = false;
 		}
 		++countedFrames;
@@ -947,16 +804,10 @@ int main(int argc, char* argv[])
 	file = IOFromFile(load->Path("nums.bin"), "w+b");
 	if (file != NULL)
 	{
-		for (int i = 0; i < TOTAL_DATA; ++i)
-		{
-			WriteIO(file, &gData);
-		}
+		for (int i = 0; i < TOTAL_DATA; ++i) WriteIO(file, &data);
 		CloseIO(file);
 	}
-	else
-	{
-		printf("Error: Unable to save file! %s\n", SDL_GetError());
-	}
+	else printf("Error: Unable to save file! %s\n", SDL_GetError());
 	gWindow.Free();
 	SDL_Quit();
 	delete[] miracleStarfalls;
