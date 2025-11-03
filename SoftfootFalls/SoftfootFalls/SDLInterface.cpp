@@ -114,7 +114,7 @@ SDL_Renderer* SetLinuxRenderer(SDL_Window* window)
 	if (renderer == NULL)
 	{
 		printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
-		return 1;
+		return NULL;
 	}
 	else
 	{
@@ -123,7 +123,7 @@ SDL_Renderer* SetLinuxRenderer(SDL_Window* window)
 		if (!(IMG_Init(imgFlags) & imgFlags))
 		{
 			printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-			return 1;
+			return NULL;
 		}
 	}
 #endif
