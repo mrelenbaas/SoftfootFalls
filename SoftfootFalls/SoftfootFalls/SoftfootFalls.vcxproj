@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClCompile Include="Load.cpp" />
     <ClCompile Include="Node.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="SDLInterface.cpp" />
     <ClCompile Include="SDLWrapper.cpp" />
     <ClCompile Include="SoftfootFalls.cpp" />
@@ -140,6 +141,7 @@
   <ItemGroup>
     <ClInclude Include="Load.h" />
     <ClInclude Include="Node.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="SDLInterface.h" />
     <ClInclude Include="SDLWrapper.h" />

@@ -125,7 +125,7 @@ void DestroySurface(SDL_Surface*);
 //  RENDER  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-SDL_Renderer* SetLinuxRenderer(SDL_Window*);
+SDL_Renderer* GetLinuxRenderer(SDL_Window*);
 
 void RenderLine(SDL_Renderer*, float, float, float, float);
 

@@ -106,7 +106,7 @@ void DestroySurface(SDL_Surface* surface)
 //  RENDER  ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-SDL_Renderer* SetLinuxRenderer(SDL_Window* window)
+SDL_Renderer* GetLinuxRenderer(SDL_Window* window)
 {
 	SDL_Renderer* renderer = NULL;
 #ifdef __linux__
