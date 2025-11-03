@@ -20,8 +20,8 @@ int main(int argc, char* argv[])
 	const int ROW_SIZE = 25;
 	const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 	int framesPerSecond = 0;
-	//const char* basePath = BasePath(argv[0]);
-	Load* load = new Load(BasePath(argv[0]));
+	const char* basePath = BasePath(argv[0]);
+	Load* load = new Load(basePath);
 	long long deltas[TimerEnum_Size]{};
 	for (int i = 0; i < TimerEnum_Size; ++i) deltas[i] = 0L;
 	double normals[TimerEnum_Size]{};
@@ -763,6 +763,6 @@ int main(int argc, char* argv[])
 	SDL_Quit();
 	delete[] miracleStarfalls;
 	delete load;
-	//delete[] basePath;
+	delete[] basePath;
 	return 0;
 }

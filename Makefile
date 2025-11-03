@@ -13,6 +13,7 @@ SOURCES = \
 	./SoftfootFalls/SoftfootFalls/SDLWrapper.cpp \
 	./SoftfootFalls/SoftfootFalls/Window.cpp \
 	./SoftfootFalls/SoftfootFalls/Texture.cpp \
+	./SoftfootFalls/SoftfootFalls/Player.cpp \
 	./SoftfootFalls/SoftfootFalls/Container.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
