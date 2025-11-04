@@ -25,7 +25,8 @@ public:
 		, width(640)
 		, height(480)
 		, fullscreen(false)
-		, minimized(false) {
+		, minimized(false)
+		, isRunning(true) {
 	}
 	bool Init();
 	void HandleEvent(SDL_Event&);
@@ -36,6 +37,8 @@ public:
 	SDL_Window* GetWindow() { return window; };
 	void SetRenderer(SDL_Renderer*);
 	bool IsMinimized() const;
+	bool IsRunning() const { return isRunning; }
+	void Quit() { isRunning = false; }
 private:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
@@ -44,4 +47,5 @@ private:
 	int height;
 	bool fullscreen;
 	bool minimized;
+	bool isRunning;
 };

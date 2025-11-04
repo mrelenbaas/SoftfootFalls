@@ -24,7 +24,10 @@
 #include "Window.h"
 #include "Texture.h"
 #include "Player.h"
+#include "Load.h"
 
+
+Window window;
 
 ///////////////////////////////////////////////////////////////////////
 //  Timer  ////////////////////////////////////////////////////////////
@@ -47,37 +50,6 @@ const double limits[] =
 	6'000'000'000.0,
 	60'000'000'000.0,
 	1'000'000'000.0 / ANIMATION_LIMIT
-};
-
-///////////////////////////////////////////////////////////////////////
-//  Viewports  ////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-
-enum ViewportsEnum
-{
-	v_default,
-	v_fullscreen,
-	v_menu,
-	v_background,
-	v_player,
-	v_playerBox,
-	v_playerStarCurrent,
-	v_playerStarTileToGrid,
-	v_playerStarGridToSky,
-	v_playerClouds,
-	v_playerMiracle,
-	v_row,
-	v_column,
-	v_tile,
-	v_tileMiracle,
-	v_farTopTile,
-	v_farLeftTile,
-	v_palace,
-	v_palaceRight,
-	v_palaceRightDown,
-	v_palaceRightDownDown,
-	v_boss,
-	ViewportsEnum_Size
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -697,3 +669,365 @@ const char* alphabetPaths[] =
 	"ASCII125000.png",
 	"ASCII126000.png"
 };
+
+Texture unsorted[PathEnum_Size];
+Texture horizons[HorizonsEnum_Size];
+Texture roads[RoadsEnum_Size];
+Texture redFire[RedFireEnum_Size];
+Texture blueFire[BlueFireEnum_Size];
+Texture fires[FiresEnum_Size];
+Texture lightnings[LightningEnum_Size];
+Texture clouds[CloudsEnum_Size];
+Texture rainClouds[RainCloudsEnum_Size];
+Texture rains[RainEnum_Size];
+Texture winds[WindEnum_Size];
+Texture houseDenPillars[HouseDenPillarsEnum_Size];
+Texture houseHaunts[HouseHauntsEnum_Size];
+Texture characterFairyWistfuls[CharacterFairyWistfulsEnum_Size];
+Texture alphabet[AlphabetEnum_Size];
+Texture boxes[BoxesEnum_Size];
+
+void LoadArt(Load* load)
+{
+	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Init(window.GetRenderer(), load->Path(Paths[i]));
+	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(window.GetRenderer(), load->Path(RoadsPaths[i]));
+	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Init(window.GetRenderer(), load->Path(HorizonsPaths[i]));
+	for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Init(window.GetRenderer(), load->Path(redFirePaths[i]));
+	for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Init(window.GetRenderer(), load->Path(blueFirePaths[i]));
+	for (int i = 0; i < FiresEnum_Size; ++i) fires[i].Init(window.GetRenderer(), load->Path(firesPaths[i]));
+	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Init(window.GetRenderer(), load->Path(lightningsPaths[i]));
+	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Init(window.GetRenderer(), load->Path(cloudsPaths[i]));
+	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Init(window.GetRenderer(), load->Path(rainCloudsPaths[i]));
+	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Init(window.GetRenderer(), load->Path(rainPaths[i]));
+	for (int i = 0; i < WindEnum_Size; ++i) winds[i].Init(window.GetRenderer(), load->Path(windPaths[i]));
+	for (int i = 0; i < HouseDenPillarsEnum_Size; ++i) houseDenPillars[i].Init(window.GetRenderer(), load->Path(houseDenPillarsPaths[i]));
+	for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Init(window.GetRenderer(), load->Path(houseHauntsPaths[i]));
+	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Init(window.GetRenderer(), load->Path(boxesPaths[i]));
+	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Init(window.GetRenderer(), load->Path(CharacterFairyWistfulsPaths[i]));
+	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Init(window.GetRenderer(), load->Path(alphabetPaths[i]));
+}
+
+void UnloadArt()
+{
+	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Free();
+	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Free();
+	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Free();
+	for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Free();
+	for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Free();
+	for (int i = 0; i < FiresEnum_Size; ++i) fires[i].Free();
+	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Free();
+	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Free();
+	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Free();
+	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Free();
+	for (int i = 0; i < WindEnum_Size; ++i) winds[i].Free();
+	for (int i = 0; i < HouseDenPillarsEnum_Size; ++i) houseDenPillars[i].Free();
+	for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Free();
+	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
+	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Free();
+	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Free();
+}
+
+///////////////////////////////////////////////////////////////////////
+//  Viewports  ////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+
+enum ViewportsEnum
+{
+	v,
+	v_player,
+	v_playerBox,
+	v_playerStarCurrent,
+	v_arrow,
+	v_playerClouds,
+	v_playerMiracle,
+	v_row,
+	v_column,
+	v_tile,
+	v_tileMiracle,
+	v_farTopTile,
+	v_farLeftTile,
+	v_palace,
+	v_palaceRight,
+	v_palaceRightDown,
+	v_palaceRightDownDown,
+	v_boss,
+	ViewportsEnum_Size
+};
+
+void SetX(SDL_Rect* viewports)
+{
+}
+
+void SetBoss(SDL_Rect* viewports, int horizontalModifier)
+{
+	viewports[v_boss].x = 0 - window.GetWidth() + horizontalModifier;
+	viewports[v_boss].y = 0 - (window.GetHeight() / 2);
+	viewports[v_boss].w = window.GetWidth();
+	viewports[v_boss].h = window.GetHeight();
+}
+
+void SetRightDownDown(SDL_Rect* viewports, int dotJ)
+{
+	viewports[v_palaceRightDownDown].x = (dotJ < 12) ? viewports[v_palace].x + viewports[v_palace].w : viewports[v_palace].x - viewports[v_palace].w;
+	viewports[v_palaceRightDownDown].y = viewports[v_palace].y + (viewports[v_palace].h * 0.75f);
+	viewports[v_palaceRightDownDown].h = viewports[v_palace].w;
+	viewports[v_palaceRightDownDown].w = viewports[v_palace].h;
+}
+
+void SetRightDown(SDL_Rect* viewports, int dotJ)
+{
+	viewports[v_palaceRightDown].x = (dotJ < 12) ? viewports[v_palace].x + viewports[v_palace].w : viewports[v_palace].x - viewports[v_palace].w;
+	viewports[v_palaceRightDown].y = viewports[v_palace].y + (viewports[v_palace].h * 0.5f);
+	viewports[v_palaceRightDown].h = viewports[v_palace].w;
+	viewports[v_palaceRightDown].w = viewports[v_palace].h;
+}
+
+void SetRight(SDL_Rect* viewports, int dotJ)
+{
+	viewports[v_palaceRight].x = (dotJ < 12) ? viewports[v_palace].x + viewports[v_palace].w : viewports[v_palace].x - viewports[v_palace].w;
+	viewports[v_palaceRight].y = viewports[v_palace].y;
+	viewports[v_palaceRight].h = viewports[v_palace].w;
+	viewports[v_palaceRight].w = viewports[v_palace].h;
+}
+
+void SetPalace(SDL_Rect* viewports, Player* player)
+{
+	viewports[v_palace].x = player->GetBox().x - (player->GetBox().w / 4 * 10);
+	viewports[v_palace].y = player->GetBox().y - (player->GetBox().h / 4 * 10);
+	viewports[v_palace].w = player->GetBox().w * 10;
+	viewports[v_palace].h = player->GetBox().h * 10;
+}
+
+void SetFarLeftTile(SDL_Rect* viewports)
+{
+	viewports[v_farLeftTile].x = viewports[v_tile].x;
+	viewports[v_farLeftTile].y = viewports[v_tile].y;
+	viewports[v_farLeftTile].w = viewports[v_tile].w;
+	viewports[v_farLeftTile].h = viewports[v_tile].h;
+}
+
+void SetFarTopTile(SDL_Rect* viewports)
+{
+	viewports[v_farTopTile].x = viewports[v_tile].x;
+	viewports[v_farTopTile].y = viewports[v_tile].y;
+	viewports[v_farTopTile].w = viewports[v_tile].w;
+	viewports[v_farTopTile].h = viewports[v_tile].h;
+}
+
+void SetColumn(SDL_Rect* viewports)
+{
+	viewports[v_column] = viewports[v_tile];
+}
+
+void SetRow(SDL_Rect* viewports)
+{
+	viewports[v_row] = viewports[v_tile];
+}
+
+void SetPlayerMiracle(SDL_Rect* viewports, const int ROW_SIZE, float dotNormalJ)
+{
+	viewports[v_playerMiracle].x = (viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w));
+	viewports[v_playerMiracle].y = viewports[v_tile].y - (viewports[v_tile].h * 0.5f);
+	viewports[v_playerMiracle].w = viewports[v_tile].w * 2.0f;
+	viewports[v_playerMiracle].h = viewports[v_tile].h * 2.0f;
+}
+
+void SetPlayerClouds(SDL_Rect* viewports, const int ROW_SIZE, float dotNormalJ)
+{
+	viewports[v_playerClouds].x = (viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w)) - (viewports[v_playerClouds].w * 0.1f);
+	viewports[v_playerClouds].y = viewports[v_tile].y - (viewports[v_tile].h * 1.4f);
+	viewports[v_playerClouds].w = viewports[v_tile].w * 2.6f;
+	viewports[v_playerClouds].h = viewports[v_tile].h * 2.2f;
+}
+
+void SetArrow(SDL_Rect* viewports, double* normals)
+{
+	viewports[v_arrow].x = ((float)viewports[v_farTopTile].x < (float)viewports[v_player].x)
+		? (float)viewports[v_farTopTile].x + (((float)viewports[v_player].x - (float)viewports[v_farTopTile].x) * (1.0f - normals[second_1]))
+		: (float)viewports[v_player].x + (((float)viewports[v_farTopTile].x - (float)viewports[v_player].x) * normals[second_1]);
+	viewports[v_arrow].y = (float)viewports[v_farTopTile].y + (((float)viewports[v_player].y - (float)viewports[v_farTopTile].y) * (1.0f - normals[second_1]));
+	viewports[v_arrow].w = viewports[v_player].w - ((viewports[v_player].w - viewports[v_farTopTile].w) * normals[second_1]);
+	viewports[v_arrow].h = viewports[v_player].h - ((viewports[v_player].h - viewports[v_farTopTile].h) * normals[second_1]);
+}
+
+void SetPlayerStarCurrent(SDL_Rect* viewports, SDL_Rect* miracleStarfallViewports, int index, double* miracleStarfallNormals)
+{
+	viewports[v_playerStarCurrent].x = miracleStarfallViewports[index].x;
+	viewports[v_playerStarCurrent].y = miracleStarfallViewports[index].y + (window.GetHeight() * miracleStarfallNormals[index]);
+	viewports[v_playerStarCurrent].w = miracleStarfallViewports[index].w;
+	viewports[v_playerStarCurrent].h = miracleStarfallViewports[index].h;
+}
+
+void SetPlayerBox(SDL_Rect* viewports, const int ROW_SIZE, float dotNormalJ)
+{
+	viewports[v_playerBox].x = (viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w));
+	viewports[v_playerBox].y = viewports[v_tile].y - (viewports[v_tile].h * 0.5f) - (viewports[v_tile].h * 1.25f);
+	viewports[v_playerBox].w = viewports[v_tile].w * 2.0f;
+	viewports[v_playerBox].h = viewports[v_tile].h * 2.0f;
+}
+
+void SetPlayer(SDL_Rect* viewports)
+{
+	viewports[v_player] = viewports[v_tile];
+}
+
+void SetLeftTop(SDL_Rect* viewports, int offset)
+{
+	viewports[v].w = unsorted[BackgroundBackground].GetWidth();
+	viewports[v].h = unsorted[BackgroundBackground].GetHeight();
+	viewports[v].x = 0;
+	viewports[v].y = offset;
+}
+
+void SetLeftMiddle(SDL_Rect* viewports, int offset)
+{
+	viewports[v].y = offset + unsorted[BackgroundBackground].GetHeight();
+}
+
+void SetLeftBottom(SDL_Rect* viewports, int offset)
+{
+	viewports[v].y = offset + (unsorted[BackgroundBackground].GetHeight() * 2);
+}
+
+void SetRightTop(SDL_Rect* viewports, int offset)
+{
+	viewports[v].x = unsorted[BackgroundBackground].GetWidth();
+	viewports[v].y = offset;
+}
+
+void SetRightMiddle(SDL_Rect* viewports, int offset)
+{
+	viewports[v].y = offset + unsorted[BackgroundBackground].GetHeight();
+}
+
+void SetRightBottom(SDL_Rect* viewports, int offset)
+{
+	viewports[v].y = offset + (unsorted[BackgroundBackground].GetHeight() * 2);
+}
+
+void SetMenuTop(SDL_Rect* viewports)
+{
+	viewports[v].x = 0;
+	viewports[v].y = 0 - (window.GetHeight() * 0.4f);
+	viewports[v].w = window.GetWidth();
+	viewports[v].h = window.GetHeight();
+}
+
+void SetMenuBottom(SDL_Rect* viewports)
+{
+	viewports[v].x = 0;
+	viewports[v].y = window.GetHeight() - (window.GetHeight() * 0.7f);
+	viewports[v].w = window.GetWidth();
+	viewports[v].h = window.GetHeight();
+}
+
+void SetMenuRightTop(SDL_Rect* viewports)
+{
+	viewports[v].x = window.GetWidth() * 0.5f;
+	viewports[v].y = window.GetHeight() - (window.GetHeight() * 0.95f);
+	viewports[v].w = window.GetWidth() * 0.5f;
+	viewports[v].h = window.GetHeight() * 0.6f;
+}
+
+void SetMenuRightBottom(SDL_Rect* viewports)
+{
+	viewports[v].x = window.GetWidth() * 0.5f;
+	viewports[v].y = window.GetHeight() - (window.GetHeight() * 0.75f);
+	viewports[v].w = window.GetWidth() * 0.5f;
+	viewports[v].h = window.GetHeight() * 0.6f;
+}
+
+void SetMenuLeft(SDL_Rect* viewports)
+{
+	viewports[v].x = 0;
+	viewports[v].y = window.GetHeight() - (window.GetHeight() * 0.9f);
+	viewports[v].w = window.GetWidth() * 0.5f;
+	viewports[v].h = window.GetHeight() * 0.6f;
+}
+
+void SetTileMiracle(SDL_Rect* viewports)
+{
+	viewports[v_tileMiracle].x = viewports[v_tile].x;
+	viewports[v_tileMiracle].y = viewports[v_tile].y - viewports[v_tile].h;
+	viewports[v_tileMiracle].w = viewports[v_tile].w;
+	viewports[v_tileMiracle].h = viewports[v_tile].h;
+}
+
+void DrawBackgroundLeftTop(SDL_Rect* viewports, int offset)
+{
+	SetLeftTop(viewports, offset);
+	unsorted[BackgroundBackground].Draw(&viewports[v]);
+}
+
+void DrawBackgroundLeftMiddle(SDL_Rect* viewports, int offset)
+{
+	SetLeftMiddle(viewports, offset);
+	unsorted[BackgroundBackground].Draw(&viewports[v]);
+}
+
+void DrawBackgroundLeftBottom(SDL_Rect* viewports, int offset)
+{
+	SetLeftBottom(viewports, offset);
+	unsorted[BackgroundBackground].Draw(&viewports[v]);
+}
+
+void DrawBackgroundRightTop(SDL_Rect* viewports, int offset)
+{
+	SetRightTop(viewports, offset);
+	unsorted[BackgroundBackground].Draw(&viewports[v]);
+}
+
+void DrawBackgroundRightMiddle(SDL_Rect* viewports, int offset)
+{
+	SetRightMiddle(viewports, offset);
+	unsorted[BackgroundBackground].Draw(&viewports[v]);
+}
+
+void DrawBackgroundRightBottom(SDL_Rect* viewports, int offset)
+{
+	SetRightBottom(viewports, offset);
+	unsorted[BackgroundBackground].Draw(&viewports[v]);
+}
+
+void DrawBossMoonboy(SDL_Rect* viewports, int horizontalModifier)
+{
+	SetBoss(viewports, horizontalModifier);
+	unsorted[CharacterTownspersonMoonboy].Draw(&viewports[v_boss]);
+}
+
+void DrawBossMoonboyHands(SDL_Rect* viewports, int horizontalModifier)
+{
+	SetBoss(viewports, horizontalModifier);
+	unsorted[CharacterTownspersonMoonboy_Hands].Draw(&viewports[v_boss]);
+}
+
+void DrawBackgroundForeground(SDL_Rect* viewports)
+{
+	unsorted[BackgroundForeground].Draw(NULL);
+}
+
+void DrawAlphabet(SDL_Rect* viewports, int j)
+{
+	alphabet[ASCII065000 + j].Draw(&viewports[v_tileMiracle]);
+}
+
+void DrawHouseWithWind(SDL_Rect* viewports, int windIndex, double windAngle, bool isActive, int fireIndex)
+{
+	houseDenPillars[HouseDenPillar_000].Draw(&viewports[v_tile]);
+	winds[windIndex].Draw(&viewports[v_tileMiracle], windAngle, SDL_FLIP_HORIZONTAL);
+	(isActive)
+		? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
+		: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
+}
+
+void DrawPlayerHighlight(SDL_Rect* viewports)
+{
+	SetPlayer(viewports);
+	unsorted[PlayerHighlight].Draw(&viewports[v_player]);
+}
+
+void DrawFarTopTile(SDL_Rect* viewports)
+{
+	SetFarTopTile(viewports);
+	unsorted[PalaceHighlightBottom].Draw(&viewports[v_farTopTile]);
+}
