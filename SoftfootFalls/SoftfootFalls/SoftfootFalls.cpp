@@ -484,6 +484,7 @@ int main(int argc, char* argv[])
 	}
 	for (int i = 0; i < miracleStarfallLimit; ++i) miracleStarfalls[i].Free();
 	FileIO::Write(load->Path("nums.bin"), data);
+	UnloadArt();
 	window.Free();
 	SDL_Quit();
 	delete[] miracleStarfalls;
