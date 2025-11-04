@@ -758,6 +758,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Free();
 	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
 	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Free();
+	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Free();
 	for (int i = 0; i < miracleStarfallLimit; ++i) miracleStarfalls[i].Free();
 	file = IOFromFile(load->Path("nums.bin"), "w+b");
 	if (file != NULL)
