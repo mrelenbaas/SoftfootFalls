@@ -601,7 +601,7 @@ enum AlphabetEnum
 	ASCII126000,
 	AlphabetEnum_Size
 };
-const char* AlphabetPaths[] =
+const char* alphabetPaths[] =
 {
 	"ASCII033000.png",
 	"ASCII034000.png",

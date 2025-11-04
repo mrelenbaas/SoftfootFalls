@@ -14,12 +14,12 @@ int main(int argc, char* argv[])
 {
 	if (argc < 1) return 1;
 	using namespace std;
+	const int ROW_SIZE = 61;
+	const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 	const int TOTAL_DATA = 10;
+	int framesPerSecond = 0;
 	Window window;
 	Sint32 data[TOTAL_DATA]{};
-	const int ROW_SIZE = 25;
-	const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
-	int framesPerSecond = 0;
 	const char* basePath = BasePath(argv[0]);
 	Load* load = new Load(basePath);
 	long long deltas[TimerEnum_Size]{};
@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
 	bool isOverHall = false;
 	double windAngle = 30.0;
 	const int FIRE_SIZE = 3;
+	int alphabetIndex = 0;
 	Texture* miracleStarfalls;
 	int miracleStarfallIndex = 0;
 	int miracleStarfallModIndex = 0;
@@ -118,7 +119,7 @@ int main(int argc, char* argv[])
 	Texture houseDenPillars[HouseDenPillarsEnum_Size];
 	Texture houseHaunts[HouseHauntsEnum_Size];
 	Texture characterFairyWistfuls[CharacterFairyWistfulsEnum_Size];
-	Texture alphabet[CharacterFairyWistfulsEnum_Size];
+	Texture alphabet[AlphabetEnum_Size];
 	Texture boxes[BoxesEnum_Size];
 	Texture* box = &boxes[BoxUp];
 	for (int i = 0; i < PathEnum_Size; ++i) textures[i].Init(window.GetRenderer(), load->Path(Paths[i]));
@@ -145,17 +146,17 @@ int main(int argc, char* argv[])
 		else if (j == 4) miracleStarfalls[i].Init(window.GetRenderer(), load->Path("MiracleStarfall_004_1024x1024.png"));
 	}
 	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Init(window.GetRenderer(), load->Path(CharacterFairyWistfulsPaths[i]));
-	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Init(window.GetRenderer(), load->Path(CharacterFairyWistfulsPaths[i]));
+	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Init(window.GetRenderer(), load->Path(alphabetPaths[i]));
 	bool quit = false;
 	SDL_Event e;
 	int countedFrames = 0;
-	Dot dot;
+	Player player;
 	int backgroundScrollingOffset = 0;
 	int currentData = 0;
 	bool isHome = false;
 	long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	bool trisecondToggle = false;
-	bool twelvesecondToggle = false;
+	bool sixsecondToggle = false;
 	int dotI = 0;
 	int dotJ = 0;
 	float dotNormalI = 0.0f;
@@ -212,7 +213,7 @@ int main(int argc, char* argv[])
 		}
 		if (deltas[second_6] > limits[second_6])
 		{
-			twelvesecondToggle = !twelvesecondToggle;
+			sixsecondToggle = !sixsecondToggle;
 			deltas[second_6] -= limits[second_6];
 		}
 		if (deltas[minute_1] > limits[minute_1]) deltas[minute_1] -= limits[minute_1];
@@ -237,19 +238,19 @@ int main(int argc, char* argv[])
 				case SDLK_HOME:
 					break;
 				case KEY_W:
-					dot.SetUp(false);
+					player.SetUp(false);
 					isUp = false;
 					break;
 				case KEY_S:
-					dot.SetDown(false);
+					player.SetDown(false);
 					isDown = false;
 					break;
 				case KEY_A:
-					dot.SetLeft(false);
+					player.SetLeft(false);
 					isLeft = false;
 					break;
 				case KEY_D:
-					dot.SetRight(false);
+					player.SetRight(false);
 					isRight = false;
 					break;
 				case KEY_Q:
@@ -285,26 +286,26 @@ int main(int argc, char* argv[])
 					box = &boxes[BoxUp];
 					--currentData;
 					if (currentData < 0) currentData = TOTAL_DATA - 1;
-					dot.SetUp(true);
+					player.SetUp(true);
 					isUp = true;
 					break;
 				case KEY_S:
 					box = &boxes[BoxDown];
 					++currentData;
 					if (currentData == TOTAL_DATA) currentData = 0;
-					dot.SetDown(true);
+					player.SetDown(true);
 					isDown = true;
 					break;
 				case KEY_A:
 					box = &boxes[BoxLeft];
 					--data[currentData];
-					dot.SetLeft(true);
+					player.SetLeft(true);
 					isLeft = true;
 					break;
 				case KEY_D:
 					box = &boxes[BoxRight];
 					++data[currentData];
-					dot.SetRight(true);
+					player.SetRight(true);
 					isRight = true;
 					break;
 				case KEY_Q:
@@ -383,7 +384,7 @@ int main(int argc, char* argv[])
 			viewports[v_fullscreen].w = window.GetWidth();
 			viewports[v_fullscreen].h = window.GetHeight();
 			int horizontalModifier = 0;
-			if (twelvesecondToggle) horizontalModifier = (window.GetWidth() + viewports[v_fullscreen].w) * normals[second_6];
+			if (sixsecondToggle) horizontalModifier = (window.GetWidth() + viewports[v_fullscreen].w) * normals[second_6];
 			else horizontalModifier = (window.GetWidth() + viewports[v_fullscreen].w) * (1.0f - normals[second_6]);
 			viewports[v_boss].x = viewports[v_fullscreen].x - viewports[v_fullscreen].w + horizontalModifier;
 			viewports[v_boss].y = viewports[v_fullscreen].y - (viewports[v_fullscreen].h / 2);
@@ -392,8 +393,8 @@ int main(int argc, char* argv[])
 			textures[CharacterTownspersonMoonboy].Draw(&viewports[v_boss]);
 			textures[BackgroundForeground].Draw(&viewports[v_fullscreen]);
 			textures[CharacterTownspersonMoonboy_Hands].Draw(&viewports[v_boss]);
-			dot.Move(window.GetWidth(), window.GetHeight(), currentTime, limits[second_3]);
-			dot.SetIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ, (float)window.GetWidth(), (float)window.GetHeight(), ROW_SIZE);
+			player.Move(window.GetWidth(), window.GetHeight(), currentTime, limits[second_3]);
+			player.SetIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ, (float)window.GetWidth(), (float)window.GetHeight(), ROW_SIZE);
 			viewports[v_tile].x = (window.GetWidth() * 0.5f) - 100;
 			viewports[v_tile].y = (window.GetHeight() * 0.5f) - 100;
 			viewports[v_tile].w = 200;
@@ -529,6 +530,12 @@ int main(int argc, char* argv[])
 					if (i == 1 && j == 4) houseHaunts[HouseHaunt_004_Normal_Half].Draw(&viewports[v_tile]);
 					if (i == 24 && j == 0) textures[CharacterFairySun].Draw(&viewports[v_tile], 360 * normals[second_1]);
 					if (i == 24 && j == 1) textures[CharacterFairyHopeful].Draw(&viewports[v_tile]);
+					alphabet[ASCII065000 + j].Draw(&viewports[v_tile]);
+					++alphabetIndex;
+					if (alphabetIndex >= AlphabetEnum_Size)
+					{
+						alphabetIndex = 0;
+					}
 					int hallI = 12;
 					int hallJ = 11;
 					if (i == hallI && j == hallJ) textures[Landscape_Hall].Draw(&viewports[v_tile]);
@@ -652,10 +659,10 @@ int main(int argc, char* argv[])
 			viewports[v_playerStarTileToGrid].w = viewports[v_player].w - ((viewports[v_player].w - viewports[v_farTopTile].w) * normals[second_1]);
 			viewports[v_playerStarTileToGrid].h = viewports[v_player].h - ((viewports[v_player].h - viewports[v_farTopTile].h) * normals[second_1]);
 			textures[IconCursor].Draw(&viewports[v_playerStarTileToGrid], 0.0, SDL_FLIP_VERTICAL);
-			viewports[v_palace].x = dot.GetBox().x - (dot.GetBox().w / 4 * 10);
-			viewports[v_palace].y = dot.GetBox().y - (dot.GetBox().h / 4 * 10);
-			viewports[v_palace].w = dot.GetBox().w * 10;
-			viewports[v_palace].h = dot.GetBox().h * 10;
+			viewports[v_palace].x = player.GetBox().x - (player.GetBox().w / 4 * 10);
+			viewports[v_palace].y = player.GetBox().y - (player.GetBox().h / 4 * 10);
+			viewports[v_palace].w = player.GetBox().w * 10;
+			viewports[v_palace].h = player.GetBox().h * 10;
 			viewports[v_palaceRight].x = (dotJ < 12) ? viewports[v_palace].x + viewports[v_palace].w : viewports[v_palace].x - viewports[v_palace].w;
 			viewports[v_palaceRight].y = viewports[v_palace].y;
 			viewports[v_palaceRight].h = viewports[v_palace].w;

@@ -1,6 +1,6 @@
 #include "Player.h"
 
-void Dot::Move(int width, int height, long long currentTime, double limit)
+void Player::Move(int width, int height, long long currentTime, double limit)
 {
 	double normal = (currentTime - previousTime) / limit;
 	double potentialX = 0.0;
@@ -32,7 +32,7 @@ void Dot::Move(int width, int height, long long currentTime, double limit)
 	previousTime = currentTime;
 }
 
-void Dot::SetIJ(int* i, int* j, float* normalI, float* normalJ, int width, int height, const int LIMIT) const
+void Player::SetIJ(int* i, int* j, float* normalI, float* normalJ, int width, int height, const int LIMIT) const
 {
 	float w = width - (box.w * 4.0f);
 	float h = height - (box.h * 4.0f);
