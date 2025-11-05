@@ -27,7 +27,7 @@ void Window::HandleEvent(SDL_Event& event)
 		minimized = false;
 		break;
 	case KEY_PRESSED:
-		if (Key(event) == SDLK_RETURN)
+		if (Key(event) == SDLK_END)
 		{
 			if (fullscreen)
 			{

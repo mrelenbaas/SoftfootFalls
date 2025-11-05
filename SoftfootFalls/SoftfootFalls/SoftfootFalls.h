@@ -11,6 +11,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <cstdlib>
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
@@ -28,6 +29,33 @@
 
 
 Window window;
+const int ROW_SIZE = 26;
+const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
+const int HALL_I = 12;
+const int HALL_J = 11;
+Sint32 data[FileIO::TOTAL_DATA]{};
+int framesPerSecond = 0;
+
+const int FIRE_SIZE = 3;
+
+const int MIRACLE_STARFALL_LIMIT = 5;
+
+double windAngle = 30.0;
+
+bool isHoveroverHall = false;
+
+bool isUp = false;
+bool isDown = false;
+bool isLeft = false;
+bool isRight = false;
+bool isA = false;
+bool isB = false;
+bool isX = false;
+bool isY = false;
+bool isLeftBumper = false;
+bool isRightBumper = false;
+bool isStart = false;
+bool isSelect = false;
 
 ///////////////////////////////////////////////////////////////////////
 //  Timer  ////////////////////////////////////////////////////////////
@@ -42,6 +70,7 @@ enum TimerEnum
 	animation,
 	TimerEnum_Size
 };
+long long deltas[TimerEnum_Size]{};
 const double ANIMATION_LIMIT = 12.0;
 const double limits[] =
 {
@@ -642,6 +671,7 @@ const char* alphabetPaths[] =
 	"ASCII097000.png",
 	"ASCII098000.png",
 	"ASCII099000.png",
+	"ASCII100000.png",
 	"ASCII101000.png",
 	"ASCII102000.png",
 	"ASCII103000.png",
@@ -905,14 +935,6 @@ void SetRightBottom(SDL_Rect* viewports, int offset)
 	viewports[v].y = offset + (unsorted[BackgroundBackground].GetHeight() * 2);
 }
 
-void SetMenuTop(SDL_Rect* viewports)
-{
-	viewports[v].x = 0;
-	viewports[v].y = 0 - (window.GetHeight() * 0.4f);
-	viewports[v].w = window.GetWidth();
-	viewports[v].h = window.GetHeight();
-}
-
 void SetMenuBottom(SDL_Rect* viewports)
 {
 	viewports[v].x = 0;
@@ -1020,6 +1042,11 @@ void DrawHouseWithWind(SDL_Rect* viewports, int windIndex, double windAngle, boo
 		: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 }
 
+void DrawCharacterFairyMoon(SDL_Rect* viewports, double normal)
+{
+	unsorted[CharacterFairyMoon].Draw(&viewports[v_tile], 360 * normal);
+}
+
 void DrawPlayerHighlight(SDL_Rect* viewports)
 {
 	SetPlayer(viewports);
@@ -1030,4 +1057,150 @@ void DrawFarTopTile(SDL_Rect* viewports)
 {
 	SetFarTopTile(viewports);
 	unsorted[PalaceHighlightBottom].Draw(&viewports[v_farTopTile]);
+}
+
+void DrawMenuTop(SDL_Rect* viewports)
+{
+	viewports[v].x = 0;
+	viewports[v].y = -window.GetHeight() * 0.4f;
+	viewports[v].w = window.GetWidth();
+	viewports[v].h = window.GetHeight();
+	unsorted[MenuTop].Draw(&viewports[v]);
+}
+
+int TextToIndex(char letter)
+{
+	return (int)letter - 33;
+}
+
+void DrawAltMenuTop(SDL_Rect* viewports, const char* text)
+{
+	const int COLUMN_LIMIT = 20;
+	viewports[v].y = 0;
+	viewports[v].w = window.GetWidth() / COLUMN_LIMIT;
+	viewports[v].h = viewports[v].w;
+	//TextToIndex(text);
+	for (int i = 0; text[i] != '\0'; ++i)
+	{
+		viewports[v].x = (window.GetWidth() / COLUMN_LIMIT) * i;
+		alphabet[TextToIndex(text[i])].Draw(&viewports[v]);
+	}
+}
+
+void DrawMenuBottom(SDL_Rect* viewports)
+{
+	SetMenuBottom(viewports);
+	unsorted[MenuBottom].Draw(&viewports[v]);
+}
+
+void DrawMenuRightTop(SDL_Rect* viewports)
+{
+	SetMenuRightTop(viewports);
+	unsorted[MenuRightTop].Draw(&viewports[v]);
+}
+
+void DrawMenuRightBottom(SDL_Rect* viewports)
+{
+	SetMenuRightBottom(viewports);
+	unsorted[MenuRightBottom].Draw(&viewports[v]);
+}
+
+void DrawMenuLeft(SDL_Rect* viewports)
+{
+	SetMenuLeft(viewports);
+	unsorted[MenuLeft].Draw(&viewports[v]);
+}
+
+void DrawCrest(SDL_Rect* viewports)
+{
+	unsorted[Crest].Draw(NULL);
+}
+
+void DrawEarthquake(SDL_Rect* viewports, SDL_Rect* miracleStarfallViewports, int index, double* miracleStarfallNormals)
+{
+	SetPlayerStarCurrent(viewports, miracleStarfallViewports, index, miracleStarfallNormals);
+	characterFairyWistfuls[index].Draw(&viewports[v_playerStarCurrent]);
+}
+
+void DrawRightDownDown(SDL_Rect* viewports, int dotJ)
+{
+	SetRightDownDown(viewports, dotJ);
+	unsorted[PalaceHighlightRight].Draw(&viewports[v_palaceRightDownDown]);
+}
+
+void DrawRightDown(SDL_Rect* viewports, int dotJ)
+{
+	SetRightDown(viewports, dotJ);
+	unsorted[PalaceHighlightTop].Draw(&viewports[v_palaceRightDown]);
+}
+
+void DrawRight(SDL_Rect* viewports, int dotJ)
+{
+	SetRight(viewports, dotJ);
+	unsorted[PlayerHighlight].Draw(&viewports[v_palaceRight]);
+}
+
+void DrawBoxFront(SDL_Rect* viewports, Player* player)
+{
+	SetPalace(viewports, player);
+	unsorted[BoxFront].Draw(&viewports[v_palace]);
+}
+
+void DrawPalace(SDL_Rect* viewports, Player* player)
+{
+	SetPalace(viewports, player);
+	unsorted[Loadstone].Draw(&viewports[v_palace]);
+}
+
+void DrawArrow(SDL_Rect* viewports, double* normals)
+{
+	SetArrow(viewports, normals);
+	unsorted[IconCursor].Draw(&viewports[v_arrow], 0.0, SDL_FLIP_VERTICAL);
+}
+
+void WindowsProcess(char* mbString)
+{
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	ZeroMemory(&pi, sizeof(pi));
+	//const char* mbString = "notepad.exe";
+	size_t requiredSize;
+	mbstowcs_s(&requiredSize, nullptr, 0, mbString, _TRUNCATE);
+	std::vector<wchar_t> wcBuffer(requiredSize);
+	errno_t err = mbstowcs_s(&requiredSize, wcBuffer.data(), wcBuffer.size(), mbString, _TRUNCATE);
+	if (err == 0) {
+		std::wcout << L"Converted string: " << wcBuffer.data() << std::endl;
+	}
+	else {
+		std::wcerr << L"Error during conversion: " << err << std::endl;
+	}
+	wchar_t* wideString = wcBuffer.data();
+	std::cout << "wide: " << wideString << std::endl;
+	if (!CreateProcess(
+		NULL,                   // No module name (use command line)
+		wideString, // Command line
+		NULL,                   // Process handle not inheritable
+		NULL,                   // Thread handle not inheritable
+		FALSE,                  // Set handle inheritance to FALSE
+		0,                      // No creation flags
+		NULL,                   // Use parent's environment block
+		NULL,                   // Use parent's starting directory 
+		&si,                    // Pointer to STARTUPINFO structure
+		&pi)                    // Pointer to PROCESS_INFORMATION structure
+		) {
+		std::cerr << "CreateProcess failed (" << GetLastError() << ").\n";
+	}
+	std::cout << "Child process created successfully.\n";
+	std::cout << "Process ID: " << pi.dwProcessId << "\n";
+	std::cout << "Thread ID: " << pi.dwThreadId << "\n";
+	WaitForSingleObject(pi.hProcess, INFINITE);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+}
+
+void LinuxProcess(char* commandLine)
+{
+	printf("%s\n", commandLine);
 }
