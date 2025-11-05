@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <unistd.h>
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
@@ -1160,6 +1161,7 @@ void DrawArrow(SDL_Rect* viewports, double* normals)
 
 void WindowsProcess(char* mbString)
 {
+#ifdef _WIN32
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(si));
@@ -1198,9 +1200,30 @@ void WindowsProcess(char* mbString)
 	WaitForSingleObject(pi.hProcess, INFINITE);
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
+#endif
 }
 
 void LinuxProcess(char* commandLine)
 {
-	printf("%s\n", commandLine);
+	printf("\nHERE:\n%s\n\n", commandLine);
+	char* token;
+	token = strtok(commandLine, " ");
+	//char* first = token;
+	int tokenLength = strlen(token);
+	printf("%i\n", tokenLength);
+	char first[tokenLength];
+	for (int i = 0; i < tokenLength; ++i)
+	{
+		first[i] = token[i];
+	}
+	//printf("%s\n", token);
+	//int i = 0;
+	//char* second;
+	//while (token != NULL)
+	//{
+	//	token = strtok(NULL, " ");
+	//	second = token;
+	//	printf("%s\n", token);
+	//}
+	execl("/bin/ls", commandLine, NULL);
 }

@@ -198,10 +198,14 @@ int main(int argc, char* argv[])
 				if (isAcceptingInput)
 				{
 					//printf("event: %i\n", (int)Key(event));
-					//SDL_Keycode key_code = event.key.keysym.sym;
+#ifdef _WIN32
 					SDL_Keycode key_code = event.key.key;
-					//if (key_code >= SDLK_SPACE && key_code <= SDLK_z) { // Example range for common ASCII
-					if (key_code >= SDLK_SPACE && key_code <= SDLK_Z) { // Example range for common ASCII
+					if (key_code >= SDLK_SPACE && key_code <= SDLK_Z)
+#elif __linux__
+					SDL_Keycode key_code = event.key.keysym.sym;
+					if (key_code >= SDLK_SPACE && key_code <= SDLK_z)
+#endif
+					{
 						char ascii_char = static_cast<char>(key_code);
 						printf("%c", ascii_char);
 						// Now you have the ASCII character
