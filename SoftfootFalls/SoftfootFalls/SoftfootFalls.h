@@ -42,21 +42,12 @@ const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 const int FIRE_SIZE = 3;
 
 Player player;
-bool isUp = false;
-bool isDown = false;
-bool isLeft = false;
-bool isRight = false;
-bool isA = false;
-bool isB = false;
-bool isX = false;
-bool isY = false;
-bool isLeftBumper = false;
-bool isRightBumper = false;
-bool isStart = false;
-bool isSelect = false;
 
 long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 bool minuteToggle = false;
+int backgroundOffset = 0;
+int animationIndex = 0;
+int horizontalModifier = 0;
 
 ///////////////////////////////////////////////////////////////////////
 //  Timer  ////////////////////////////////////////////////////////////
@@ -72,6 +63,7 @@ enum TimerEnum
 	TimerEnum_Size
 };
 long long deltas[TimerEnum_Size]{};
+double normals[TimerEnum_Size]{};
 const double ANIMATION_LIMIT = 12.0;
 const double limits[] =
 {
@@ -366,20 +358,6 @@ Texture unsorted[PathEnum_Size];
 Texture roads[RoadsEnum_Size];
 Texture alphabet[AlphabetEnum_Size];
 
-void LoadArt(Load* load)
-{
-	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Init(window.GetRenderer(), load->Path(Paths[i]));
-	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(window.GetRenderer(), load->Path(RoadsPaths[i]));
-	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Init(window.GetRenderer(), load->Path(alphabetPaths[i]));
-}
-
-void UnloadArt()
-{
-	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Free();
-	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Free();
-	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Free();
-}
-
 ///////////////////////////////////////////////////////////////////////
 //  Viewports  ////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
@@ -406,6 +384,24 @@ enum ViewportsEnum
 	v_boss,
 	ViewportsEnum_Size
 };
+SDL_Rect viewports[ViewportsEnum_Size]{};
+
+void LoadArt(Load* load)
+{
+	for (int i = 0; i < TimerEnum_Size; ++i) deltas[i] = 0L;
+	for (int i = 0; i < TimerEnum_Size; ++i) normals[i] = 0.0;
+	for (int i = 0; i < ViewportsEnum_Size; ++i) viewports[i] = { 0, 0, 0, 0 };
+	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Init(window.GetRenderer(), load->Path(Paths[i]));
+	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(window.GetRenderer(), load->Path(RoadsPaths[i]));
+	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Init(window.GetRenderer(), load->Path(alphabetPaths[i]));
+}
+
+void UnloadArt()
+{
+	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Free();
+	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Free();
+	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Free();
+}
 
 void SetX(SDL_Rect* viewports)
 {
@@ -578,6 +574,18 @@ void DrawBackgroundRightBottom(SDL_Rect* viewports, int offset)
 	unsorted[BackgroundBackground].Draw(&viewports[v]);
 }
 
+void DrawBackground(SDL_Rect* viewports)
+{
+	backgroundOffset = -unsorted[BackgroundBackground].GetHeight() * normals[minute_1];
+	if (backgroundOffset < -unsorted[BackgroundBackground].GetHeight()) backgroundOffset = 0;
+	DrawBackgroundLeftTop(viewports, backgroundOffset);
+	DrawBackgroundLeftMiddle(viewports, backgroundOffset);
+	DrawBackgroundLeftBottom(viewports, backgroundOffset);
+	DrawBackgroundRightTop(viewports, backgroundOffset);
+	DrawBackgroundRightMiddle(viewports, backgroundOffset);
+	DrawBackgroundRightBottom(viewports, backgroundOffset);
+}
+
 void DrawBossMoonboy(SDL_Rect* viewports, int horizontalModifier)
 {
 	SetBoss(viewports, horizontalModifier);
@@ -593,6 +601,15 @@ void DrawBossMoonboyHands(SDL_Rect* viewports, int horizontalModifier)
 void DrawBackgroundForeground(SDL_Rect* viewports)
 {
 	unsorted[BackgroundForeground].Draw(NULL);
+}
+
+void DrawForeground(SDL_Rect* viewports)
+{
+	if (minuteToggle) horizontalModifier = (window.GetWidth() + window.GetWidth()) * normals[minute_1];
+	else horizontalModifier = (window.GetWidth() + window.GetWidth()) * (1.0f - normals[minute_1]);
+	DrawBossMoonboy(viewports, horizontalModifier);
+	DrawBackgroundForeground(viewports);
+	DrawBossMoonboyHands(viewports, horizontalModifier);
 }
 
 void DrawAlphabet(SDL_Rect* viewports, int j)
@@ -636,6 +653,7 @@ void DrawShellPrompt(SDL_Rect* viewports, const char* text)
 	for (int i = 0; text[i] != '\0'; ++i)
 	{
 		viewports[v].x = (window.GetWidth() / COLUMN_LIMIT) * i;
+		if (text[i] == ' ') continue;
 		alphabet[TextToIndex(text[i])].Draw(&viewports[v]);
 	}
 }

@@ -245,21 +245,3 @@ void CloseIO(SDL_RWops* file)
 	SDL_RWclose(file);
 #endif
 }
-
-///////////////////////////////////////////////////////////////////////
-//  SFX  //////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-
-void PlaySFX(const char* path)
-{
-#ifdef _WIN32
-	size_t requiredSize;
-	mbstowcs_s(&requiredSize, nullptr, 0, path, _TRUNCATE);
-	std::vector<wchar_t> wideBuffer(requiredSize);
-	mbstowcs_s(&requiredSize, wideBuffer.data(), requiredSize, path, _TRUNCATE);
-	std::wstring wideString(wideBuffer.data());
-	PlaySound(wideString.c_str(), NULL, SND_FILENAME | SND_ASYNC);
-#elif __linux__
-	system("aplay ~/SoftfootFalls/SoftfootFalls/x64/Debug/art/scratch.wav");
-#endif
-}

@@ -12,23 +12,17 @@
 int main(int argc, char* argv[])
 {
 	if (argc < 1) return 1;
+	bool isAcceptingInput = true;
+	int alphabetIndex = 0;
+
 	const char* BASE_PATH = BasePath(argv[0]);
 	Load* load = new Load(BASE_PATH);
-	for (int i = 0; i < TimerEnum_Size; ++i) deltas[i] = 0L;
-	double normals[TimerEnum_Size]{};
-	for (int i = 0; i < TimerEnum_Size; ++i) normals[i] = 0.0;
-	SDL_Rect viewports[ViewportsEnum_Size]{};
-	for (int i = 0; i < ViewportsEnum_Size; ++i) viewports[i] = { 0, 0, 0, 0 };
-	int alphabetIndex = 0;
 	if (!window.Init()) return 1;
 	SDL_Renderer* linuxRenderer = GetLinuxRenderer(window.GetWindow());
 	if (linuxRenderer) window.SetRenderer(linuxRenderer);
 	LoadArt(load);
-	SDL_Event event;
-	int backgroundOffset = 0;
-	int animationIndex = 0;
-	bool isAcceptingInput = true;
-	const char* temp = "Insert\0";
+
+	const char* temp = "Prompt\0";
 	char* text = new char[ROW_SIZE];
 	int copyI = 0;
 	int copyJ = 0;
@@ -63,6 +57,7 @@ int main(int argc, char* argv[])
 			normals[i] = (double)deltas[i] / limits[i];
 		}
 		previousTime = currentTime;
+		SDL_Event event;
 		while (SDL_PollEvent(&event) != 0)
 		{
 			if (IsWindowQuit(event)) window.Quit();
@@ -74,34 +69,15 @@ int main(int argc, char* argv[])
 					break;
 				case KEY_W:
 					player.SetUp(false);
-					isUp = false;
 					break;
 				case KEY_S:
 					player.SetDown(false);
-					isDown = false;
 					break;
 				case KEY_A:
 					player.SetLeft(false);
-					isLeft = false;
 					break;
 				case KEY_D:
 					player.SetRight(false);
-					isRight = false;
-					break;
-				case KEY_Q:
-					isY = false;
-					break;
-				case KEY_E:
-					isX = false;
-					break;
-				case KEY_Z:
-					isB = false;
-					break;
-				case KEY_C:
-					isA = false;
-					break;
-				case KEY_X:
-					isLeftBumper = false;
 					break;
 				}
 			}
@@ -195,37 +171,15 @@ int main(int argc, char* argv[])
 					break;
 				case KEY_W:
 					player.SetUp(true);
-					isUp = true;
 					break;
 				case KEY_S:
 					player.SetDown(true);
-					isDown = true;
 					break;
 				case KEY_A:
 					player.SetLeft(true);
-					isLeft = true;
 					break;
 				case KEY_D:
 					player.SetRight(true);
-					isRight = true;
-					break;
-				case KEY_Q:
-					PlaySFX(load->Path("medium.wav"));
-					isY = true;
-					break;
-				case KEY_E:
-					isX = true;
-					break;
-				case KEY_Z:
-					isB = true;
-					break;
-				case KEY_C:
-					isA = true;
-					break;
-				case KEY_X:
-					isLeftBumper = true;
-					break;
-				default:
 					break;
 				}
 			}
@@ -233,20 +187,9 @@ int main(int argc, char* argv[])
 		}
 		if (window.IsMinimized()) continue;
 		SDL_RenderClear(window.GetRenderer());
-		backgroundOffset = -unsorted[BackgroundBackground].GetHeight() * normals[minute_1];
-		if (backgroundOffset < -unsorted[BackgroundBackground].GetHeight()) backgroundOffset = 0;
-		DrawBackgroundLeftTop(viewports, backgroundOffset);
-		DrawBackgroundLeftMiddle(viewports, backgroundOffset);
-		DrawBackgroundLeftBottom(viewports, backgroundOffset);
-		DrawBackgroundRightTop(viewports, backgroundOffset);
-		DrawBackgroundRightMiddle(viewports, backgroundOffset);
-		DrawBackgroundRightBottom(viewports, backgroundOffset);
-		int horizontalModifier = 0;
-		if (minuteToggle) horizontalModifier = (window.GetWidth() + window.GetWidth()) * normals[minute_1];
-		else horizontalModifier = (window.GetWidth() + window.GetWidth()) * (1.0f - normals[minute_1]);
-		DrawBossMoonboy(viewports, horizontalModifier);
-		DrawBackgroundForeground(viewports);
-		DrawBossMoonboyHands(viewports, horizontalModifier);
+		DrawBackground(viewports);
+		DrawForeground(viewports);
+
 		player.Move(window.GetWidth(), window.GetHeight(), currentTime, limits[second_3]);
 		player.SetIJ((float)window.GetWidth(), (float)window.GetHeight(), ROW_SIZE);
 		float normal = normals[second_1];
