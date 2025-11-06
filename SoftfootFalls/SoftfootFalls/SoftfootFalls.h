@@ -38,18 +38,10 @@
 Window window;
 const int ROW_SIZE = 26;
 const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
-const int HALL_I = 12;
-const int HALL_J = 11;
-Sint32 data[FileIO::TOTAL_DATA]{};
 
 const int FIRE_SIZE = 3;
 
-const int MIRACLE_STARFALL_LIMIT = 5;
-
-double windAngle = 30.0;
-
-bool isHoveroverHall = false;
-
+Player player;
 bool isUp = false;
 bool isDown = false;
 bool isLeft = false;
@@ -62,6 +54,9 @@ bool isLeftBumper = false;
 bool isRightBumper = false;
 bool isStart = false;
 bool isSelect = false;
+
+long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+bool minuteToggle = false;
 
 ///////////////////////////////////////////////////////////////////////
 //  Timer  ////////////////////////////////////////////////////////////
@@ -114,13 +109,9 @@ static const char* BasePath(const char* filePath)
 
 enum PathEnum
 {
-	Landscape_Hall,
 	BackgroundBackground,
 	BackgroundForeground,
 	IconCursor,
-	CharacterFairySun,
-	CharacterFairyMoon,
-	BoxFront,
 	PlayerHighlight,
 	PalaceHighlightBottom,
 	PalaceHighlightTop,
@@ -139,13 +130,9 @@ enum PathEnum
 };
 const char* Paths[] =
 {
-	"Landscape_Hall_3300x2550.png",
 	"bg.png",
 	"Landscape_Moon_3300x2550.png",
 	"IconCursor.png",
-	"CharacterFairySun_000_256x256.png",
-	"CharacterFairyMoon_000_256x256.png",
-	"BoxFront.png",
 	"PlayerHighlight_000_1024x1024.png",
 	"PalaceHighlightBottom_000_2048x2048.png",
 	"PalaceHighlightTop_000_2048x2048.png",
@@ -160,30 +147,6 @@ const char* Paths[] =
 	"CharacterTownspersonMoonboy_Hands_000_1024x1024.png",
 	"CharacterMonsterMouth_000_1024x1024.png",
 	"PlayerBeam_000_2048x2048.png"
-};
-
-enum HorizonsEnum
-{
-	Horizon000,
-	Horizon001,
-	Horizon002,
-	Horizon003,
-	Horizon004,
-	Horizon005,
-	Horizon006,
-	Horizon007,
-	HorizonsEnum_Size
-};
-const char* HorizonsPaths[] =
-{
-	"Horizon000.png",
-	"Horizon001.png",
-	"Horizon002.png",
-	"Horizon003.png",
-	"Horizon004.png",
-	"Horizon005.png",
-	"Horizon006.png",
-	"Horizon007.png"
 };
 
 enum RoadsEnum
@@ -202,178 +165,6 @@ const char* RoadsPaths[] =
 	"Road_002_256x256.png",
 	"Road_003_256x256.png",
 	"Road_004_256x256.png"
-};
-
-enum LightningEnum
-{
-	MiracleLightning_000,
-	MiracleLightning_001,
-	MiracleLightning_002,
-	MiracleLightning_003,
-	MiracleLightning_004,
-	MiracleLightning_005,
-	MiracleLightning_006,
-	MiracleLightning_007,
-	LightningEnum_Size
-};
-const char* lightningsPaths[] =
-{
-	"MiracleLightning_000_512x512.png",
-	"MiracleLightning_001_512x512.png",
-	"MiracleLightning_002_512x512.png",
-	"MiracleLightning_003_512x512.png",
-	"MiracleLightning_004_512x512.png",
-	"MiracleLightning_005_512x512.png",
-	"MiracleLightning_006_512x512.png",
-	"MiracleLightning_007_512x512.png"
-};
-
-enum CloudsEnum
-{
-	MiracleCloud_000,
-	MiracleCloud_001,
-	MiracleCloud_002,
-	MiracleCloud_003,
-	MiracleCloud_004,
-	MiracleCloud_005,
-	MiracleCloud_006,
-	MiracleCloud_007,
-	MiracleCloud_008,
-	MiracleCloud_009,
-	MiracleCloud_010,
-	MiracleCloud_011,
-	CloudsEnum_Size
-};
-const char* cloudsPaths[] =
-{
-	"MiracleCloud_000_1024x1024.png",
-	"MiracleCloud_001_1024x1024.png",
-	"MiracleCloud_002_1024x1024.png",
-	"MiracleCloud_003_1024x1024.png",
-	"MiracleCloud_004_1024x1024.png",
-	"MiracleCloud_005_1024x1024.png",
-	"MiracleCloud_006_1024x1024.png",
-	"MiracleCloud_007_1024x1024.png",
-	"MiracleCloud_008_1024x1024.png",
-	"MiracleCloud_009_1024x1024.png",
-	"MiracleCloud_010_1024x1024.png",
-	"MiracleCloud_011_1024x1024.png"
-};
-
-enum RainCloudsEnum
-{
-	MiracleRainCloud_000,
-	MiracleRainCloud_001,
-	RainCloudsEnum_Size
-};
-const char* rainCloudsPaths[] =
-{
-	"MiracleRainCloud_000_1024x1024.png",
-	"MiracleRainCloud_001_1024x1024.png"
-};
-
-enum RainEnum
-{
-	MiracleRain_000,
-	MiracleRain_001,
-	MiracleRain_002,
-	RainEnum_Size
-};
-const char* rainPaths[] =
-{
-	"MiracleRain_000_1024x1024.png",
-	"MiracleRain_001_1024x1024.png",
-	"MiracleRain_002_1024x1024.png"
-};
-
-enum WindEnum
-{
-	MiracleStarfallStreamer_000,
-	MiracleStarfallStreamer_001,
-	MiracleStarfallStreamer_002,
-	MiracleStarfallStreamer_003,
-	MiracleStarfallStreamer_004,
-	WindEnum_Size
-};
-const char* windPaths[] =
-{
-	"MiracleStarfallStreamer_000_1024x1024.png",
-	"MiracleStarfallStreamer_001_1024x1024.png",
-	"MiracleStarfallStreamer_002_1024x1024.png",
-	"MiracleStarfallStreamer_003_1024x1024.png",
-	"MiracleStarfallStreamer_004_1024x1024.png"
-};
-
-enum BoxesEnum
-{
-	BoxUp,
-	BoxDown,
-	BoxLeft,
-	BoxRight,
-	BoxesEnum_Size
-};
-const char* boxesPaths[] =
-{
-	"BoxUp.png",
-	"BoxDown.png",
-	"BoxLeft.png",
-	"BoxRight.png"
-};
-
-enum FiresEnum
-{
-	Fire_000_000,
-	Fire_000_001,
-	Fire_000_002,
-	Fire_000_003,
-	Fire_000_004,
-	Fire_001_000,
-	Fire_001_001,
-	Fire_001_002,
-	Fire_001_003,
-	Fire_001_004,
-	Fire_002_000,
-	Fire_002_001,
-	Fire_002_002,
-	Fire_002_003,
-	Fire_002_004,
-	FiresEnum_Size
-};
-const char* firesPaths[] =
-{
-	"Fire_000_64x64_000.png",
-	"Fire_000_64x64_001.png",
-	"Fire_000_64x64_002.png",
-	"Fire_000_64x64_003.png",
-	"Fire_000_64x64_004.png",
-	"Fire_001_64x64_000.png",
-	"Fire_001_64x64_001.png",
-	"Fire_001_64x64_002.png",
-	"Fire_001_64x64_003.png",
-	"Fire_001_64x64_004.png",
-	"Fire_002_64x64_000.png",
-	"Fire_002_64x64_001.png",
-	"Fire_002_64x64_002.png",
-	"Fire_002_64x64_003.png",
-	"Fire_002_64x64_004.png",
-};
-
-enum CharacterFairyWistfulsEnum
-{
-	CharacterFairyWistful_000,
-	CharacterFairyWistful_001,
-	CharacterFairyWistful_002,
-	CharacterFairyWistful_003,
-	CharacterFairyWistful_004,
-	CharacterFairyWistfulsEnum_Size
-};
-const char* CharacterFairyWistfulsPaths[] =
-{
-	"CharacterFairyWistful_000_64x64.png",
-	"CharacterFairyWistful_001_64x64.png",
-	"CharacterFairyWistful_002_64x64.png",
-	"CharacterFairyWistful_003_64x64.png",
-	"CharacterFairyWistful_004_64x64.png"
 };
 
 enum AlphabetEnum
@@ -572,44 +363,20 @@ const char* alphabetPaths[] =
 };
 
 Texture unsorted[PathEnum_Size];
-Texture horizons[HorizonsEnum_Size];
 Texture roads[RoadsEnum_Size];
-Texture fires[FiresEnum_Size];
-Texture lightnings[LightningEnum_Size];
-Texture clouds[CloudsEnum_Size];
-Texture rainClouds[RainCloudsEnum_Size];
-Texture rains[RainEnum_Size];
-Texture characterFairyWistfuls[CharacterFairyWistfulsEnum_Size];
 Texture alphabet[AlphabetEnum_Size];
-Texture boxes[BoxesEnum_Size];
 
 void LoadArt(Load* load)
 {
 	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Init(window.GetRenderer(), load->Path(Paths[i]));
 	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(window.GetRenderer(), load->Path(RoadsPaths[i]));
-	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Init(window.GetRenderer(), load->Path(HorizonsPaths[i]));
-	for (int i = 0; i < FiresEnum_Size; ++i) fires[i].Init(window.GetRenderer(), load->Path(firesPaths[i]));
-	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Init(window.GetRenderer(), load->Path(lightningsPaths[i]));
-	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Init(window.GetRenderer(), load->Path(cloudsPaths[i]));
-	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Init(window.GetRenderer(), load->Path(rainCloudsPaths[i]));
-	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Init(window.GetRenderer(), load->Path(rainPaths[i]));
-	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Init(window.GetRenderer(), load->Path(boxesPaths[i]));
-	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Init(window.GetRenderer(), load->Path(CharacterFairyWistfulsPaths[i]));
 	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Init(window.GetRenderer(), load->Path(alphabetPaths[i]));
 }
 
 void UnloadArt()
 {
 	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Free();
-	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Free();
 	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Free();
-	for (int i = 0; i < FiresEnum_Size; ++i) fires[i].Free();
-	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Free();
-	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Free();
-	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Free();
-	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Free();
-	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
-	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Free();
 	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Free();
 }
 
@@ -859,7 +626,7 @@ int TextToIndex(char letter)
 	return (int)letter - 33;
 }
 
-void DrawAltMenuTop(SDL_Rect* viewports, const char* text)
+void DrawShellPrompt(SDL_Rect* viewports, const char* text)
 {
 	const int COLUMN_LIMIT = 20;
 	viewports[v].y = 0;
@@ -871,18 +638,6 @@ void DrawAltMenuTop(SDL_Rect* viewports, const char* text)
 		viewports[v].x = (window.GetWidth() / COLUMN_LIMIT) * i;
 		alphabet[TextToIndex(text[i])].Draw(&viewports[v]);
 	}
-}
-
-void DrawEarthquake(SDL_Rect* viewports, SDL_Rect* miracleStarfallViewports, int index, double* miracleStarfallNormals)
-{
-	SetPlayerStarCurrent(viewports, miracleStarfallViewports, index, miracleStarfallNormals);
-	characterFairyWistfuls[index].Draw(&viewports[v_playerStarCurrent]);
-}
-
-void DrawBoxFront(SDL_Rect* viewports, Player* player)
-{
-	SetPalace(viewports, player);
-	unsorted[BoxFront].Draw(&viewports[v_palace]);
 }
 
 void DrawArrow(SDL_Rect* viewports, double* normals)

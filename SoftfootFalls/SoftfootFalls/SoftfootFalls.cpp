@@ -19,42 +19,14 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < TimerEnum_Size; ++i) normals[i] = 0.0;
 	SDL_Rect viewports[ViewportsEnum_Size]{};
 	for (int i = 0; i < ViewportsEnum_Size; ++i) viewports[i] = { 0, 0, 0, 0 };
-	BoxesEnum playerDirection = BoxUp;
 	int alphabetIndex = 0;
-	FileIO::Open(load->Path("nums.bin"), data);
 	if (!window.Init()) return 1;
 	SDL_Renderer* linuxRenderer = GetLinuxRenderer(window.GetWindow());
 	if (linuxRenderer) window.SetRenderer(linuxRenderer);
 	LoadArt(load);
-	Texture* box = &boxes[BoxUp];
 	SDL_Event event;
-	int countedFrames = 0;
-	Player player;
 	int backgroundOffset = 0;
-	int currentData = 0;
-	long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	bool trisecondToggle = false;
-	bool minuteToggle = false;
-	int dotI = 0;
-	int dotJ = 0;
-	float dotNormalI = 0.0f;
-	float dotNormalJ = 0.0f;
 	int animationIndex = 0;
-	int fireIndex = 0;
-	bool isLightningActive = false;
-	bool isRainActive = false;
-	bool isStarActive = false;
-	SDL_Rect starBox = { 0, 0, 0, 0 };
-	SDL_Rect windBox = { 0, 0, 0, 0 };
-	int starI = 0;
-	int starJ = 0;
-	bool isOnFire[GRID_SIZE]{};
-	for (int i = 0; i < GRID_SIZE; ++i) isOnFire[i] = false;
-	int lightningIndex = 0;
-	int cloudIndex = 0;
-	int rainCloudIndex = 0;
-	int rainIndex = 0;
-	int windIndex = 0;
 	bool isAcceptingInput = true;
 	const char* temp = "Insert\0";
 	char* text = new char[ROW_SIZE];
@@ -83,14 +55,7 @@ int main(int argc, char* argv[])
 		{
 			deltas[animation] -= limits[animation];
 			if (animationIndex++ >= ANIMATION_LIMIT) animationIndex = 0;
-			fireIndex = animationIndex % FIRE_SIZE;
-			rainIndex = animationIndex % RainEnum_Size;
-			windIndex = animationIndex % WindEnum_Size;
-			cloudIndex = animationIndex % CloudsEnum_Size;
-			lightningIndex = animationIndex % LightningEnum_Size;
-			rainCloudIndex = animationIndex % RainCloudsEnum_Size;
 		}
-		if (deltas[second_3] > limits[second_3]) trisecondToggle = !trisecondToggle;
 		if (deltas[minute_1] > limits[minute_1]) minuteToggle = !minuteToggle;
 		for (int i = 0; i < TimerEnum_Size; ++i)
 		{
@@ -128,19 +93,15 @@ int main(int argc, char* argv[])
 					break;
 				case KEY_E:
 					isX = false;
-					windAngle = 30.0;
 					break;
 				case KEY_Z:
 					isB = false;
-					isLightningActive = false;
 					break;
 				case KEY_C:
 					isA = false;
-					isRainActive = false;
 					break;
 				case KEY_X:
 					isLeftBumper = false;
-					isStarActive = false;
 					break;
 				}
 			}
@@ -233,28 +194,18 @@ int main(int argc, char* argv[])
 					isAcceptingInput = !isAcceptingInput;
 					break;
 				case KEY_W:
-					box = &boxes[BoxUp];
-					--currentData;
-					if (currentData < 0) currentData = FileIO::TOTAL_DATA - 1;
 					player.SetUp(true);
 					isUp = true;
 					break;
 				case KEY_S:
-					box = &boxes[BoxDown];
-					++currentData;
-					if (currentData == FileIO::TOTAL_DATA) currentData = 0;
 					player.SetDown(true);
 					isDown = true;
 					break;
 				case KEY_A:
-					box = &boxes[BoxLeft];
-					--data[currentData];
 					player.SetLeft(true);
 					isLeft = true;
 					break;
 				case KEY_D:
-					box = &boxes[BoxRight];
-					++data[currentData];
 					player.SetRight(true);
 					isRight = true;
 					break;
@@ -264,19 +215,15 @@ int main(int argc, char* argv[])
 					break;
 				case KEY_E:
 					isX = true;
-					windAngle = 0.0;
 					break;
 				case KEY_Z:
-					isLightningActive = true;
 					isB = true;
 					break;
 				case KEY_C:
-					isRainActive = true;
 					isA = true;
 					break;
 				case KEY_X:
 					isLeftBumper = true;
-					isStarActive = true;
 					break;
 				default:
 					break;
@@ -301,11 +248,10 @@ int main(int argc, char* argv[])
 		DrawBackgroundForeground(viewports);
 		DrawBossMoonboyHands(viewports, horizontalModifier);
 		player.Move(window.GetWidth(), window.GetHeight(), currentTime, limits[second_3]);
-		player.SetIJ(&dotI, &dotJ, &dotNormalI, &dotNormalJ, (float)window.GetWidth(), (float)window.GetHeight(), ROW_SIZE);
+		player.SetIJ((float)window.GetWidth(), (float)window.GetHeight(), ROW_SIZE);
 		float normal = normals[second_1];
 		float centerX = window.GetWidth() * 0.15f;
 		float centerY = window.GetHeight() * 0.5f;
-		int horizonI = 0;
 		int roadI = 0;
 		int k = 0;
 		for (int i = ROW_SIZE - 1; i >= 0 ; --i)
@@ -333,49 +279,18 @@ int main(int argc, char* argv[])
 				if (viewports[v_tile].w < 0) viewports[v_tile].w = 0;
 				if (viewports[v_tile].h < 0) viewports[v_tile].h = 0;
 				int modI = (i % 2 == 0) ? 0 : 4;
-				//horizons[modI + horizonI].Draw(&viewports[v_tile]);
-				++horizonI;
-				if (horizonI > 3) horizonI = 0;
 				modI = (i % 4 == 0);
 				roads[modI + roadI].Draw(&viewports[v_tile]);
 				++roadI;
 				if (roadI > 3) roadI = 0;
-				if (dotI == i && dotJ == j)
-				{
-					if (isLightningActive) isOnFire[k] = true;
-					else if (isRainActive) isOnFire[k] = false;
-					DrawPlayerHighlight(viewports);
-				}
-				if (isStarActive)
-				{
-					starBox.x = (viewports[v_tile].x + window.GetWidth()) - (window.GetWidth() * normals[second_3]);
-					starBox.y = (viewports[v_tile].y - window.GetHeight()) + (window.GetHeight() * normals[second_3]);
-					starBox.w = viewports[v_tile].w;
-					starBox.h = viewports[v_tile].h;
-					starI = dotI;
-					starJ = dotJ;
-				}
-				double altWindAngle = windAngle;
-				if (windAngle == 0.0)
-				{
-					windBox.x = (viewports[v_tileMiracle].x + window.GetWidth()) - (window.GetWidth() * normals[second_3]);
-					windBox.y = viewports[v_tileMiracle].y;
-					windBox.w = viewports[v_tileMiracle].w;
-					windBox.h = viewports[v_tileMiracle].h;
-					altWindAngle = 125.0;
-				}
-				clouds[cloudIndex].Draw(&windBox);
-				if (i == ROW_SIZE - 1 && dotJ == j) DrawFarTopTile(viewports);
-				if (isOnFire[k]) fires[animationIndex].Draw(&viewports[v_tile]);
+				if (player.GetI() == i && player.GetJ() == j) DrawPlayerHighlight(viewports);
+				if (i == ROW_SIZE - 1 && player.GetJ() == j) DrawFarTopTile(viewports);
 				if (j == 0) SetFarLeftTile(viewports);
-				if (i == dotI) unsorted[PalaceHighlightLeft].Draw(&viewports[v_farLeftTile]);
-				SetPlayerBox(viewports, ROW_SIZE, dotNormalJ);
-				SetPlayerMiracle(viewports, ROW_SIZE, dotNormalJ);
-				SetPlayerClouds(viewports, ROW_SIZE, dotNormalJ);
-				if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1) unsorted[CharacterFairyMoon].Draw(&viewports[v_tile], 360 * normals[minute_1]);
-				if (i == ROW_SIZE - 1 && j == 0) unsorted[CharacterFairySun].Draw(&viewports[v_tile], 360 * normals[minute_1]);
-				if (i == HALL_I && j == HALL_J) unsorted[Landscape_Hall].Draw(&viewports[v_tile]);
-				if (/*i == 0 && */j == alphabetIndex)
+				if (i == player.GetI()) unsorted[PalaceHighlightLeft].Draw(&viewports[v_farLeftTile]);
+				SetPlayerBox(viewports, ROW_SIZE, player.GetJNormal());
+				SetPlayerMiracle(viewports, ROW_SIZE, player.GetJNormal());
+				SetPlayerClouds(viewports, ROW_SIZE, player.GetJNormal());
+				if (j == alphabetIndex)
 				{
 					if (texts[i][alphabetIndex] == '\0')
 					{
@@ -388,35 +303,20 @@ int main(int argc, char* argv[])
 					}
 				}
 				SetTileMiracle(viewports);
-				if (dotI == i)
-				{
-					if (isLightningActive) lightnings[lightningIndex].Draw(&viewports[v_playerMiracle]);
-					box->Draw(&viewports[v_playerBox]);
-					if (isRainActive) rains[rainIndex].Draw(&viewports[v_playerMiracle]);
-					if (isLightningActive || isRainActive) rainClouds[rainCloudIndex].Draw(&viewports[v_playerClouds]);
-				}
 				++k;
 			}
 		}
 		DrawArrow(viewports, normals);
-		DrawBoxFront(viewports, &player);
-		if (isAcceptingInput)
-		{
-			DrawAltMenuTop(viewports, text);
-		}
-		else
-		{
-			DrawMenuTop(viewports);
-		}
+		SetPalace(viewports, &player);
+		if (isAcceptingInput) DrawShellPrompt(viewports, text);
+		else DrawMenuTop(viewports);
 		SDL_RenderPresent(window.GetRenderer());
-		++countedFrames;
 	}
 	for (int i = 0; i < ROW_SIZE; ++i)
 	{
 		delete[] texts[i];
 	}
 	delete[] text;
-	FileIO::Write(load->Path("nums.bin"), data);
 	UnloadArt();
 	window.Free();
 	SDL_Quit();

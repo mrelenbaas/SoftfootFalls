@@ -21,12 +21,16 @@ public:
 	Player() {}
 	~Player() {}
 	void Move(int, int, long long, double);
+	int GetI() { return i; }
+	int GetJ() { return j; }
+	float GetINormal() { return iNormal; }
+	float GetJNormal() { return jNormal; }
 	SDL_Rect GetBox()
 	{
 		SDL_Rect rect = { box.x, box.y, box.w, box.h };
 		return rect;
 	}
-	void SetIJ(int*, int*, float*, float*, int, int, const int) const;
+	void SetIJ(int, int, const int);
 	void SetUp(bool isUp) { (*this).isUp = isUp; }
 	void SetDown(bool isDown) { (*this).isDown = isDown; }
 	void SetLeft(bool isLeft) { (*this).isLeft = isLeft; }
@@ -38,4 +42,8 @@ private:
 	bool isDown = false;
 	bool isLeft = false;
 	bool isRight = false;
+	int i = 0;
+	int j = 0;
+	int iNormal = 0.0f;
+	int jNormal = 0.0f;
 };

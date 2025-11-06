@@ -32,7 +32,7 @@ void Player::Move(int width, int height, long long currentTime, double limit)
 	previousTime = currentTime;
 }
 
-void Player::SetIJ(int* i, int* j, float* normalI, float* normalJ, int width, int height, const int LIMIT) const
+void Player::SetIJ(int width, int height, const int LIMIT)
 {
 	float w = width - (box.w * 4.0f);
 	float h = height - (box.h * 4.0f);
@@ -40,10 +40,8 @@ void Player::SetIJ(int* i, int* j, float* normalI, float* normalJ, int width, in
 	float y = (float)box.y;
 	float jNormal = x / w;
 	float iNormal = y / h;
-	*i = LIMIT - (LIMIT * iNormal);
-	if (*i == LIMIT) *i = LIMIT - 1;
-	*j = LIMIT * jNormal;
-	if (*j == LIMIT) *j = LIMIT - 1;
-	*normalI = iNormal;
-	*normalJ = jNormal;
+	i = LIMIT - (LIMIT * iNormal);
+	if (i == LIMIT) i = LIMIT - 1;
+	j = LIMIT * jNormal;
+	if (j == LIMIT) j = LIMIT - 1;
 }
