@@ -41,7 +41,6 @@ const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 const int HALL_I = 12;
 const int HALL_J = 11;
 Sint32 data[FileIO::TOTAL_DATA]{};
-int framesPerSecond = 0;
 
 const int FIRE_SIZE = 3;
 
@@ -115,11 +114,9 @@ static const char* BasePath(const char* filePath)
 
 enum PathEnum
 {
-	Crest,
 	Landscape_Hall,
 	BackgroundBackground,
 	BackgroundForeground,
-	Loadstone,
 	IconCursor,
 	CharacterFairySun,
 	CharacterFairyMoon,
@@ -142,11 +139,9 @@ enum PathEnum
 };
 const char* Paths[] =
 {
-	"Crest_2048x2048_000.png",
 	"Landscape_Hall_3300x2550.png",
 	"bg.png",
 	"Landscape_Moon_3300x2550.png",
-	"Loadstone_000_2048x2048.png",
 	"IconCursor.png",
 	"CharacterFairySun_000_256x256.png",
 	"CharacterFairyMoon_000_256x256.png",
@@ -207,34 +202,6 @@ const char* RoadsPaths[] =
 	"Road_002_256x256.png",
 	"Road_003_256x256.png",
 	"Road_004_256x256.png"
-};
-
-enum RedFireEnum
-{
-	RedFire_000,
-	RedFire_001,
-	RedFire_002,
-	RedFireEnum_Size
-};
-const char* redFirePaths[] =
-{
-	"Fire_000_512x512.png",
-	"Fire_001_512x512.png",
-	"Fire_002_512x512.png"
-};
-
-enum BlueFireEnum
-{
-	BlueFire_000,
-	BlueFire_001,
-	BlueFire_002,
-	BlueFireEnum_Size
-};
-const char* blueFirePaths[] =
-{
-	"MiracleLightningFire_000_512x512.png",
-	"MiracleLightningFire_001_512x512.png",
-	"MiracleLightningFire_002_512x512.png"
 };
 
 enum LightningEnum
@@ -389,107 +356,6 @@ const char* firesPaths[] =
 	"Fire_002_64x64_002.png",
 	"Fire_002_64x64_003.png",
 	"Fire_002_64x64_004.png",
-};
-
-enum HouseDenPillarsEnum
-{
-	HouseDenPillar_000,
-	HouseDenPillar_001,
-	HouseDenPillar_002,
-	HouseDenPillar_003,
-	HouseDenPillar_004,
-	HouseDenPillar_005,
-	HouseDenPillar_006,
-	HouseDenPillar_007,
-	HouseDenPillar_008,
-	HouseDenPillar_009,
-	HouseDenPillar_010,
-	HouseDenPillar_011,
-	HouseDenPillarsEnum_Size
-};
-const char* houseDenPillarsPaths[] =
-{
-	"HouseDenPillar_000.png",
-	"HouseDenPillar_001.png",
-	"HouseDenPillar_002.png",
-	"HouseDenPillar_003.png",
-	"HouseDenPillar_004.png",
-	"HouseDenPillar_005.png",
-	"HouseDenPillar_006.png",
-	"HouseDenPillar_007.png",
-	"HouseDenPillar_008.png",
-	"HouseDenPillar_009.png",
-	"HouseDenPillar_010.png",
-	"HouseDenPillar_011.png",
-	"HouseDenPillar_012.png"
-};
-
-enum HouseHauntsEnum
-{
-	HouseHaunt_000_Alt_Empty,
-	HouseHaunt_001_Alt_Empty,
-	HouseHaunt_002_Alt_Empty,
-	HouseHaunt_003_Alt_Empty,
-	HouseHaunt_004_Alt_Empty,
-	HouseHaunt_000_Alt_Full,
-	HouseHaunt_001_Alt_Full,
-	HouseHaunt_002_Alt_Full,
-	HouseHaunt_003_Alt_Full,
-	HouseHaunt_004_Alt_Full,
-	HouseHaunt_000_Alt_Half,
-	HouseHaunt_001_Alt_Half,
-	HouseHaunt_002_Alt_Half,
-	HouseHaunt_003_Alt_Half,
-	HouseHaunt_004_Alt_Half,
-	HouseHaunt_000_Normal_Empty,
-	HouseHaunt_001_Normal_Empty,
-	HouseHaunt_002_Normal_Empty,
-	HouseHaunt_003_Normal_Empty,
-	HouseHaunt_004_Normal_Empty,
-	HouseHaunt_000_Normal_Full,
-	HouseHaunt_001_Normal_Full,
-	HouseHaunt_002_Normal_Full,
-	HouseHaunt_003_Normal_Full,
-	HouseHaunt_004_Normal_Full,
-	HouseHaunt_000_Normal_Half,
-	HouseHaunt_001_Normal_Half,
-	HouseHaunt_002_Normal_Half,
-	HouseHaunt_003_Normal_Half,
-	HouseHaunt_004_Normal_Half,
-	HouseHauntsEnum_Size
-};
-const char* houseHauntsPaths[] =
-{
-	"HouseHaunt_000_Alt_Empty_256x256.png",
-	"HouseHaunt_001_Alt_Empty_256x256.png",
-	"HouseHaunt_002_Alt_Empty_256x256.png",
-	"HouseHaunt_003_Alt_Empty_256x256.png",
-	"HouseHaunt_004_Alt_Empty_256x256.png",
-	"HouseHaunt_000_Alt_Full_256x256.png",
-	"HouseHaunt_001_Alt_Full_256x256.png",
-	"HouseHaunt_002_Alt_Full_256x256.png",
-	"HouseHaunt_003_Alt_Full_256x256.png",
-	"HouseHaunt_004_Alt_Full_256x256.png",
-	"HouseHaunt_000_Alt_Half_256x256.png",
-	"HouseHaunt_001_Alt_Half_256x256.png",
-	"HouseHaunt_002_Alt_Half_256x256.png",
-	"HouseHaunt_003_Alt_Half_256x256.png",
-	"HouseHaunt_004_Alt_Half_256x256.png",
-	"HouseHaunt_000_Normal_Empty_256x256.png",
-	"HouseHaunt_001_Normal_Empty_256x256.png",
-	"HouseHaunt_002_Normal_Empty_256x256.png",
-	"HouseHaunt_003_Normal_Empty_256x256.png",
-	"HouseHaunt_004_Normal_Empty_256x256.png",
-	"HouseHaunt_000_Normal_Full_256x256.png",
-	"HouseHaunt_001_Normal_Full_256x256.png",
-	"HouseHaunt_002_Normal_Full_256x256.png",
-	"HouseHaunt_003_Normal_Full_256x256.png",
-	"HouseHaunt_004_Normal_Full_256x256.png",
-	"HouseHaunt_000_Normal_Half_256x256.png",
-	"HouseHaunt_001_Normal_Half_256x256.png",
-	"HouseHaunt_002_Normal_Half_256x256.png",
-	"HouseHaunt_003_Normal_Half_256x256.png",
-	"HouseHaunt_004_Normal_Half_256x256.png"
 };
 
 enum CharacterFairyWistfulsEnum
@@ -708,16 +574,11 @@ const char* alphabetPaths[] =
 Texture unsorted[PathEnum_Size];
 Texture horizons[HorizonsEnum_Size];
 Texture roads[RoadsEnum_Size];
-Texture redFire[RedFireEnum_Size];
-Texture blueFire[BlueFireEnum_Size];
 Texture fires[FiresEnum_Size];
 Texture lightnings[LightningEnum_Size];
 Texture clouds[CloudsEnum_Size];
 Texture rainClouds[RainCloudsEnum_Size];
 Texture rains[RainEnum_Size];
-Texture winds[WindEnum_Size];
-Texture houseDenPillars[HouseDenPillarsEnum_Size];
-Texture houseHaunts[HouseHauntsEnum_Size];
 Texture characterFairyWistfuls[CharacterFairyWistfulsEnum_Size];
 Texture alphabet[AlphabetEnum_Size];
 Texture boxes[BoxesEnum_Size];
@@ -727,16 +588,11 @@ void LoadArt(Load* load)
 	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Init(window.GetRenderer(), load->Path(Paths[i]));
 	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(window.GetRenderer(), load->Path(RoadsPaths[i]));
 	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Init(window.GetRenderer(), load->Path(HorizonsPaths[i]));
-	for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Init(window.GetRenderer(), load->Path(redFirePaths[i]));
-	for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Init(window.GetRenderer(), load->Path(blueFirePaths[i]));
 	for (int i = 0; i < FiresEnum_Size; ++i) fires[i].Init(window.GetRenderer(), load->Path(firesPaths[i]));
 	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Init(window.GetRenderer(), load->Path(lightningsPaths[i]));
 	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Init(window.GetRenderer(), load->Path(cloudsPaths[i]));
 	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Init(window.GetRenderer(), load->Path(rainCloudsPaths[i]));
 	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Init(window.GetRenderer(), load->Path(rainPaths[i]));
-	for (int i = 0; i < WindEnum_Size; ++i) winds[i].Init(window.GetRenderer(), load->Path(windPaths[i]));
-	for (int i = 0; i < HouseDenPillarsEnum_Size; ++i) houseDenPillars[i].Init(window.GetRenderer(), load->Path(houseDenPillarsPaths[i]));
-	for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Init(window.GetRenderer(), load->Path(houseHauntsPaths[i]));
 	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Init(window.GetRenderer(), load->Path(boxesPaths[i]));
 	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Init(window.GetRenderer(), load->Path(CharacterFairyWistfulsPaths[i]));
 	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Init(window.GetRenderer(), load->Path(alphabetPaths[i]));
@@ -747,16 +603,11 @@ void UnloadArt()
 	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Free();
 	for (int i = 0; i < HorizonsEnum_Size; ++i) horizons[i].Free();
 	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Free();
-	for (int i = 0; i < RedFireEnum_Size; ++i) redFire[i].Free();
-	for (int i = 0; i < BlueFireEnum_Size; ++i) blueFire[i].Free();
 	for (int i = 0; i < FiresEnum_Size; ++i) fires[i].Free();
 	for (int i = 0; i < LightningEnum_Size; ++i) lightnings[i].Free();
 	for (int i = 0; i < CloudsEnum_Size; ++i) clouds[i].Free();
 	for (int i = 0; i < RainCloudsEnum_Size; ++i) rainClouds[i].Free();
 	for (int i = 0; i < RainEnum_Size; ++i) rains[i].Free();
-	for (int i = 0; i < WindEnum_Size; ++i) winds[i].Free();
-	for (int i = 0; i < HouseDenPillarsEnum_Size; ++i) houseDenPillars[i].Free();
-	for (int i = 0; i < HouseHauntsEnum_Size; ++i) houseHaunts[i].Free();
 	for (int i = 0; i < BoxesEnum_Size; ++i) boxes[i].Free();
 	for (int i = 0; i < CharacterFairyWistfulsEnum_Size; ++i) characterFairyWistfuls[i].Free();
 	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Free();
@@ -799,30 +650,6 @@ void SetBoss(SDL_Rect* viewports, int horizontalModifier)
 	viewports[v_boss].y = 0 - (window.GetHeight() / 2);
 	viewports[v_boss].w = window.GetWidth();
 	viewports[v_boss].h = window.GetHeight();
-}
-
-void SetRightDownDown(SDL_Rect* viewports, int dotJ)
-{
-	viewports[v_palaceRightDownDown].x = (dotJ < 12) ? viewports[v_palace].x + viewports[v_palace].w : viewports[v_palace].x - viewports[v_palace].w;
-	viewports[v_palaceRightDownDown].y = viewports[v_palace].y + (viewports[v_palace].h * 0.75f);
-	viewports[v_palaceRightDownDown].h = viewports[v_palace].w;
-	viewports[v_palaceRightDownDown].w = viewports[v_palace].h;
-}
-
-void SetRightDown(SDL_Rect* viewports, int dotJ)
-{
-	viewports[v_palaceRightDown].x = (dotJ < 12) ? viewports[v_palace].x + viewports[v_palace].w : viewports[v_palace].x - viewports[v_palace].w;
-	viewports[v_palaceRightDown].y = viewports[v_palace].y + (viewports[v_palace].h * 0.5f);
-	viewports[v_palaceRightDown].h = viewports[v_palace].w;
-	viewports[v_palaceRightDown].w = viewports[v_palace].h;
-}
-
-void SetRight(SDL_Rect* viewports, int dotJ)
-{
-	viewports[v_palaceRight].x = (dotJ < 12) ? viewports[v_palace].x + viewports[v_palace].w : viewports[v_palace].x - viewports[v_palace].w;
-	viewports[v_palaceRight].y = viewports[v_palace].y;
-	viewports[v_palaceRight].h = viewports[v_palace].w;
-	viewports[v_palaceRight].w = viewports[v_palace].h;
 }
 
 void SetPalace(SDL_Rect* viewports, Player* player)
@@ -940,38 +767,6 @@ void SetRightBottom(SDL_Rect* viewports, int offset)
 	viewports[v].y = offset + (unsorted[BackgroundBackground].GetHeight() * 2);
 }
 
-void SetMenuBottom(SDL_Rect* viewports)
-{
-	viewports[v].x = 0;
-	viewports[v].y = window.GetHeight() - (window.GetHeight() * 0.7f);
-	viewports[v].w = window.GetWidth();
-	viewports[v].h = window.GetHeight();
-}
-
-void SetMenuRightTop(SDL_Rect* viewports)
-{
-	viewports[v].x = window.GetWidth() * 0.5f;
-	viewports[v].y = window.GetHeight() - (window.GetHeight() * 0.95f);
-	viewports[v].w = window.GetWidth() * 0.5f;
-	viewports[v].h = window.GetHeight() * 0.6f;
-}
-
-void SetMenuRightBottom(SDL_Rect* viewports)
-{
-	viewports[v].x = window.GetWidth() * 0.5f;
-	viewports[v].y = window.GetHeight() - (window.GetHeight() * 0.75f);
-	viewports[v].w = window.GetWidth() * 0.5f;
-	viewports[v].h = window.GetHeight() * 0.6f;
-}
-
-void SetMenuLeft(SDL_Rect* viewports)
-{
-	viewports[v].x = 0;
-	viewports[v].y = window.GetHeight() - (window.GetHeight() * 0.9f);
-	viewports[v].w = window.GetWidth() * 0.5f;
-	viewports[v].h = window.GetHeight() * 0.6f;
-}
-
 void SetTileMiracle(SDL_Rect* viewports)
 {
 	viewports[v_tileMiracle].x = viewports[v_tile].x;
@@ -1038,15 +833,6 @@ void DrawAlphabet(SDL_Rect* viewports, int j)
 	alphabet[ASCII065000 + j].Draw(&viewports[v_tileMiracle]);
 }
 
-void DrawHouseWithWind(SDL_Rect* viewports, int windIndex, double windAngle, bool isActive, int fireIndex)
-{
-	houseDenPillars[HouseDenPillar_000].Draw(&viewports[v_tile]);
-	winds[windIndex].Draw(&viewports[v_tileMiracle], windAngle, SDL_FLIP_HORIZONTAL);
-	(isActive)
-		? redFire[fireIndex].Draw(&viewports[v_tileMiracle])
-		: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
-}
-
 void DrawPlayerHighlight(SDL_Rect* viewports)
 {
 	SetPlayer(viewports);
@@ -1087,69 +873,16 @@ void DrawAltMenuTop(SDL_Rect* viewports, const char* text)
 	}
 }
 
-void DrawMenuBottom(SDL_Rect* viewports)
-{
-	SetMenuBottom(viewports);
-	unsorted[MenuBottom].Draw(&viewports[v]);
-}
-
-void DrawMenuRightTop(SDL_Rect* viewports)
-{
-	SetMenuRightTop(viewports);
-	unsorted[MenuRightTop].Draw(&viewports[v]);
-}
-
-void DrawMenuRightBottom(SDL_Rect* viewports)
-{
-	SetMenuRightBottom(viewports);
-	unsorted[MenuRightBottom].Draw(&viewports[v]);
-}
-
-void DrawMenuLeft(SDL_Rect* viewports)
-{
-	SetMenuLeft(viewports);
-	unsorted[MenuLeft].Draw(&viewports[v]);
-}
-
-void DrawCrest(SDL_Rect* viewports)
-{
-	unsorted[Crest].Draw(NULL);
-}
-
 void DrawEarthquake(SDL_Rect* viewports, SDL_Rect* miracleStarfallViewports, int index, double* miracleStarfallNormals)
 {
 	SetPlayerStarCurrent(viewports, miracleStarfallViewports, index, miracleStarfallNormals);
 	characterFairyWistfuls[index].Draw(&viewports[v_playerStarCurrent]);
 }
 
-void DrawRightDownDown(SDL_Rect* viewports, int dotJ)
-{
-	SetRightDownDown(viewports, dotJ);
-	unsorted[PalaceHighlightRight].Draw(&viewports[v_palaceRightDownDown]);
-}
-
-void DrawRightDown(SDL_Rect* viewports, int dotJ)
-{
-	SetRightDown(viewports, dotJ);
-	unsorted[PalaceHighlightTop].Draw(&viewports[v_palaceRightDown]);
-}
-
-void DrawRight(SDL_Rect* viewports, int dotJ)
-{
-	SetRight(viewports, dotJ);
-	unsorted[PlayerHighlight].Draw(&viewports[v_palaceRight]);
-}
-
 void DrawBoxFront(SDL_Rect* viewports, Player* player)
 {
 	SetPalace(viewports, player);
 	unsorted[BoxFront].Draw(&viewports[v_palace]);
-}
-
-void DrawPalace(SDL_Rect* viewports, Player* player)
-{
-	SetPalace(viewports, player);
-	unsorted[Loadstone].Draw(&viewports[v_palace]);
 }
 
 void DrawArrow(SDL_Rect* viewports, double* normals)
@@ -1188,6 +921,7 @@ void WindowsProcess(char* narrowText)
 }
 
 char** splitString(const std::string& inputString, int& tokenCount) {
+#ifdef __linux__
     // Create a mutable copy of the input string as strtok modifies the string.
     char* cstr = new char[inputString.length() + 1];
     strcpy(cstr, inputString.c_str());
@@ -1218,6 +952,8 @@ char** splitString(const std::string& inputString, int& tokenCount) {
 
     delete[] cstr; // Clean up the mutable copy of the input string
     return tokensArray;
+#endif
+	return NULL;
 }
 
 void LinuxProcess(char* text)
