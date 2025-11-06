@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 	bool isHome = false;
 	long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	bool trisecondToggle = false;
-	bool sixsecondToggle = false;
+	bool minuteToggle = false;
 	int dotI = 0;
 	int dotJ = 0;
 	float dotNormalI = 0.0f;
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 	int rainIndex = 0;
 	int windIndex = 0;
 	bool isAcceptingInput = true;
-	const char* temp = "DEFAULT\0";
+	const char* temp = "Insert\0";
 	char* text = new char[ROW_SIZE];
 	int copyI = 0;
 	int copyJ = 0;
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 		}
 		else ++framesPerSecond;
 		if (deltas[second_3] > limits[second_3]) trisecondToggle = !trisecondToggle;
-		if (deltas[second_6] > limits[second_6]) sixsecondToggle = !sixsecondToggle;
+		if (deltas[minute_1] > limits[minute_1]) minuteToggle = !minuteToggle;
 		for (int i = 0; i < TimerEnum_Size; ++i)
 		{
 			if (deltas[i] > limits[i]) deltas[i] -= limits[i];
@@ -350,8 +350,8 @@ int main(int argc, char* argv[])
 		DrawBackgroundRightMiddle(viewports, backgroundOffset);
 		DrawBackgroundRightBottom(viewports, backgroundOffset);
 		int horizontalModifier = 0;
-		if (sixsecondToggle) horizontalModifier = (window.GetWidth() + window.GetWidth()) * normals[second_6];
-		else horizontalModifier = (window.GetWidth() + window.GetWidth()) * (1.0f - normals[second_6]);
+		if (minuteToggle) horizontalModifier = (window.GetWidth() + window.GetWidth()) * normals[minute_1];
+		else horizontalModifier = (window.GetWidth() + window.GetWidth()) * (1.0f - normals[minute_1]);
 		DrawBossMoonboy(viewports, horizontalModifier);
 		DrawBackgroundForeground(viewports);
 		DrawBossMoonboyHands(viewports, horizontalModifier);
@@ -388,8 +388,9 @@ int main(int argc, char* argv[])
 				if (viewports[v_tile].w < 0) viewports[v_tile].w = 0;
 				if (viewports[v_tile].h < 0) viewports[v_tile].h = 0;
 				int modI = (i % 2 == 0) ? 0 : 4;
-				horizons[modI + horizonI].Draw(&viewports[v_tile]);
-				if (horizonI++ > 3) horizonI = 0;
+				//horizons[modI + horizonI].Draw(&viewports[v_tile]);
+				++horizonI;
+				if (horizonI > 3) horizonI = 0;
 				modI = (i % 4 == 0);
 				roads[modI + roadI].Draw(&viewports[v_tile]);
 				++roadI;
@@ -457,8 +458,8 @@ int main(int argc, char* argv[])
 				if (i == 1 && j == 2) houseHaunts[HouseHaunt_002_Normal_Half].Draw(&viewports[v_tile]);
 				if (i == 1 && j == 3) houseHaunts[HouseHaunt_003_Normal_Half].Draw(&viewports[v_tile]);
 				if (i == 1 && j == 4) houseHaunts[HouseHaunt_004_Normal_Half].Draw(&viewports[v_tile]);
-				if (i == 24 && j == 0) unsorted[CharacterFairySun].Draw(&viewports[v_tile], 360 * normals[second_1]);
-				if (i == 24 && j == 1) unsorted[CharacterFairyHopeful].Draw(&viewports[v_tile]);
+				if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1) unsorted[CharacterFairyMoon].Draw(&viewports[v_tile], 360 * normals[minute_1]);
+				if (i == ROW_SIZE - 1 && j == 0) unsorted[CharacterFairySun].Draw(&viewports[v_tile], 360 * normals[minute_1]);
 				if (i == HALL_I && j == HALL_J) unsorted[Landscape_Hall].Draw(&viewports[v_tile]);
 				if (HALL_I == dotI && HALL_J == dotJ) isHoveroverHall = true;
 				else isHoveroverHall = false;
@@ -487,7 +488,6 @@ int main(int argc, char* argv[])
 				if (i == 2 && j == 15) DrawHouseWithWind(viewports, windIndex, windAngle, isStart, fireIndex);
 				if (i == 9 && j == 10) DrawHouseWithWind(viewports, windIndex, windAngle, isLeftBumper, fireIndex);
 				if (i == 9 && j == 19) DrawHouseWithWind(viewports, windIndex, windAngle, isRightBumper, fireIndex);
-				if (i == ROW_SIZE - 1 && j == ROW_SIZE - 1) DrawCharacterFairyMoon(viewports, 360 * normals[second_1]);
 				if (dotI == i)
 				{
 					if (isLightningActive) lightnings[lightningIndex].Draw(&viewports[v_playerMiracle]);

@@ -12,7 +12,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-#include <unistd.h>
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
@@ -20,6 +19,7 @@
 #elif __linux__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <unistd.h>
 #endif
 #include "SDLInterface.h"
 #include "SDLWrapper.h"
@@ -132,7 +132,6 @@ enum PathEnum
 	CharacterTownspersonMoonboy_Hands,
 	CharacterMonsterMouth,
 	PlayerBeam,
-	CharacterFairyHopeful,
 	PathEnum_Size
 };
 const char* Paths[] =
@@ -159,8 +158,7 @@ const char* Paths[] =
 	"CharacterTownspersonMoonboy_000_1024x1024.png",
 	"CharacterTownspersonMoonboy_Hands_000_1024x1024.png",
 	"CharacterMonsterMouth_000_1024x1024.png",
-	"PlayerBeam_000_2048x2048.png",
-	"CharacterFairyHopeful_000_256x256.png"
+	"PlayerBeam_000_2048x2048.png"
 };
 
 enum HorizonsEnum
@@ -1043,11 +1041,6 @@ void DrawHouseWithWind(SDL_Rect* viewports, int windIndex, double windAngle, boo
 		: blueFire[fireIndex].Draw(&viewports[v_tileMiracle]);
 }
 
-void DrawCharacterFairyMoon(SDL_Rect* viewports, double normal)
-{
-	unsorted[CharacterFairyMoon].Draw(&viewports[v_tile], 360 * normal);
-}
-
 void DrawPlayerHighlight(SDL_Rect* viewports)
 {
 	SetPlayer(viewports);
@@ -1080,7 +1073,7 @@ void DrawAltMenuTop(SDL_Rect* viewports, const char* text)
 	viewports[v].y = 0;
 	viewports[v].w = window.GetWidth() / COLUMN_LIMIT;
 	viewports[v].h = viewports[v].w;
-	//TextToIndex(text);
+	//TextToIndex(narrowText);
 	for (int i = 0; text[i] != '\0'; ++i)
 	{
 		viewports[v].x = (window.GetWidth() / COLUMN_LIMIT) * i;
@@ -1159,52 +1152,38 @@ void DrawArrow(SDL_Rect* viewports, double* normals)
 	unsorted[IconCursor].Draw(&viewports[v_arrow], 0.0, SDL_FLIP_VERTICAL);
 }
 
-void WindowsProcess(char* mbString)
+// https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa
+// https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
+// https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-startupinfoa
+void WindowsProcess(char* narrowText)
 {
 #ifdef _WIN32
-	STARTUPINFO si;
-	PROCESS_INFORMATION pi;
-	ZeroMemory(&si, sizeof(si));
-	si.cb = sizeof(si);
-	ZeroMemory(&pi, sizeof(pi));
-	//const char* mbString = "notepad.exe";
-	size_t requiredSize;
-	mbstowcs_s(&requiredSize, nullptr, 0, mbString, _TRUNCATE);
-	std::vector<wchar_t> wcBuffer(requiredSize);
-	errno_t err = mbstowcs_s(&requiredSize, wcBuffer.data(), wcBuffer.size(), mbString, _TRUNCATE);
-	if (err == 0) {
-		std::wcout << L"Converted string: " << wcBuffer.data() << std::endl;
+	STARTUPINFO startupInfo;
+	ZeroMemory(&startupInfo, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+	PROCESS_INFORMATION processInfo;
+	ZeroMemory(&processInfo, sizeof(processInfo));
+	size_t wideTextSize;                                                      // Declare a variable for wide text's size.
+	mbstowcs_s(&wideTextSize, nullptr, 0, narrowText, _TRUNCATE);             // Define the wide text's size.
+	wchar_t* wideText = new wchar_t[wideTextSize];                            // Declare wide text.
+	mbstowcs_s(&wideTextSize, wideText, wideTextSize, narrowText, _TRUNCATE); // Define wide text.
+	if (!CreateProcess(NULL, wideText, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &startupInfo, &processInfo))
+	{
+		printf("ERROR: Failed to create process: %ul\n", GetLastError());
 	}
-	else {
-		std::wcerr << L"Error during conversion: " << err << std::endl;
-	}
-	wchar_t* wideString = wcBuffer.data();
-	std::cout << "wide: " << wideString << std::endl;
-	if (!CreateProcess(
-		NULL,                   // No module name (use command line)
-		wideString, // Command line
-		NULL,                   // Process handle not inheritable
-		NULL,                   // Thread handle not inheritable
-		FALSE,                  // Set handle inheritance to FALSE
-		0,                      // No creation flags
-		NULL,                   // Use parent's environment block
-		NULL,                   // Use parent's starting directory 
-		&si,                    // Pointer to STARTUPINFO structure
-		&pi)                    // Pointer to PROCESS_INFORMATION structure
-		) {
-		std::cerr << "CreateProcess failed (" << GetLastError() << ").\n";
-	}
-	std::cout << "Child process created successfully.\n";
-	std::cout << "Process ID: " << pi.dwProcessId << "\n";
-	std::cout << "Thread ID: " << pi.dwThreadId << "\n";
-	WaitForSingleObject(pi.hProcess, INFINITE);
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
+	delete[] wideText;
+	printf("SUCCESS: Created Process\n");
+	printf("SUCCESS: Process ID, %i\n", processInfo.dwProcessId);
+	printf("SUCCESS: Thread ID, %i\n", processInfo.dwThreadId);
+	WaitForSingleObject(processInfo.hProcess, INFINITE);
+	CloseHandle(processInfo.hProcess);
+	CloseHandle(processInfo.hThread);
 #endif
 }
 
 void LinuxProcess(char* commandLine)
 {
+#ifdef __linux__
 	printf("\nHERE:\n%s\n\n", commandLine);
 	char* token;
 	token = strtok(commandLine, " ");
@@ -1226,4 +1205,5 @@ void LinuxProcess(char* commandLine)
 	//	printf("%s\n", token);
 	//}
 	execl("/bin/ls", commandLine, NULL);
+#endif
 }
