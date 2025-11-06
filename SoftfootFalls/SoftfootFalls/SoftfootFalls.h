@@ -20,6 +20,12 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <unistd.h>
+//#include <iostream>
+//#include <vector>
+//#include <string>
+//#include <unistd.h> // For execv
+#include <sys/wait.h> // For waitpid
+#include <cstring> // For strdup
 #endif
 #include "SDLInterface.h"
 #include "SDLWrapper.h"
@@ -1181,29 +1187,134 @@ void WindowsProcess(char* narrowText)
 #endif
 }
 
-void LinuxProcess(char* commandLine)
+char** splitString(const std::string& inputString, int& tokenCount) {
+    // Create a mutable copy of the input string as strtok modifies the string.
+    char* cstr = new char[inputString.length() + 1];
+    strcpy(cstr, inputString.c_str());
+
+    // First pass to count tokens
+    char* tempCstr = new char[inputString.length() + 1];
+    strcpy(tempCstr, inputString.c_str());
+    char* token = strtok(tempCstr, " ");
+    tokenCount = 0;
+    while (token != nullptr) {
+        tokenCount++;
+        token = strtok(nullptr, " ");
+    }
+    delete[] tempCstr; // Clean up temporary buffer
+
+    // Allocate memory for the char** array
+    char** tokensArray = new char*[tokenCount];
+
+    // Second pass to store tokens
+    int i = 0;
+    token = strtok(cstr, " "); // Use the original mutable copy
+    while (token != nullptr) {
+        tokensArray[i] = new char[strlen(token) + 1]; // Allocate for each token
+        strcpy(tokensArray[i], token);
+        token = strtok(nullptr, " ");
+        i++;
+    }
+
+    delete[] cstr; // Clean up the mutable copy of the input string
+    return tokensArray;
+}
+
+void LinuxProcess(char* text)
 {
 #ifdef __linux__
-	printf("\nHERE:\n%s\n\n", commandLine);
-	char* token;
-	token = strtok(commandLine, " ");
-	//char* first = token;
-	int tokenLength = strlen(token);
-	printf("%i\n", tokenLength);
-	char first[tokenLength];
-	for (int i = 0; i < tokenLength; ++i)
+
+	/*
+	int spaceCount = 0;
+	int textLimit = strlen(text);
+	for (int i = 0; i < textLimit; ++i)
 	{
-		first[i] = token[i];
+		if (text[i] == ' ')
+		{
+			++spaceCount;
+		}
 	}
-	//printf("%s\n", token);
-	//int i = 0;
-	//char* second;
-	//while (token != NULL)
-	//{
-	//	token = strtok(NULL, " ");
-	//	second = token;
-	//	printf("%s\n", token);
-	//}
-	execl("/bin/ls", commandLine, NULL);
+	++spaceCount;
+	printf("space count: %i\n", spaceCount);
+	char modifiedText[textLimit];
+	//modifiedText[textLimit] = nullptr;
+	for (int i = 0; i < textLimit; ++i)
+	{
+		if (text[i] == ' ')
+		{
+			modifiedText[i] = '\0';
+		}
+		else
+		{
+			modifiedText[i] = text[i];
+		}
+	}
+	printf("text: %s\n", text);
+	printf("mod : %s\n", modifiedText);
+	char* texts[spaceCount + 1];
+	texts[spaceCount] = NULL;
+	texts[0] = modifiedText;
+	if (spaceCount > 1)
+	{
+		int j = 1;
+		for (int i = 0; i < textLimit; ++i)
+		{
+			if (modifiedText[i] == '\0')
+			{
+				printf(">> %s\n", &modifiedText[i + 1]);
+				texts[j] = &modifiedText[i + 1];
+				++j;
+			}
+		}
+	}
+	for (int i = 0; i < spaceCount + 1; ++i)
+	{
+		printf("texts[%i]: %s\n", i, texts[i]);
+	}
+	*/
+
+	//std::string sentence = "This is a sample string to split";
+    int count = 0;
+    char** words = splitString(text, count);
+
+
+    std::cout << "Tokens:" << std::endl;
+    for (int i = 0; i < count; ++i) {
+        std::cout << words[i] << std::endl;
+    }
+
+	/*char* token;
+	token = strtok(text, " ");
+	int tokensLimit = strlen(token);//WRONG
+	if (tokensLimit == strlen(text))
+	printf("\nTOKEN LENGTH: %i\n", tokensLimit);
+	char* tokens[tokensLimit + 1];
+	int tokenCounter = 0;
+	while (token != NULL) {
+		tokens[tokenCounter] = token;
+        token = strtok(NULL, " \t\n");
+		++tokenCounter;
+    }
+    tokens[tokenCounter] = nullptr;
+	for (int i = 0; i < tokensLimit; ++i)
+	{
+		printf("tokens[%i]: %s\n", i, tokens[i]);
+	}*/
+	//execl("/bin/ls", text, NULL);
+	pid_t pid = fork();
+    if (pid == -1) perror("fork failed");
+    else if (pid == 0) // Child.
+	{
+        std::cout << "Child process (PID: " << getpid() << ") is about to execute a new program." << std::endl;
+        execv("/bin/ls", words);
+        //perror("execv failed");
+    }
+    else // Parent.
+	{
+        std::cout << "Parent process (PID: " << getpid() << ") is waiting for child (PID: " << pid << ")." << std::endl;
+        int status;
+        waitpid(pid, &status, 0); // Wait for the child process to complete
+        std::cout << "Parent process: Child finished with status " << WEXITSTATUS(status) << std::endl;
+    }
 #endif
 }

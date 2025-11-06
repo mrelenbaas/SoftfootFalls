@@ -5,7 +5,6 @@ LDFLAGS =
 TARGET = softfoot-falls
 SOURCES = \
     ./SoftfootFalls/SoftfootFalls/SoftfootFalls.cpp \
-	./SoftfootFalls/SoftfootFalls/Print.cpp \
 	./SoftfootFalls/SoftfootFalls/Time.cpp \
 	./SoftfootFalls/SoftfootFalls/Load.cpp \
 	./SoftfootFalls/SoftfootFalls/Node.cpp \
@@ -13,8 +12,7 @@ SOURCES = \
 	./SoftfootFalls/SoftfootFalls/SDLWrapper.cpp \
 	./SoftfootFalls/SoftfootFalls/Window.cpp \
 	./SoftfootFalls/SoftfootFalls/Texture.cpp \
-	./SoftfootFalls/SoftfootFalls/Player.cpp \
-	./SoftfootFalls/SoftfootFalls/Container.cpp
+	./SoftfootFalls/SoftfootFalls/Player.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 # Default target

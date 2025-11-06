@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
 		}
 		if (deltas[second_1] > limits[second_1])
 		{
-			printf("%i\n", framesPerSecond);
+			//printf("%i\n", framesPerSecond);
 			framesPerSecond = 0;
 		}
 		else ++framesPerSecond;
