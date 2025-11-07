@@ -39,11 +39,8 @@ Window window;
 const int ROW_SIZE = 26;
 const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 
-const int FIRE_SIZE = 3;
-
-Player player;
-
 long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+long long currentTime = 0L;
 bool minuteToggle = false;
 int backgroundOffset = 0;
 int animationIndex = 0;
@@ -423,22 +420,6 @@ void SetPalace(SDL_Rect* viewports, Player* player)
 	viewports[v_palace].h = player->GetBox().h * 10;
 }
 
-void SetFarLeftTile(SDL_Rect* viewports)
-{
-	viewports[v_farLeftTile].x = viewports[v_tile].x;
-	viewports[v_farLeftTile].y = viewports[v_tile].y;
-	viewports[v_farLeftTile].w = viewports[v_tile].w;
-	viewports[v_farLeftTile].h = viewports[v_tile].h;
-}
-
-void SetFarTopTile(SDL_Rect* viewports)
-{
-	viewports[v_farTopTile].x = viewports[v_tile].x;
-	viewports[v_farTopTile].y = viewports[v_tile].y;
-	viewports[v_farTopTile].w = viewports[v_tile].w;
-	viewports[v_farTopTile].h = viewports[v_tile].h;
-}
-
 void SetColumn(SDL_Rect* viewports)
 {
 	viewports[v_column] = viewports[v_tile];
@@ -449,46 +430,12 @@ void SetRow(SDL_Rect* viewports)
 	viewports[v_row] = viewports[v_tile];
 }
 
-void SetPlayerMiracle(SDL_Rect* viewports, const int ROW_SIZE, float dotNormalJ)
-{
-	viewports[v_playerMiracle].x = (viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w));
-	viewports[v_playerMiracle].y = viewports[v_tile].y - (viewports[v_tile].h * 0.5f);
-	viewports[v_playerMiracle].w = viewports[v_tile].w * 2.0f;
-	viewports[v_playerMiracle].h = viewports[v_tile].h * 2.0f;
-}
-
-void SetPlayerClouds(SDL_Rect* viewports, const int ROW_SIZE, float dotNormalJ)
-{
-	viewports[v_playerClouds].x = (viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w)) - (viewports[v_playerClouds].w * 0.1f);
-	viewports[v_playerClouds].y = viewports[v_tile].y - (viewports[v_tile].h * 1.4f);
-	viewports[v_playerClouds].w = viewports[v_tile].w * 2.6f;
-	viewports[v_playerClouds].h = viewports[v_tile].h * 2.2f;
-}
-
-void SetArrow(SDL_Rect* viewports, double* normals)
-{
-	viewports[v_arrow].x = ((float)viewports[v_farTopTile].x < (float)viewports[v_player].x)
-		? (float)viewports[v_farTopTile].x + (((float)viewports[v_player].x - (float)viewports[v_farTopTile].x) * (1.0f - normals[second_1]))
-		: (float)viewports[v_player].x + (((float)viewports[v_farTopTile].x - (float)viewports[v_player].x) * normals[second_1]);
-	viewports[v_arrow].y = (float)viewports[v_farTopTile].y + (((float)viewports[v_player].y - (float)viewports[v_farTopTile].y) * (1.0f - normals[second_1]));
-	viewports[v_arrow].w = viewports[v_player].w - ((viewports[v_player].w - viewports[v_farTopTile].w) * normals[second_1]);
-	viewports[v_arrow].h = viewports[v_player].h - ((viewports[v_player].h - viewports[v_farTopTile].h) * normals[second_1]);
-}
-
 void SetPlayerStarCurrent(SDL_Rect* viewports, SDL_Rect* miracleStarfallViewports, int index, double* miracleStarfallNormals)
 {
 	viewports[v_playerStarCurrent].x = miracleStarfallViewports[index].x;
 	viewports[v_playerStarCurrent].y = miracleStarfallViewports[index].y + (window.GetHeight() * miracleStarfallNormals[index]);
 	viewports[v_playerStarCurrent].w = miracleStarfallViewports[index].w;
 	viewports[v_playerStarCurrent].h = miracleStarfallViewports[index].h;
-}
-
-void SetPlayerBox(SDL_Rect* viewports, const int ROW_SIZE, float dotNormalJ)
-{
-	viewports[v_playerBox].x = (viewports[v_farLeftTile].x + ((viewports[v_farLeftTile].w * ROW_SIZE) * dotNormalJ) - (viewports[v_farLeftTile].w));
-	viewports[v_playerBox].y = viewports[v_tile].y - (viewports[v_tile].h * 0.5f) - (viewports[v_tile].h * 1.25f);
-	viewports[v_playerBox].w = viewports[v_tile].w * 2.0f;
-	viewports[v_playerBox].h = viewports[v_tile].h * 2.0f;
 }
 
 void SetPlayer(SDL_Rect* viewports)
@@ -528,14 +475,6 @@ void SetRightMiddle(SDL_Rect* viewports, int offset)
 void SetRightBottom(SDL_Rect* viewports, int offset)
 {
 	viewports[v].y = offset + (unsorted[BackgroundBackground].GetHeight() * 2);
-}
-
-void SetTileMiracle(SDL_Rect* viewports)
-{
-	viewports[v_tileMiracle].x = viewports[v_tile].x;
-	viewports[v_tileMiracle].y = viewports[v_tile].y - viewports[v_tile].h;
-	viewports[v_tileMiracle].w = viewports[v_tile].w;
-	viewports[v_tileMiracle].h = viewports[v_tile].h;
 }
 
 void DrawBackgroundLeftTop(SDL_Rect* viewports, int offset)
@@ -623,21 +562,6 @@ void DrawPlayerHighlight(SDL_Rect* viewports)
 	unsorted[PlayerHighlight].Draw(&viewports[v_player]);
 }
 
-void DrawFarTopTile(SDL_Rect* viewports)
-{
-	SetFarTopTile(viewports);
-	unsorted[PalaceHighlightBottom].Draw(&viewports[v_farTopTile]);
-}
-
-void DrawMenuTop(SDL_Rect* viewports)
-{
-	viewports[v].x = 0;
-	viewports[v].y = -window.GetHeight() * 0.4f;
-	viewports[v].w = window.GetWidth();
-	viewports[v].h = window.GetHeight();
-	unsorted[MenuTop].Draw(&viewports[v]);
-}
-
 int TextToIndex(char letter)
 {
 	return (int)letter - 33;
@@ -656,174 +580,4 @@ void DrawShellPrompt(SDL_Rect* viewports, const char* text)
 		if (text[i] == ' ') continue;
 		alphabet[TextToIndex(text[i])].Draw(&viewports[v]);
 	}
-}
-
-void DrawArrow(SDL_Rect* viewports, double* normals)
-{
-	SetArrow(viewports, normals);
-	unsorted[IconCursor].Draw(&viewports[v_arrow], 0.0, SDL_FLIP_VERTICAL);
-}
-
-// https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa
-// https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
-// https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-startupinfoa
-void WindowsProcess(char* narrowText)
-{
-#ifdef _WIN32
-	STARTUPINFO startupInfo;
-	ZeroMemory(&startupInfo, sizeof(startupInfo));
-	startupInfo.cb = sizeof(startupInfo);
-	PROCESS_INFORMATION processInfo;
-	ZeroMemory(&processInfo, sizeof(processInfo));
-	size_t wideTextSize;                                                      // Declare a variable for wide text's size.
-	mbstowcs_s(&wideTextSize, nullptr, 0, narrowText, _TRUNCATE);             // Define the wide text's size.
-	wchar_t* wideText = new wchar_t[wideTextSize];                            // Declare wide text.
-	mbstowcs_s(&wideTextSize, wideText, wideTextSize, narrowText, _TRUNCATE); // Define wide text.
-	if (!CreateProcess(NULL, wideText, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &startupInfo, &processInfo))
-	{
-		printf("ERROR: Failed to create process: %ul\n", GetLastError());
-	}
-	delete[] wideText;
-	printf("SUCCESS: Created Process\n");
-	printf("SUCCESS: Process ID, %i\n", processInfo.dwProcessId);
-	printf("SUCCESS: Thread ID, %i\n", processInfo.dwThreadId);
-	WaitForSingleObject(processInfo.hProcess, INFINITE);
-	CloseHandle(processInfo.hProcess);
-	CloseHandle(processInfo.hThread);
-#endif
-}
-
-char** splitString(const std::string& inputString, int& tokenCount) {
-#ifdef __linux__
-    // Create a mutable copy of the input string as strtok modifies the string.
-    char* cstr = new char[inputString.length() + 1];
-    strcpy(cstr, inputString.c_str());
-
-    // First pass to count tokens
-    char* tempCstr = new char[inputString.length() + 1];
-    strcpy(tempCstr, inputString.c_str());
-    char* token = strtok(tempCstr, " ");
-    tokenCount = 0;
-    while (token != nullptr) {
-        tokenCount++;
-        token = strtok(nullptr, " ");
-    }
-    delete[] tempCstr; // Clean up temporary buffer
-
-    // Allocate memory for the char** array
-    char** tokensArray = new char*[tokenCount];
-
-    // Second pass to store tokens
-    int i = 0;
-    token = strtok(cstr, " "); // Use the original mutable copy
-    while (token != nullptr) {
-        tokensArray[i] = new char[strlen(token) + 1]; // Allocate for each token
-        strcpy(tokensArray[i], token);
-        token = strtok(nullptr, " ");
-        i++;
-    }
-
-    delete[] cstr; // Clean up the mutable copy of the input string
-    return tokensArray;
-#endif
-	return NULL;
-}
-
-void LinuxProcess(char* text)
-{
-#ifdef __linux__
-
-	/*
-	int spaceCount = 0;
-	int textLimit = strlen(text);
-	for (int i = 0; i < textLimit; ++i)
-	{
-		if (text[i] == ' ')
-		{
-			++spaceCount;
-		}
-	}
-	++spaceCount;
-	printf("space count: %i\n", spaceCount);
-	char modifiedText[textLimit];
-	//modifiedText[textLimit] = nullptr;
-	for (int i = 0; i < textLimit; ++i)
-	{
-		if (text[i] == ' ')
-		{
-			modifiedText[i] = '\0';
-		}
-		else
-		{
-			modifiedText[i] = text[i];
-		}
-	}
-	printf("text: %s\n", text);
-	printf("mod : %s\n", modifiedText);
-	char* texts[spaceCount + 1];
-	texts[spaceCount] = NULL;
-	texts[0] = modifiedText;
-	if (spaceCount > 1)
-	{
-		int j = 1;
-		for (int i = 0; i < textLimit; ++i)
-		{
-			if (modifiedText[i] == '\0')
-			{
-				printf(">> %s\n", &modifiedText[i + 1]);
-				texts[j] = &modifiedText[i + 1];
-				++j;
-			}
-		}
-	}
-	for (int i = 0; i < spaceCount + 1; ++i)
-	{
-		printf("texts[%i]: %s\n", i, texts[i]);
-	}
-	*/
-
-	//std::string sentence = "This is a sample string to split";
-    int count = 0;
-    char** words = splitString(text, count);
-
-
-    std::cout << "Tokens:" << std::endl;
-    for (int i = 0; i < count; ++i) {
-        std::cout << words[i] << std::endl;
-    }
-
-	/*char* token;
-	token = strtok(text, " ");
-	int tokensLimit = strlen(token);//WRONG
-	if (tokensLimit == strlen(text))
-	printf("\nTOKEN LENGTH: %i\n", tokensLimit);
-	char* tokens[tokensLimit + 1];
-	int tokenCounter = 0;
-	while (token != NULL) {
-		tokens[tokenCounter] = token;
-        token = strtok(NULL, " \t\n");
-		++tokenCounter;
-    }
-    tokens[tokenCounter] = nullptr;
-	for (int i = 0; i < tokensLimit; ++i)
-	{
-		printf("tokens[%i]: %s\n", i, tokens[i]);
-	}*/
-	//execl("/bin/ls", text, NULL);
-	pid_t pid = fork();
-    if (pid == -1) perror("fork failed");
-    else if (pid == 0) // Child.
-	{
-        std::cout << "Child process (PID: " << getpid() << ") is about to execute a new program." << std::endl;
-        execv("/bin/ls", words);
-        //perror("execv failed");
-    }
-    else // Parent.
-	{
-        std::cout << "Parent process (PID: " << getpid() << ") is waiting for child (PID: " << pid << ")." << std::endl;
-        int status;
-        waitpid(pid, &status, 0); // Wait for the child process to complete
-        std::cout << "Parent process: Child finished with status " << WEXITSTATUS(status) << std::endl;
-    }
-#endif
 }
