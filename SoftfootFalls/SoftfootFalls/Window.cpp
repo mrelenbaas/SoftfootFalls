@@ -17,15 +17,6 @@ void Window::HandleEvent(SDL_Event& event)
 	}
 	switch (event.type)
 	{
-	case EVENT_WINDOW_MINIMIZED:
-		minimized = true;
-		break;
-	case EVENT_WINDOW_MAXIMIZED:
-		minimized = false;
-		break;
-	case EVENT_WINDOW_RESTORED:
-		minimized = false;
-		break;
 	case KEY_PRESSED:
 		if (Key(event) == SDLK_END)
 		{
@@ -38,7 +29,6 @@ void Window::HandleEvent(SDL_Event& event)
 			{
 				SDL_SetWindowFullscreen(window, true);
 				fullscreen = true;
-				minimized = false;
 			}
 		}
 		break;
@@ -56,9 +46,4 @@ void Window::Free()
 void Window::SetRenderer(SDL_Renderer* renderer)
 {
 	(*this).renderer = renderer;
-}
-
-bool Window::IsMinimized() const
-{
-	return minimized;
 }

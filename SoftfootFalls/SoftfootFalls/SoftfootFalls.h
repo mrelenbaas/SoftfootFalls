@@ -44,7 +44,6 @@ long long currentTime = 0L;
 bool minuteToggle = false;
 int backgroundOffset = 0;
 int animationIndex = 0;
-int horizontalModifier = 0;
 
 ///////////////////////////////////////////////////////////////////////
 //  Timer  ////////////////////////////////////////////////////////////
@@ -383,14 +382,25 @@ enum ViewportsEnum
 };
 SDL_Rect viewports[ViewportsEnum_Size]{};
 
-void LoadArt(Load* load)
+void LoadArt(const char* applicationPath)
 {
+	const char* BASE_PATH = BasePath(applicationPath);
+	Load* load = new Load(BasePath(applicationPath));
 	for (int i = 0; i < TimerEnum_Size; ++i) deltas[i] = 0L;
 	for (int i = 0; i < TimerEnum_Size; ++i) normals[i] = 0.0;
 	for (int i = 0; i < ViewportsEnum_Size; ++i) viewports[i] = { 0, 0, 0, 0 };
 	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Init(window.GetRenderer(), load->Path(Paths[i]));
 	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(window.GetRenderer(), load->Path(RoadsPaths[i]));
 	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Init(window.GetRenderer(), load->Path(alphabetPaths[i]));
+	delete[] BASE_PATH;
+	delete load;
+}
+
+void LoadSDL()
+{
+	window.Init();
+	SDL_Renderer* linuxRenderer = GetLinuxRenderer(window.GetWindow());
+	if (linuxRenderer) window.SetRenderer(linuxRenderer);
 }
 
 void UnloadArt()
@@ -400,16 +410,10 @@ void UnloadArt()
 	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Free();
 }
 
-void SetX(SDL_Rect* viewports)
+void UnloadSDL()
 {
-}
-
-void SetBoss(SDL_Rect* viewports, int horizontalModifier)
-{
-	viewports[v_boss].x = 0 - window.GetWidth() + horizontalModifier;
-	viewports[v_boss].y = 0 - (window.GetHeight() / 2);
-	viewports[v_boss].w = window.GetWidth();
-	viewports[v_boss].h = window.GetHeight();
+	window.Free();
+	SDL_Quit();
 }
 
 void SetPalace(SDL_Rect* viewports, Player* player)
@@ -525,30 +529,9 @@ void DrawBackground(SDL_Rect* viewports)
 	DrawBackgroundRightBottom(viewports, backgroundOffset);
 }
 
-void DrawBossMoonboy(SDL_Rect* viewports, int horizontalModifier)
-{
-	SetBoss(viewports, horizontalModifier);
-	unsorted[CharacterTownspersonMoonboy].Draw(&viewports[v_boss]);
-}
-
-void DrawBossMoonboyHands(SDL_Rect* viewports, int horizontalModifier)
-{
-	SetBoss(viewports, horizontalModifier);
-	unsorted[CharacterTownspersonMoonboy_Hands].Draw(&viewports[v_boss]);
-}
-
 void DrawBackgroundForeground(SDL_Rect* viewports)
 {
 	unsorted[BackgroundForeground].Draw(NULL);
-}
-
-void DrawForeground(SDL_Rect* viewports)
-{
-	if (minuteToggle) horizontalModifier = (window.GetWidth() + window.GetWidth()) * normals[minute_1];
-	else horizontalModifier = (window.GetWidth() + window.GetWidth()) * (1.0f - normals[minute_1]);
-	DrawBossMoonboy(viewports, horizontalModifier);
-	DrawBackgroundForeground(viewports);
-	DrawBossMoonboyHands(viewports, horizontalModifier);
 }
 
 void DrawAlphabet(SDL_Rect* viewports, int j)
@@ -560,6 +543,24 @@ void DrawPlayerHighlight(SDL_Rect* viewports)
 {
 	SetPlayer(viewports);
 	unsorted[PlayerHighlight].Draw(&viewports[v_player]);
+}
+
+void UpdateTimer()
+{
+	currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	for (int i = 0; i < TimerEnum_Size; ++i) deltas[i] += currentTime - previousTime;
+	if (deltas[animation] > limits[animation])
+	{
+		deltas[animation] -= limits[animation];
+		if (animationIndex++ >= ANIMATION_LIMIT) animationIndex = 0;
+	}
+	if (deltas[minute_1] > limits[minute_1]) minuteToggle = !minuteToggle;
+	for (int i = 0; i < TimerEnum_Size; ++i)
+	{
+		if (deltas[i] > limits[i]) deltas[i] -= limits[i];
+		normals[i] = (double)deltas[i] / limits[i];
+	}
+	previousTime = currentTime;
 }
 
 int TextToIndex(char letter)

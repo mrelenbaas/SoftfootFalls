@@ -6,8 +6,6 @@
 #include <vector>
 #include <cstdlib>
 
-#include "Point.h"
-
 
 char** splitString(const std::string& inputString, int& tokenCount) {
 #ifdef __linux__
@@ -173,50 +171,21 @@ void WindowsProcess(char* narrowText)
 #endif
 }
 
+void RunProcess(char* text)
+{
+#ifdef _WIN32
+	WindowsProcess(text);
+#elif __linux__
+	LinuxProcess(text);
+#endif
+}
+
 int main(int argc, char* argv[])
 {
 	if (argc < 1) return 1;
-	const char* BASE_PATH = BasePath(argv[0]);
 
-//#ifdef _WIN32
-//	//const wchar_t* wideString = L"";
-//	//const char* narrowText = argv[0];
-//	const char* narrowText = "DIR";
-//	STARTUPINFO startupInfo;
-//	ZeroMemory(&startupInfo, sizeof(startupInfo));
-//	startupInfo.cb = sizeof(startupInfo);
-//	PROCESS_INFORMATION processInfo;
-//	ZeroMemory(&processInfo, sizeof(processInfo));
-//	size_t wideTextSize;                                                      // Declare a variable for wide text's size.
-//	mbstowcs_s(&wideTextSize, nullptr, 0, narrowText, _TRUNCATE);             // Define the wide text's size.
-//	wchar_t* wideText = new wchar_t[wideTextSize];                            // Declare wide text.
-//	mbstowcs_s(&wideTextSize, wideText, wideTextSize, narrowText, _TRUNCATE); // Define wide text.
-//	if (!CreateProcess(NULL, wideText, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &startupInfo, &processInfo))
-//	{
-//		printf("ERROR: Failed to create process: %ul\n", GetLastError());
-//	}
-//	else
-//	{
-//		printf("HERHEHREHRHERERHEHR");
-//		std::cin.get();
-//	}
-//	printf("THREREERERER");
-//	std::cin.get();
-//	//delete[] wideText;
-//	printf("SUCCESS: Created Process\n");
-//	printf("SUCCESS: Process ID, %i\n", processInfo.dwProcessId);
-//	printf("SUCCESS: Thread ID, %i\n", processInfo.dwThreadId);
-//	WaitForSingleObject(processInfo.hProcess, INFINITE);
-//	CloseHandle(processInfo.hProcess);
-//	CloseHandle(processInfo.hThread);
-//#endif
-
-	
-	Load* load = new Load(BASE_PATH);
-	if (!window.Init()) return 1;
-	SDL_Renderer* linuxRenderer = GetLinuxRenderer(window.GetWindow());
-	if (linuxRenderer) window.SetRenderer(linuxRenderer);
-	LoadArt(load);
+	LoadSDL();
+	LoadArt(argv[0]);
 
 	int alphabetIndex = 0;
 	const char* temp = "Prompt\0";
@@ -240,29 +209,12 @@ int main(int argc, char* argv[])
 	}
 	while (window.IsRunning())
 	{
-		currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		for (int i = 0; i < TimerEnum_Size; ++i) deltas[i] += currentTime - previousTime;
-		if (deltas[animation] > limits[animation])
-		{
-			deltas[animation] -= limits[animation];
-			if (animationIndex++ >= ANIMATION_LIMIT) animationIndex = 0;
-		}
-		if (deltas[minute_1] > limits[minute_1]) minuteToggle = !minuteToggle;
-		for (int i = 0; i < TimerEnum_Size; ++i)
-		{
-			if (deltas[i] > limits[i]) deltas[i] -= limits[i];
-			normals[i] = (double)deltas[i] / limits[i];
-		}
-		previousTime = currentTime;
-
+		UpdateTimer();
 		SDL_Event event;
 		while (SDL_PollEvent(&event) != 0)
 		{
 			if (IsWindowQuit(event)) window.Quit();
-			else if (event.type == KEY_RELEASED)
-			{
-			}
-			else if (event.type == KEY_PRESSED)
+			if (event.type == KEY_PRESSED)
 			{
 				//printf("event: %i\n", (int)Key(event));
 				SDL_Keycode key_code = Key(event);
@@ -319,29 +271,23 @@ int main(int argc, char* argv[])
 							text[copyI] = '\0';
 						}
 						texts[0][copyI] = '\0';
-//#ifdef _WIN32
-//							WindowsProcess(texts[0]);
-//#elif __linux__
-//							LinuxProcess(texts[0]);
-//#endif
+						RunProcess(texts[0]);
 						break;
 					}
 				}
 			}
 			window.HandleEvent(event);
 		}
-		if (window.IsMinimized()) continue;
 		SDL_RenderClear(window.GetRenderer());
 		DrawBackground(viewports);
-		DrawForeground(viewports);
-		float normal = normals[second_1];
-		float mouseX, mouseY;
-		SDL_GetMouseState(&mouseX, &mouseY);
-		float centerX = mouseX;
-		float centerY = window.GetHeight() - mouseY;
+		DrawBackgroundForeground(viewports);
+		float centerX = 0.0f;
+		float centerY = 0.0f;
+		SDL_GetMouseState(&centerX, &centerY);
+		centerY = window.GetHeight() - centerY;
 		for (int i = ROW_SIZE - 1; i >= 0 ; --i)
 		{
-			normal = (float)i / (float)ROW_SIZE;
+			float normal = (float)i / (float)ROW_SIZE;
 			viewports[v_tile].w = centerX / ROW_SIZE;
 			viewports[v_tile].h = centerY / ROW_SIZE;
 			viewports[v_tile].x = ((0 + centerX) * normal);
@@ -358,7 +304,7 @@ int main(int argc, char* argv[])
 				viewports[v_tile].w = (viewports[v_column].x + viewports[v_column].w - viewports[v_row].x) / ROW_SIZE;
 				viewports[v_tile].h = viewports[v_tile].w;
 				viewports[v_tile].x = (viewports[v_row].x + (j * xStep));
-				viewports[v_tile].y = (window.GetHeight() - viewports[v_tile].h - ((0 + centerY) * normal));
+				viewports[v_tile].y = (window.GetHeight() - viewports[v_tile].h - (centerY * normal));
 				if (viewports[v_tile].x < 0) viewports[v_tile].x = 0;
 				if (viewports[v_tile].y < 0) viewports[v_tile].y = 0;
 				if (viewports[v_tile].w < 0) viewports[v_tile].w = 0;
@@ -381,11 +327,8 @@ int main(int argc, char* argv[])
 		SDL_RenderPresent(window.GetRenderer());
 	}
 	UnloadArt();
-	window.Free();
-	SDL_Quit();
+	UnloadSDL();
 	for (int i = 0; i < ROW_SIZE; ++i) delete[] texts[i];
 	delete[] text;
-	delete load;
-	delete[] BASE_PATH;
 	return 0;
 }
