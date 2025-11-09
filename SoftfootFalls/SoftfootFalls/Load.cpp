@@ -6,8 +6,8 @@
 
 Load::Load(const char* basePath)
 {
-	paths = new Node;
-	paths->data = new PathNode;
+	PATHS = new Node;
+	PATHS->data = new PathNode;
 	int size = strlen(basePath);
 	(*this).basePath = new char[size + 1];
 	for (int i = 0; i < size; ++i)
@@ -23,21 +23,21 @@ Load::~Load()
 	Node* temp;
 	do
 	{
-		if ((PathNode*)(paths->data) != NULL
-			&& ((PathNode*)(paths->data))->path != NULL)
+		if ((PathNode*)(PATHS->data) != NULL
+			&& ((PathNode*)(PATHS->data))->path != NULL)
 		{
-			delete[]((PathNode*)(paths->data))->path;
-			((PathNode*)(paths->data))->path = NULL;
+			delete[]((PathNode*)(PATHS->data))->path;
+			((PathNode*)(PATHS->data))->path = NULL;
 		}
-		delete ((PathNode*)(paths->data));
-		paths->data = NULL;
-		temp = paths;
-		paths = paths->next;
+		delete ((PathNode*)(PATHS->data));
+		PATHS->data = NULL;
+		temp = PATHS;
+		PATHS = PATHS->next;
 		delete temp;
 		temp = NULL;
-	} while (paths != NULL);
-	delete paths;
-	paths = NULL;
+	} while (PATHS != NULL);
+	delete PATHS;
+	PATHS = NULL;
 }
 
 bool Load::Print(SDL_Surface* surface, const char* filename)
@@ -64,7 +64,7 @@ const char* Load::Path(const char* filename)
 		{
 			new char[size + 1]
 		},
-		paths
+		PATHS
 	};
 	for (int i = 0; i < size; ++i)
 	{
@@ -82,7 +82,7 @@ const char* Load::Path(const char* filename)
 		}
 	}
 	((PathNode*)(temp->data))->path[size - 1] = '\0';
-	paths = temp;
+	PATHS = temp;
 	
-	return ((PathNode*)(paths->data))->path;
+	return ((PathNode*)(PATHS->data))->path;
 }

@@ -5,6 +5,8 @@
 #include <iomanip>
 #include <vector>
 #include <cstdlib>
+#include <cassert>
+
 
 
 char** splitString(const std::string& inputString, int& tokenCount) {
@@ -49,10 +51,10 @@ void LinuxProcess(char* text)
 
 	/*
 	int spaceCount = 0;
-	int textLimit = strlen(text);
+	int textLimit = strlen(command);
 	for (int i = 0; i < textLimit; ++i)
 	{
-		if (text[i] == ' ')
+		if (command[i] == ' ')
 		{
 			++spaceCount;
 		}
@@ -63,20 +65,20 @@ void LinuxProcess(char* text)
 	//modifiedText[textLimit] = nullptr;
 	for (int i = 0; i < textLimit; ++i)
 	{
-		if (text[i] == ' ')
+		if (command[i] == ' ')
 		{
 			modifiedText[i] = '\0';
 		}
 		else
 		{
-			modifiedText[i] = text[i];
+			modifiedText[i] = command[i];
 		}
 	}
-	printf("text: %s\n", text);
+	printf("command: %s\n", command);
 	printf("mod : %s\n", modifiedText);
-	char* texts[spaceCount + 1];
-	texts[spaceCount] = NULL;
-	texts[0] = modifiedText;
+	char* gridTexts[spaceCount + 1];
+	gridTexts[spaceCount] = NULL;
+	gridTexts[0] = modifiedText;
 	if (spaceCount > 1)
 	{
 		int j = 1;
@@ -85,20 +87,20 @@ void LinuxProcess(char* text)
 			if (modifiedText[i] == '\0')
 			{
 				printf(">> %s\n", &modifiedText[i + 1]);
-				texts[j] = &modifiedText[i + 1];
+				gridTexts[j] = &modifiedText[i + 1];
 				++j;
 			}
 		}
 	}
 	for (int i = 0; i < spaceCount + 1; ++i)
 	{
-		printf("texts[%i]: %s\n", i, texts[i]);
+		printf("gridTexts[%i]: %s\n", i, gridTexts[i]);
 	}
 	*/
 
 	//std::string sentence = "This is a sample string to split";
 	int count = 0;
-	char** words = splitString(text, count);
+	char** words = splitString(command, count);
 
 
 	std::cout << "Tokens:" << std::endl;
@@ -107,9 +109,9 @@ void LinuxProcess(char* text)
 	}
 
 	/*char* token;
-	token = strtok(text, " ");
+	token = strtok(command, " ");
 	int tokensLimit = strlen(token);//WRONG
-	if (tokensLimit == strlen(text))
+	if (tokensLimit == strlen(command))
 	printf("\nTOKEN LENGTH: %i\n", tokensLimit);
 	char* tokens[tokensLimit + 1];
 	int tokenCounter = 0;
@@ -123,7 +125,7 @@ void LinuxProcess(char* text)
 	{
 		printf("tokens[%i]: %s\n", i, tokens[i]);
 	}*/
-	//execl("/bin/ls", text, NULL);
+	//execl("/bin/ls", command, NULL);
 	pid_t pid = fork();
 	if (pid == -1) perror("fork failed");
 	else if (pid == 0) // Child.
@@ -142,32 +144,66 @@ void LinuxProcess(char* text)
 #endif
 }
 
+static std::string FakeExec(const char* text)
+{
+	std::array<char, 128> buffer{};
+	std::string result;
+#ifdef _WIN32
+	std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(text, "r"), _pclose);
+#else
+	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command, "r"), pclose);
+#endif
+	if (!pipe)
+	{
+		throw std::runtime_error("popen() failed!");
+	}
+	while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+	{
+		result += buffer.data();
+	}
+	return result;
+}
+
 // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa
 // https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
 // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-startupinfoa
 void WindowsProcess(char* narrowText)
 {
 #ifdef _WIN32
+	auto NarrowTextToWideText = [&]()
+	{
+		size_t limit;                                           // Declare a variable for wide command's size.
+		mbstowcs_s(&limit, nullptr, 0, narrowText, _TRUNCATE);  // Define the wide command's size.
+		wchar_t* command = new wchar_t[limit];                     // Declare wide command.
+		mbstowcs_s(&limit, command, limit, narrowText, _TRUNCATE); // Define wide command.
+		return command;
+	};
 	STARTUPINFO startupInfo;
 	ZeroMemory(&startupInfo, sizeof(startupInfo));
 	startupInfo.cb = sizeof(startupInfo);
 	PROCESS_INFORMATION processInfo;
 	ZeroMemory(&processInfo, sizeof(processInfo));
-	size_t wideTextSize;                                                      // Declare a variable for wide text's size.
-	mbstowcs_s(&wideTextSize, nullptr, 0, narrowText, _TRUNCATE);             // Define the wide text's size.
-	wchar_t* wideText = new wchar_t[wideTextSize];                            // Declare wide text.
-	mbstowcs_s(&wideTextSize, wideText, wideTextSize, narrowText, _TRUNCATE); // Define wide text.
-	if (!CreateProcess(NULL, wideText, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &startupInfo, &processInfo))
+	wchar_t* command = NarrowTextToWideText();
+	if (!CreateProcess(NULL, command, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &startupInfo, &processInfo))
 	{
 		printf("ERROR: Failed to create process: %ul\n", GetLastError());
 	}
-	delete[] wideText;
-	printf("SUCCESS: Created Process\n");
-	printf("SUCCESS: Process ID, %i\n", processInfo.dwProcessId);
-	printf("SUCCESS: Thread ID, %i\n", processInfo.dwThreadId);
+	delete[] command;
+	printf("SUCCESS: Process ID, %i\n----\n", processInfo.dwProcessId);
 	WaitForSingleObject(processInfo.hProcess, INFINITE);
 	CloseHandle(processInfo.hProcess);
 	CloseHandle(processInfo.hThread);
+
+	//try {
+	//	// Example: execute the "dir" command in Command Prompt and print its output
+	//	// For other commands, replace "dir" with the desired command.
+	//	std::string output = FakeExec("dir");
+	//	std::cout << "Command Output:\n" << output << std::endl;
+	//}
+	//catch (const std::runtime_error& e) {
+	//	std::cerr << "Error: " << e.what() << std::endl;
+	//	//return 1;
+	//}
 #endif
 }
 
@@ -176,37 +212,233 @@ void RunProcess(char* text)
 #ifdef _WIN32
 	WindowsProcess(text);
 #elif __linux__
-	LinuxProcess(text);
+	LinuxProcess(command);
 #endif
 }
 
+const char* ERROR_NULL_TERMINATOR = "ERROR: The null terminator on program name's copy was not found.";
+const char* ERROR_FILE_OPENED = "ERROR: Failed to open file.";
+const char* SUCCESS_FILE_OPENED = "SUCCESS: File opened.\n";
+const char* ERROR_FILE_CLOSED = "ERROR: Failed to close file.";
+const char* SUCCESS_FILE_CLOSED = "SUCCESS: File closed.\n";
+
+static void Write(const char* filename, const char* text)
+{
+	std::ofstream writer(filename, std::ios::app);
+	assert(writer.is_open() == true && ERROR_FILE_OPENED);
+	printf(SUCCESS_FILE_OPENED);
+	writer << text << std::endl;
+	writer.close();
+	assert(writer.is_open() == false && ERROR_FILE_CLOSED);
+	printf(SUCCESS_FILE_CLOSED);
+}
+
+// https://en.cppreference.com/w/cpp/string/basic_string/getline.html
+static void Read(const char* filename)
+{
+	std::ifstream reader(filename);
+	assert(reader.is_open() == true && ERROR_FILE_OPENED);
+	printf(SUCCESS_FILE_OPENED);
+	std::string line;
+	int i = 0;
+	while (std::getline(reader, line))
+	{
+		printf("line[%i]: ", i);
+		for (int i = 0; i < line.size(); ++i) printf("%c", line[i]);
+		printf("\n");
+		++i;
+	}
+	reader.close();
+	assert(reader.is_open() == false && ERROR_FILE_CLOSED);
+	printf(SUCCESS_FILE_CLOSED);
+}
+
+// Base case for the recursion: handles no arguments
+void processStrings() {
+	// End of recursion
+	std::cout << "--- End of processing ---" << std::endl;
+}
+
+// Variadic template function to process C-style strings
+template <typename T, typename... Args>
+void processStrings(T firstArg, Args... args) {
+	// Ensure the first argument is a C-style string
+	static_assert(std::is_convertible<T, const char*>::value, "Argument must be convertible to const char*");
+
+	const char* c_str = static_cast<const char*>(firstArg);
+	std::cout << "Processing string: \"" << c_str << "\" (Length: " << std::strlen(c_str) << ")" << std::endl;
+	Write("data.csv", c_str);
+
+	// Recursively call with the remaining arguments
+	processStrings(args...);
+}
+
+class StringNode
+{
+public:
+	StringNode(const char* text)
+	{
+		printf("StringNode Constructor\n");
+		(*this).text = new char[strlen(text) + 1];
+		int i;
+		for (i = 0; text[i] != '\0'; ++i)
+		{
+			(*this).text[i] = text[i];
+		}
+		printf("StringNode: %s\n", text);
+		(*this).text[--i] = '\0';
+	};
+	~StringNode()
+	{
+		delete[] text;
+	};
+	void Print()
+	{
+		printf("HERER: %s\n", text);
+	};
+	void SetNext(StringNode* next)
+	{
+		(*this).next = next;
+	};
+	StringNode* GetNext()
+	{
+		return next;
+	};
+private:
+	char* text = NULL;
+	StringNode* next = NULL;
+};
+class StringList
+{
+public:
+	StringList(){};
+	~StringList()
+	{
+		while (head != NULL)
+		{
+			StringNode* temp = head;
+			head = temp->GetNext();
+			delete temp;
+		}
+	};
+	void Print()
+	{
+		printf("START PRINT\n");
+		StringNode* temp = head;
+		while (temp != NULL)
+		{
+			temp->Print();
+			temp = head->GetNext();
+		}
+	};
+	void Add(const char* text)
+	{
+		printf("StringList.Add\n");
+		StringNode* stringNode = new StringNode(text);
+		stringNode->SetNext(head);
+	};
+private:
+	StringNode* head = NULL;
+};
+
 int main(int argc, char* argv[])
 {
-	if (argc < 1) return 1;
+	StringList stringList;
+	stringList.Add("test\0");
+	stringList.Add("test2\0");
+	stringList.Print();
 
-	LoadSDL();
-	LoadArt(argv[0]);
+	// Consume argv.
+	// ----------------------------------------------------------------
+	// https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1548.pdf (Pg. 13, Thumbnail 31)
+	// Where argv[0] is the program name.
+	// Where argv[1] through argv[argc - 1] are the program parameters.
+	assert(argc > 0 && "ERROR: argc should have been greater than zero.\n");
+	printf("SUCCESS: argc is greater than zero.\n");
+	assert(argv[0] != NULL && "ERROR: The program name is not available from the host environment.\n");
+	printf("SUCCESS: The program name is available from the host environment.\n");
+	printf("argv\n----\n");
+	for (int i = 0; i < argc; ++i) printf("| argv[%i]: %s\n", i, argv[i]);
+	printf("----\n");
+	char* programName = argv[0];
 
-	int alphabetIndex = 0;
-	const char* temp = "Prompt\0";
-	char* text = new char[ROW_SIZE];
+	// Seperate directory and filename.
+	// ----------------------------------------------------------------
+	char* programDirectory = new char[strlen(programName) + 1] {};
+	for (int i = 0; i < strlen(programName) + 1; ++i) programDirectory[i] = programName[i];
+	assert(programDirectory[strlen(programName)] == '\0' && ERROR_NULL_TERMINATOR);
+	printf("SUCCESS: Program Name copied: %s\n", programDirectory);
+	char* programFilename = NULL;
+	for (int i = strlen(programDirectory); i > 0; --i) if (programDirectory[i] == SEPARATOR)
+	{
+		programDirectory[i] = '\0';
+		programFilename = &programDirectory[i] + 1;
+		break;
+	}
+	assert(programDirectory[strlen(programDirectory)] == '\0' && ERROR_NULL_TERMINATOR);
+	printf("SUCCESS: Program Directory created: %s\n", programDirectory);
+	assert(programFilename != NULL && ERROR_NULL_TERMINATOR);
+	assert(programFilename[strlen(programFilename)] == '\0' && ERROR_NULL_TERMINATOR);
+	printf("SUCCESS: Programed Filename created: %s\n", programFilename);
+
+	// Setup prompt and grid-sized history.
+	// ----------------------------------------------------------------
+	const char* startingPrompt = "Type then enter.\0";
+	char* command = new char[ROW_SIZE];
 	int copyI = 0;
 	int copyJ = 0;
-	for (copyI = 0; temp[copyI] != '\0'; ++copyI)
-	{
-		text[copyI] = temp[copyI];
-	}
-	text[copyI] = '\0';
-	char* texts[ROW_SIZE]{};
+	for (copyI = 0; startingPrompt[copyI] != '\0'; ++copyI) command[copyI] = startingPrompt[copyI];
+	command[copyI] = '\0';
+	char* gridTexts[ROW_SIZE]{};
 	for (int copyI = 0; copyI < ROW_SIZE; ++copyI)
 	{
-		texts[copyI] = new char[ROW_SIZE];
-		for (copyJ = 0; copyJ < ROW_SIZE - 1; ++copyJ)
-		{
-			texts[copyI][copyJ] = '\0';
-		}
-		texts[copyI][ROW_SIZE - 1] = '\0';
+		gridTexts[copyI] = new char[ROW_SIZE];
+		for (copyJ = 0; copyJ < ROW_SIZE - 1; ++copyJ) gridTexts[copyI][copyJ] = '\0';
+		gridTexts[copyI][ROW_SIZE - 1] = '\0';
 	}
+
+	// Test writer.
+	//Write("data.csv", "test\0");
+	//processStrings("one", "two", "three");
+
+	// Test reader.
+	Read("data.csv");
+
+	delete[] gridTexts[ROW_SIZE - 1];
+	for (int i = ROW_SIZE - 2; i >= 0; --i)
+	{
+		gridTexts[i + 1] = gridTexts[i];
+		for (copyI = 0; gridTexts[i + 1][copyI] != '\0'; ++copyI)
+		{
+			gridTexts[i + 1][copyI] = gridTexts[i][copyI];
+		}
+	}
+	gridTexts[0] = new char[ROW_SIZE];
+	for (copyI = 0; command[copyI] != '\0'; ++copyI)
+	{
+		gridTexts[0][copyI] = command[copyI];
+		command[copyI] = '\0';
+	}
+	gridTexts[0][copyI] = '\0';
+	//Write("data.csv", gridTexts[0]);
+	//Read("data.csv");
+	RunProcess(gridTexts[0]);
+
+
+	// Setup alphabet animation.
+	int alphabetIndex = 0;
+
+
+	
+
+	// Init SDL and art.
+	// ----------------------------------------------------------------
+	LoadSDL();
+	LoadArt(programName);
+
+	// Deallocate memory.
+	delete[] programDirectory;
+
 	while (window.IsRunning())
 	{
 		UpdateTimer();
@@ -229,10 +461,10 @@ int main(int argc, char* argv[])
 					copyI = 0;
 					while (copyI < ROW_SIZE - 2)
 					{
-						if (text[copyI] == '\0')
+						if (command[copyI] == '\0')
 						{
-							text[copyI + 1] = '\0';
-							text[copyI] = ascii_char;
+							command[copyI + 1] = '\0';
+							command[copyI] = ascii_char;
 							break;
 						}
 						++copyI;
@@ -246,32 +478,35 @@ int main(int argc, char* argv[])
 						copyI = 0;
 						while (copyI < ROW_SIZE - 1)
 						{
-							if (text[copyI] == '\0')
+							if (command[copyI] == '\0')
 							{
-								text[copyI - 1] = '\0';
+								command[copyI - 1] = '\0';
 								break;
 							}
 							++copyI;
 						}
 						break;
 					case SDLK_RETURN:
-						delete[] texts[ROW_SIZE - 1];
+						printf("\n----\n");
+						delete[] gridTexts[ROW_SIZE - 1];
 						for (int i = ROW_SIZE - 2; i >= 0; --i)
 						{
-							texts[i + 1] = texts[i];
-							for (copyI = 0; texts[i + 1][copyI] != '\0'; ++copyI)
+							gridTexts[i + 1] = gridTexts[i];
+							for (copyI = 0; gridTexts[i + 1][copyI] != '\0'; ++copyI)
 							{
-								texts[i + 1][copyI] = texts[i][copyI];
+								gridTexts[i + 1][copyI] = gridTexts[i][copyI];
 							}
 						}
-						texts[0] = new char[ROW_SIZE];
-						for (copyI = 0; text[copyI] != '\0'; ++copyI)
+						gridTexts[0] = new char[ROW_SIZE];
+						for (copyI = 0; command[copyI] != '\0'; ++copyI)
 						{
-							texts[0][copyI] = text[copyI];
-							text[copyI] = '\0';
+							gridTexts[0][copyI] = command[copyI];
+							command[copyI] = '\0';
 						}
-						texts[0][copyI] = '\0';
-						RunProcess(texts[0]);
+						gridTexts[0][copyI] = '\0';
+						Write("data.csv", gridTexts[0]);
+						Read("data.csv");
+						RunProcess(gridTexts[0]);
 						break;
 					}
 				}
@@ -311,24 +546,24 @@ int main(int argc, char* argv[])
 				if (viewports[v_tile].h < 0) viewports[v_tile].h = 0;
 				if (j == alphabetIndex)
 				{
-					if (texts[i][alphabetIndex] == '\0')
+					if (gridTexts[i][alphabetIndex] == '\0')
 					{
 						alphabetIndex = 0;
 					}
 					else
 					{
-						alphabet[TextToIndex(texts[i][alphabetIndex])].Draw(&viewports[v_tile]);
+						alphabet[TextToIndex(gridTexts[i][alphabetIndex])].Draw(&viewports[v_tile]);
 						++alphabetIndex;
 					}
 				}
 			}
 		}
-		DrawShellPrompt(viewports, text);
+		DrawShellPrompt(viewports, command);
 		SDL_RenderPresent(window.GetRenderer());
 	}
 	UnloadArt();
 	UnloadSDL();
-	for (int i = 0; i < ROW_SIZE; ++i) delete[] texts[i];
-	delete[] text;
+	for (int i = 0; i < ROW_SIZE; ++i) delete[] gridTexts[i];
+	delete[] command;
 	return 0;
 }

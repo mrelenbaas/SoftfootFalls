@@ -27,7 +27,7 @@ public:
 		, fullscreen(false)
 		, isRunning(true) {
 	}
-	bool Init();
+	void Init();
 	void HandleEvent(SDL_Event&);
 	void Free();
 	int GetWidth() const { return width; };

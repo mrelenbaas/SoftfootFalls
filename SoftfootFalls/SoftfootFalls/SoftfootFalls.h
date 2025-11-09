@@ -12,10 +12,19 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+//#include <iostream>
+//#include <string>
+#include <cstdio>
+#include <memory>
+#include <stdexcept>
+#include <array>
+#include <stdlib.h>
 
 #ifdef _WIN32
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_image.h>
+#include <windows.h>
+#include <tchar.h>
 #elif __linux__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -33,10 +42,11 @@
 #include "Texture.h"
 #include "Player.h"
 #include "Load.h"
+#include <cassert>
 
 
 Window window;
-const int ROW_SIZE = 26;
+const int ROW_SIZE = 50;
 const int GRID_SIZE = ROW_SIZE * ROW_SIZE;
 
 long long previousTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -80,7 +90,7 @@ const char SEPARATOR = '\\';
 const char SEPARATOR = '/';
 #endif
 
-static const char* BasePath(const char* filePath)
+static char* GetProgramDirectory(const char* filePath)
 {
 	char* basePath = new char[strlen(filePath) + 1];
 	size_t i = 0;
@@ -116,7 +126,7 @@ enum PathEnum
 	PlayerBeam,
 	PathEnum_Size
 };
-const char* Paths[] =
+const char* PATHS[] =
 {
 	"bg.png",
 	"Landscape_Moon_3300x2550.png",
@@ -146,7 +156,7 @@ enum RoadsEnum
 	Road_004,
 	RoadsEnum_Size
 };
-const char* RoadsPaths[] =
+const char* ROADS_PATHS[] =
 {
 	"Road_000_256x256.png",
 	"Road_001_256x256.png",
@@ -252,7 +262,7 @@ enum AlphabetEnum
 	ASCII126000,
 	AlphabetEnum_Size
 };
-const char* alphabetPaths[] =
+const char* ALPHABET_PATHS[] =
 {
 	"ASCII033000.png",
 	"ASCII034000.png",
@@ -382,18 +392,25 @@ enum ViewportsEnum
 };
 SDL_Rect viewports[ViewportsEnum_Size]{};
 
-void LoadArt(const char* applicationPath)
+void LoadArt(const char* programName)
 {
-	const char* BASE_PATH = BasePath(applicationPath);
-	Load* load = new Load(BasePath(applicationPath));
-	for (int i = 0; i < TimerEnum_Size; ++i) deltas[i] = 0L;
-	for (int i = 0; i < TimerEnum_Size; ++i) normals[i] = 0.0;
+	char* basePath = GetProgramDirectory(programName);
+	Load* load = NULL;
+	load = new Load(basePath);
+	assert(load != NULL && "ERROR: Failed to define load.");
+	for (int i = 0; i < TimerEnum_Size; ++i)
+	{
+		deltas[i] = 0L;
+		normals[i] = 0.0;
+	}
 	for (int i = 0; i < ViewportsEnum_Size; ++i) viewports[i] = { 0, 0, 0, 0 };
-	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Init(window.GetRenderer(), load->Path(Paths[i]));
-	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(window.GetRenderer(), load->Path(RoadsPaths[i]));
-	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Init(window.GetRenderer(), load->Path(alphabetPaths[i]));
-	delete[] BASE_PATH;
+	for (int i = 0; i < PathEnum_Size; ++i) unsorted[i].Init(window.GetRenderer(), load->Path(PATHS[i]));
+	for (int i = 0; i < RoadsEnum_Size; ++i) roads[i].Init(window.GetRenderer(), load->Path(ROADS_PATHS[i]));
+	for (int i = 0; i < AlphabetEnum_Size; ++i) alphabet[i].Init(window.GetRenderer(), load->Path(ALPHABET_PATHS[i]));
+	delete[] basePath;
+	basePath = NULL;
 	delete load;
+	load = NULL;
 }
 
 void LoadSDL()

@@ -133,6 +133,7 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SDLInterface.cpp" />
     <ClCompile Include="SDLWrapper.cpp" />
+    <ClCompile Include="ShellFunctions.cpp" />
     <ClCompile Include="SoftfootFalls.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Time.cpp" />
@@ -145,6 +146,7 @@
     <ClInclude Include="Point.h" />
     <ClInclude Include="SDLInterface.h" />
     <ClInclude Include="SDLWrapper.h" />
+    <ClInclude Include="ShellFunctions.h" />
     <ClInclude Include="SoftfootFalls.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Time.h" />

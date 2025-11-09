@@ -1,11 +1,15 @@
 #include "Window.h"
 #include "SDLInterface.h"
+#include <cassert>
 
 
-bool Window::Init()
+void Window::Init()
 {
 	SecondInit(title, width, height, &window, &renderer);
-	return window != NULL;
+	assert(&window != NULL && "ERROR: Failed to create Window.\n");
+	printf("SUCCESS: Window created.\n");
+	assert(&renderer != NULL && "ERROR: Failed to create Renderer.\n");
+	printf("SUCCESS: Created Renderer.\n");
 }
 
 void Window::HandleEvent(SDL_Event& event)

@@ -21,5 +21,5 @@ private:
 #elif __linux__
 	const char* relativePath = "SoftfootFalls/x64/Debug/art/";
 #endif
-	Node* paths;
+	Node* PATHS;
 };
