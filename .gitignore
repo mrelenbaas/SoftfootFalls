@@ -1,3 +1,7 @@
+# Obsidian
+.obsidian/graph.json
+.obsidian/workspace.json
+
 # Executables
 *.out
 softfoot-falls
